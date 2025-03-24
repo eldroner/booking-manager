@@ -1,10 +1,11 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { BookingPageComponent } from "./components/booking-page/booking-page.component";
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, BookingPageComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })

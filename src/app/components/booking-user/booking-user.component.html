@@ -1,0 +1,82 @@
+<div class="mb-4">
+    <label for="serviceType" class="form-label">Selecciona el tipo de servicio:</label>
+    <select
+      id="serviceType"
+      class="form-select"
+      [(ngModel)]="selectedType"
+    >
+      <option *ngFor="let type of serviceTypes" [value]="type">
+        {{ type | titlecase }}
+      </option>
+    </select>
+  </div>
+  
+  <div class="card p-4 shadow-sm">
+    <h5>Tipo seleccionado: <span class="badge bg-primary text-uppercase">{{ selectedType }}</span></h5>
+  
+    <div class="mt-3">
+      <!-- CITA -->
+      <div *ngIf="selectedType === 'cita'">
+        <div class="row mb-3">
+          <div class="col-md-6 mb-3">
+            <label for="date" class="form-label">Selecciona una fecha:</label>
+            <input
+              type="date"
+              id="date"
+              class="form-control"
+              [(ngModel)]="selectedDate"
+            />
+          </div>
+  
+          <div class="col-md-6 mb-3">
+            <label for="time" class="form-label">Selecciona una hora:</label>
+            <select
+              id="time"
+              class="form-select"
+              [(ngModel)]="selectedTime"
+              [disabled]="!selectedDate"
+            >
+              <option
+                *ngFor="let time of availableTimes"
+                [value]="time"
+                [disabled]="!esHoraDisponible(time)"
+              >
+                {{ time }} <span *ngIf="!esHoraDisponible(time)"> (completo) </span>
+              </option>
+            </select>
+          </div>
+        </div>
+  
+        <div *ngIf="selectedDate && selectedTime" class="alert alert-success">
+          Reserva para el <strong>{{ selectedDate }}</strong> a las <strong>{{ selectedTime }}</strong>
+        </div>
+  
+        <button
+          class="btn btn-primary mt-3"
+          (click)="confirmarReserva()"
+          [disabled]="!selectedDate || !selectedTime"
+        >
+          Confirmar reserva
+        </button>
+  
+        <hr class="my-4" />
+        <h5>Reservas realizadas:</h5>
+        <ul class="list-group">
+          <li class="list-group-item" *ngFor="let r of reservas">
+            {{ r.fecha }} a las {{ r.hora }}
+          </li>
+        </ul>
+      </div>
+  
+      <!-- ALOJAMIENTO -->
+      <div *ngIf="selectedType === 'alojamiento'">
+        <p>[Calendario por rango de días aquí]</p>
+      </div>
+  
+      <!-- TURNO -->
+      <div *ngIf="selectedType === 'turno'">
+        <p>[Selector de turnos aquí]</p>
+      </div>
+    </div>
+  </div>
+  

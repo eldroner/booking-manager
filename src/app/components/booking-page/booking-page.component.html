@@ -1,0 +1,13 @@
+<div class="container my-5">
+    <h1 class="text-center mb-4">Gestor de reservas</h1>
+  
+    <div class="mb-4 text-end">
+      <button class="btn btn-outline-secondary" (click)="isAdmin = !isAdmin">
+        Cambiar a vista {{ isAdmin ? 'Usuario' : 'Admin' }}
+      </button>
+    </div>
+  
+    <app-booking-admin *ngIf="isAdmin"></app-booking-admin>
+    <app-booking-user *ngIf="!isAdmin"></app-booking-user>
+  </div>
+  

@@ -1,51 +1,49 @@
 <div class="card p-4 shadow-sm">
-    <h2 class="mb-4">Administración</h2>
-  
-    <form (ngSubmit)="guardarConfiguracion()" #configForm="ngForm">
-      <div class="mb-3">
-        <label class="form-label">Nombre del negocio</label>
-        <input
-          type="text"
-          class="form-control"
-          [(ngModel)]="configNegocio.nombre"
-          name="nombre"
-          required
-        />
-      </div>
-  
-      <div class="mb-3">
-        <label class="form-label">Máximo de reservas por hora</label>
-        <input
-          type="number"
-          class="form-control"
-          [(ngModel)]="configNegocio.maxCitasPorHora"
-          name="maxCitasPorHora"
-          min="1"
-          required
-        />
-      </div>
-  
-      <button class="btn btn-success" type="submit">Guardar configuración</button>
-    </form>
-  
-    <hr class="my-4" />
-  
-    <h5>Reservas actuales:</h5>
-    <ul class="list-group mb-3">
-      <li class="list-group-item" *ngFor="let r of reservas">
-        {{ r.fecha }} a las {{ r.hora }}
+  <h2 class="mb-4">Administración</h2>
+
+  <form (ngSubmit)="guardarConfiguracion()" #configForm="ngForm">
+    <div class="mb-3">
+      <label class="form-label">Nombre del negocio</label>
+      <input
+        type="text"
+        class="form-control"
+        [(ngModel)]="configNegocio.nombre"
+        name="nombre"
+        required
+      />
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Máximo de reservas por hora</label>
+      <input
+        type="number"
+        class="form-control"
+        [(ngModel)]="configNegocio.maxCitasPorHora"
+        name="maxCitasPorHora"
+        min="1"
+        required
+      />
+    </div>
+
+    <button class="btn btn-success" type="submit">Guardar configuración</button>
+  </form>
+
+  <hr class="my-4" />
+
+  <h5>Reservas actuales:</h5>
+  <ul class="list-group mb-3">
+    <li class="list-group-item" *ngFor="let r of reservas">
+      {{ r.fecha }} a las {{ r.hora }}
+    </li>
+  </ul>
+
+  <h5>Resumen por fecha y hora:</h5>
+  <div *ngFor="let entry of reservasPorHora | keyvalue">
+    <strong>{{ entry.key }}</strong>
+    <ul>
+      <li *ngFor="let hora of entry.value | keyvalue">
+        {{ hora.key }} → {{ hora.value }} reserva(s)
       </li>
     </ul>
-  
-    <h5>Resumen por fecha y hora:</h5>
-    <div *ngFor="let entry of getReservasPorHora() | keyvalue">
-      <strong>{{ entry.key }}</strong>
-      <ul>
-        <li *ngFor="let hora of entry.value | keyvalue">
-          {{ hora.key }} → {{ hora.value }} reserva(s)
-        </li>
-      </ul>
-    </div>
-    
   </div>
-  
+</div>

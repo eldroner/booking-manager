@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { BookingConfigService } from '../../services/booking-config.service'; 
+import { BookingConfigService } from '../../services/booking-config.service';
 
 @Component({
   selector: 'app-booking-admin',
@@ -10,36 +10,52 @@ import { BookingConfigService } from '../../services/booking-config.service';
   templateUrl: './booking-admin.component.html',
   styleUrls: ['./booking-admin.component.scss']
 })
-
-export class BookingAdminComponent {
-  // Datos de configuración del negocio
+export class BookingAdminComponent implements OnInit {
   configNegocio = {
-    nombre: 'Mi negocio',
+    nombre: '',
     maxCitasPorHora: 1
   };
 
+  reservas: { id: string; fecha: string; hora: string }[] = [];
+  reservasPorHora: { [fecha: string]: { [hora: string]: number } } = {};
+
   constructor(private configService: BookingConfigService) {}
 
-  // Lista de reservas simuladas
-  reservas: { fecha: string; hora: string }[] = [
-    { fecha: '2025-03-25', hora: '09:00' },
-    { fecha: '2025-03-25', hora: '10:00' },
-    { fecha: '2025-03-25', hora: '10:00' }
-  ];
-
-  // Contador de reservas por hora (reconstruido al iniciar)
-  getReservasPorHora(): { [fecha: string]: { [hora: string]: number } } {
-    const contador: { [fecha: string]: { [hora: string]: number } } = {};
-    this.reservas.forEach(res => {
-      if (!contador[res.fecha]) contador[res.fecha] = {};
-      if (!contador[res.fecha][res.hora]) contador[res.fecha][res.hora] = 0;
-      contador[res.fecha][res.hora]++;
+  ngOnInit(): void {
+    this.configService.config$.subscribe(config => {
+      this.configNegocio = { ...config }; // Actualizar la configuración cada vez que cambie
     });
-    return contador;
+    this.cargarReservas();
+  }
+
+  private cargarReservas(): void {
+    this.reservas = this.configService.loadReservas().map(reserva => ({
+      ...reserva,
+      id: this.generateId() // Asignar un id único a cada reserva
+    }));
+    this.recalcularReservasPorHora();
+  }
+
+  private recalcularReservasPorHora(): void {
+    this.reservasPorHora = {};
+    this.reservas.forEach(reserva => {
+      if (!this.reservasPorHora[reserva.fecha]) {
+        this.reservasPorHora[reserva.fecha] = {};
+      }
+      if (!this.reservasPorHora[reserva.fecha][reserva.hora]) {
+        this.reservasPorHora[reserva.fecha][reserva.hora] = 0;
+      }
+      this.reservasPorHora[reserva.fecha][reserva.hora]++;
+    });
   }
 
   guardarConfiguracion(): void {
     this.configService.updateConfig(this.configNegocio);
-    alert('Configuración guardada (simulada)');
+    alert('Configuración guardada');
+  }
+
+  // Método para generar un ID único para cada reserva
+  private generateId(): string {
+    return Math.random().toString(36).substr(2, 9);
   }
 }

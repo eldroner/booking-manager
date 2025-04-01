@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { BookingConfigService } from '../../services/booking-config.service';
 
 @Component({
   selector: 'app-booking-user',
@@ -21,16 +22,35 @@ export class BookingUserComponent {
     '17:00', '18:00'
   ];
 
-  // Config del negocio (esto luego será configurable desde admin)
+  negocioNombre: string = '';
   maxReservasPorHora: number = 1;
 
   reservas: { fecha: string; hora: string }[] = [];
   reservasPorHora: { [fecha: string]: { [hora: string]: number } } = {};
 
-  onServiceTypeChange(type: string): void {
-    this.selectedType = type;
-    this.selectedDate = '';
-    this.selectedTime = '';
+  constructor(private configService: BookingConfigService) {
+    // Escuchar cambios en la configuración
+    this.configService.config$.subscribe(config => {
+      this.negocioNombre = config.nombre;
+      this.maxReservasPorHora = config.maxCitasPorHora;
+    });
+
+    this.cargarReservas();
+  }
+
+  cargarReservas(): void {
+    this.reservas = this.configService.loadReservas();
+    this.reservasPorHora = {};
+
+    for (const reserva of this.reservas) {
+      if (!this.reservasPorHora[reserva.fecha]) {
+        this.reservasPorHora[reserva.fecha] = {};
+      }
+      if (!this.reservasPorHora[reserva.fecha][reserva.hora]) {
+        this.reservasPorHora[reserva.fecha][reserva.hora] = 0;
+      }
+      this.reservasPorHora[reserva.fecha][reserva.hora]++;
+    }
   }
 
   esHoraDisponible(hora: string): boolean {
@@ -57,6 +77,9 @@ export class BookingUserComponent {
           fecha: this.selectedDate,
           hora: this.selectedTime
         });
+
+        // Guardar reservas en localStorage
+        this.configService.saveReservas(this.reservas);
 
         this.selectedDate = '';
         this.selectedTime = '';

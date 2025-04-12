@@ -1,12 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { BookingConfigService } from '../../services/booking-config.service';
+import { BookingConfigService, BusinessConfig, Reserva, BusinessType } from '../../services/booking-config.service';
 import { FullCalendarModule } from '@fullcalendar/angular';
-
-import dayGridPlugin from '@fullcalendar/daygrid';
-import interactionPlugin from '@fullcalendar/interaction';
 import { BookingCalendarComponent } from '../booking-calendar/booking-calendar.component';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-booking-admin',
@@ -15,83 +13,125 @@ import { BookingCalendarComponent } from '../booking-calendar/booking-calendar.c
   templateUrl: './booking-admin.component.html',
   styleUrls: ['./booking-admin.component.scss'],
 })
-export class BookingAdminComponent implements OnInit {
-  configNegocio = {
+export class BookingAdminComponent implements OnInit, OnDestroy {
+  configNegocio: Partial<BusinessConfig> = {
     nombre: '',
-    maxCitasPorHora: 1,
+    maxReservasPorSlot: 1,
+    tipoNegocio: BusinessType.GENERAL
   };
 
-  reservas: { id: string; fecha: string; hora: string }[] = [];
-  reservasPorHora: { [fecha: string]: { [hora: string]: number } } = {};
-  calendarOptions: any;
+  businessTypes = [
+    { value: BusinessType.PELUQUERIA, label: 'Peluquería' },
+    { value: BusinessType.HOTEL, label: 'Hotel' },
+    { value: BusinessType.CONSULTA, label: 'Consulta Médica' },
+    { value: BusinessType.GENERAL, label: 'General' }
+  ];
 
-  constructor(private configService: BookingConfigService) {}
+  calendarVisible = true;
+  reservas: Reserva[] = [];
+  reservasPorDia: { [fecha: string]: number } = {};
+  private subscriptions: Subscription = new Subscription();
+
+  constructor(public bookingService: BookingConfigService) {}
 
   ngOnInit(): void {
-    this.cargarReservas();
-    this.setupCalendar();
-    this.configService.config$.subscribe(config => {
-      this.configNegocio = { ...config };
-    });
+    this.loadData();
   }
 
-  // Reemplaza cargarReservas por:
-  private cargarReservas(): void {
-    this.configService.reservas$.subscribe(reservas => {
-      this.reservas = reservas;
-      this.recalcularReservasPorHora();
-      this.setupCalendar(); // Actualizar calendario
-    });
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
   }
 
-  private recalcularReservasPorHora(): void {
-    this.reservasPorHora = {};
+    // Método para refrescar el calendario
+    refreshCalendar(): void {
+      this.calendarVisible = false;
+      setTimeout(() => this.calendarVisible = true, 100);
+    }
+
+    
+
+  private loadData(): void {
+    this.subscriptions.add(
+      this.bookingService.getReservas().subscribe({
+        next: (reservas) => {
+          this.reservas = reservas;
+          this.updateSummary();
+        },
+        error: (err) => console.error('Error cargando reservas:', err)
+      })
+    );
+
+    this.subscriptions.add(
+      this.bookingService.config$.subscribe({
+        next: (config) => {
+          this.configNegocio = { ...config };
+          this.updateServicesDropdown();
+        },
+        error: (err) => console.error('Error cargando configuración:', err)
+      })
+    );
+  }
+
+  private updateSummary(): void {
+    this.reservasPorDia = {};
     this.reservas.forEach(reserva => {
-      if (!this.reservasPorHora[reserva.fecha]) {
-        this.reservasPorHora[reserva.fecha] = {};
-      }
-      if (!this.reservasPorHora[reserva.fecha][reserva.hora]) {
-        this.reservasPorHora[reserva.fecha][reserva.hora] = 0;
-      }
-      this.reservasPorHora[reserva.fecha][reserva.hora]++;
+      const fecha = new Date(reserva.fechaInicio).toISOString().split('T')[0];
+      this.reservasPorDia[fecha] = (this.reservasPorDia[fecha] || 0) + 1;
     });
   }
 
-  guardarConfiguracion(): void {
-    this.configService.updateConfig(this.configNegocio);
-    alert('Configuración guardada');
+  private updateServicesDropdown(): void {
+    // Si necesitas actualizar algo relacionado con los servicios
+    // cuando cambia la configuración
   }
 
-  eliminarReserva(id: string): void {
-    this.configService.deleteReserva(id); // Primero eliminar del servicio
-    this.reservas = this.reservas.filter(reserva => reserva.id !== id); // Luego actualizar vista
-    this.recalcularReservasPorHora();
+  saveConfiguration(): void {
+    if (this.isFormValid()) {
+      this.bookingService.updateConfig({
+        nombre: this.configNegocio.nombre,
+        maxReservasPorSlot: this.configNegocio.maxReservasPorSlot,
+        tipoNegocio: this.configNegocio.tipoNegocio
+      });
+      alert('Configuración guardada correctamente');
+    } else {
+      alert('Por favor complete todos los campos requeridos');
+    }
   }
 
-  private generateId(): string {
-    return Math.random().toString(36).substr(2, 9);
+  private isFormValid(): boolean {
+    return !!this.configNegocio.nombre && 
+           !!this.configNegocio.maxReservasPorSlot &&
+           !!this.configNegocio.tipoNegocio;
   }
 
-  private setupCalendar(): void {
-    this.calendarOptions = {
-      plugins: [dayGridPlugin, interactionPlugin],
-      initialView: 'dayGridMonth',
-      events: this.reservas.map(reserva => ({
-        title: `Reserva a las ${reserva.hora}`,
-        date: reserva.fecha,
-        backgroundColor: this.getReservaColor(reserva.fecha), // Fondo dinámico
-        textColor: 'black', // Texto legible
-      })),
-      dateClick: (info: any) => {
-        alert('Fecha clickeada: ' + info.dateStr);
-      },
-    };
+  deleteReservation(id: string): void {
+    if (confirm('¿Está seguro que desea eliminar esta reserva?')) {
+      this.subscriptions.add(
+        this.bookingService.deleteReserva(id).subscribe({
+          next: () => {
+            this.reservas = this.reservas.filter(r => r.id !== id);
+            this.updateSummary();
+          },
+          error: (err) => alert('Error al eliminar reserva: ' + err.message)
+        })
+      );
+    }
   }
 
-  private getReservaColor(fecha: string): string {
-    const reservasPorDia = this.reservas.filter(r => r.fecha === fecha).length;
-    if (reservasPorDia >= 5) return 'red';
-    if (reservasPorDia > 2) return 'yellow';
-    return 'green';
+  formatDate(dateString: string): string {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  getServiceName(serviceId: string): string {
+    const config = this.bookingService.getConfig();
+    return config.servicios?.find(s => s.id === serviceId)?.nombre || serviceId;
   }
 }

@@ -1,107 +1,255 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { v4 as uuidv4 } from 'uuid';
 
-@Injectable({
-  providedIn: 'root'
-})
+export enum BusinessType {
+  PELUQUERIA = 'peluqueria',
+  HOTEL = 'hotel',
+  CONSULTA = 'consulta_medica',
+  GENERAL = 'general'
+}
+
+export enum BookingStatus {
+  PENDIENTE = 'pendiente',
+  CONFIRMADA = 'confirmada',
+  CANCELADA = 'cancelada'
+}
+
+export interface UserData {
+  nombre: string;
+  email: string;
+  telefono?: string;
+  notas?: string;
+}
+
+export interface Servicio {
+  id: string;
+  nombre: string;
+  duracion: number;
+  precio?: number;
+}
+
+export interface Reserva {
+  id: string;
+  usuario: UserData;
+  fechaInicio: string;
+  fechaFin?: string;
+  servicio: string;
+  estado: BookingStatus;
+  metadata?: any;
+}
+
+export interface HorarioLaboral {
+  diasLaborables: number[];
+  horaInicio: string;
+  horaFin: string;
+}
+
+export interface BusinessConfig {
+  nombre: string;
+  tipoNegocio: BusinessType;
+  duracionBase: number;
+  maxReservasPorSlot: number;
+  horarioLaboral: HorarioLaboral;
+  servicios: Servicio[];
+}
+
+@Injectable({ providedIn: 'root' })
 export class BookingConfigService {
   private readonly storageKey = 'booking-config';
   private readonly reservasKey = 'booking-reservas';
+  private readonly EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$/;
 
-  // Configuración predeterminada
-  config = {
-    maxCitasPorHora: 2, // Valor predeterminado
+  private defaultConfig: BusinessConfig = {
+    nombre: 'Mi Negocio',
+    tipoNegocio: BusinessType.PELUQUERIA,
+    duracionBase: 60,
+    maxReservasPorSlot: 2,
+    horarioLaboral: {
+      diasLaborables: [1, 2, 3, 4, 5], // Lunes a Viernes
+      horaInicio: '09:00',
+      horaFin: '18:00'
+    },
+    servicios: [
+      { id: 'corte-pelo', nombre: 'Corte de pelo', duracion: 30 },
+      { id: 'tinte', nombre: 'Tinte', duracion: 60 }
+    ]
   };
 
-  private defaultConfig = {
-    nombre: 'Mi negocio',
-    maxCitasPorHora: 1
-  };
+  private configSubject = new BehaviorSubject<BusinessConfig>(this.loadConfig());
+  private reservasSubject = new BehaviorSubject<Reserva[]>(this.loadReservas());
 
-  // BehaviorSubject para manejar la configuración
-  private configSubject = new BehaviorSubject(this.loadConfig());
   config$ = this.configSubject.asObservable();
+  reservas$ = this.reservasSubject.asObservable();
 
-  // BehaviorSubject para manejar las reservas
-  private reservasSubject = new BehaviorSubject<{ fecha: string; hora: string; id: string }[]>(this.loadReservas());
-  reservas$ = this.reservasSubject.asObservable(); // Observable para componentes suscritos
-
-  // Cargar la configuración desde localStorage
-  private loadConfig() {
-    const saved = localStorage.getItem(this.storageKey);
-    return saved ? JSON.parse(saved) : { ...this.defaultConfig };
+  getConfig(): BusinessConfig {
+    return { ...this.configSubject.value };
   }
 
-  // Cargar las reservas desde localStorage
-  public loadReservas(): { fecha: string; hora: string; id: string }[] {
-    const savedReservas = JSON.parse(localStorage.getItem(this.reservasKey) || '[]');
-    return savedReservas;
+  getServicios(): Servicio[] {
+    const servicios = this.configSubject.value.servicios;
+    return Array.isArray(servicios) ? [...servicios] : [];
   }
 
-  // Obtener la configuración actual
-  getConfig() {
-    return this.configSubject.value;
+  updateConfig(newConfig: Partial<BusinessConfig>): void {
+    const currentConfig = this.configSubject.value;
+    const mergedConfig: BusinessConfig = {
+      ...currentConfig,
+      ...newConfig,
+      servicios: newConfig.servicios || currentConfig.servicios,
+      horarioLaboral: newConfig.horarioLaboral || currentConfig.horarioLaboral
+    };
+    this.saveConfig(mergedConfig);
   }
 
-  // Obtener las reservas actuales
-  getReservas() {
-    return this.reservasSubject.value;
+  getReservas(): Observable<Reserva[]> {
+    return this.reservas$;
   }
 
-  // Eliminar una reserva por ID
-  deleteReserva(id: string): void {
-    const reservas = this.loadReservas(); // Cargar todas las reservas existentes
-    console.log('Reservas antes de eliminar:', reservas); // Log para verificar el estado actual
-  
-    // Filtrar la reserva por ID
-    const nuevasReservas = reservas.filter(reserva => reserva.id !== id);
-    console.log('Reservas después de eliminar:', nuevasReservas); // Log para verificar la eliminación
-  
-    // Si la reserva no fue encontrada
-    if (reservas.length === nuevasReservas.length) {
-      console.log(`No se encontró una reserva con el id ${id}`);
+  addReserva(reservaData: Omit<Reserva, 'id' | 'estado'>): Observable<Reserva> {
+    // Validación básica del usuario
+    if (!reservaData.usuario?.email || !this.EMAIL_REGEX.test(reservaData.usuario.email)) {
+      return throwError(() => new Error('Email inválido'));
     }
-  
-    // Guardar las reservas actualizadas en localStorage
-    localStorage.setItem(this.reservasKey, JSON.stringify(nuevasReservas));
-  
-    // Emitir las nuevas reservas al BehaviorSubject
-    this.reservasSubject.next(nuevasReservas);
-  }
-  
 
-  // Actualizar la configuración
-  updateConfig(newConfig: { nombre: string; maxCitasPorHora: number }) {
-    localStorage.setItem(this.storageKey, JSON.stringify(newConfig));
-    this.configSubject.next(newConfig);
-  }
+    if (!reservaData.usuario?.nombre || reservaData.usuario.nombre.trim().length < 3) {
+      return throwError(() => new Error('Nombre debe tener al menos 3 caracteres'));
+    }
 
-  
-  addReserva(reserva: { fecha: string; hora: string }): string {
-    const id = uuidv4();
-    const reservas = this.loadReservas();
-    reservas.push({ ...reserva, id });
+    // Crear nueva reserva
+    const nuevaReserva: Reserva = {
+      ...reservaData,
+      id: uuidv4(),
+      estado: BookingStatus.CONFIRMADA,
+      fechaInicio: new Date(reservaData.fechaInicio).toISOString(),
+      fechaFin: reservaData.fechaFin ? new Date(reservaData.fechaFin).toISOString() : undefined
+    };
+
+    // Validación específica de la reserva
+    if (!this.validateBooking(nuevaReserva)) {
+      return throwError(() => new Error('Validación fallida: horario no disponible o datos incorrectos'));
+    }
+
+    // Guardar y retornar
+    const reservas = [...this.reservasSubject.value, nuevaReserva];
     this.saveReservas(reservas);
-    return id;
+    return of(nuevaReserva);
   }
 
-  // Guardar nuevas reservas
-  saveReservas(reservas: { fecha: string; hora: string; id: string }[]): void {
-    const reservasConId = reservas.map((reserva) => ({
-      ...reserva,
-      id: reserva.id || uuidv4(), // Asegurar que cada reserva tenga un id único
-    }));
-
-    // Guardar en localStorage
-    localStorage.setItem(this.reservasKey, JSON.stringify(reservasConId));
-
-    // Emitir las nuevas reservas al BehaviorSubject
-    this.reservasSubject.next(reservasConId);
+  deleteReserva(id: string): Observable<void> {
+    const reservas = this.reservasSubject.value.filter(r => r.id !== id);
+    this.saveReservas(reservas);
+    return of(void 0);
   }
 
-  // Obtener el máximo de citas por día (ejemplo de cálculo)
-  getMaxCitasPorDia(): number {
-    return this.config?.maxCitasPorHora ? this.config.maxCitasPorHora * 12 : 60; // Ejemplo
+  private loadConfig(): BusinessConfig {
+    try {
+      const saved = localStorage.getItem(this.storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return {
+          ...this.defaultConfig,
+          ...parsed,
+          servicios: Array.isArray(parsed.servicios) ? parsed.servicios : this.defaultConfig.servicios,
+          horarioLaboral: parsed.horarioLaboral || this.defaultConfig.horarioLaboral
+        };
+      }
+    } catch (e) {
+      console.error('Error cargando configuración', e);
+    }
+    return this.defaultConfig;
+  }
+
+  private saveConfig(config: BusinessConfig): void {
+    localStorage.setItem(this.storageKey, JSON.stringify(config));
+    this.configSubject.next(config);
+  }
+
+  private loadReservas(): Reserva[] {
+    try {
+      const reservasStr = localStorage.getItem(this.reservasKey);
+      return reservasStr ? JSON.parse(reservasStr) : [];
+    } catch (error) {
+      console.error('Error cargando reservas', error);
+      return [];
+    }
+  }
+
+  private saveReservas(reservas: Reserva[]): void {
+    localStorage.setItem(this.reservasKey, JSON.stringify(reservas));
+    this.reservasSubject.next(reservas);
+  }
+
+  private validateBooking(reserva: Reserva): boolean {
+    // Validaciones básicas
+    if (!reserva.usuario?.nombre || !reserva.usuario?.email) {
+      return false;
+    }
+
+    const fechaReserva = new Date(reserva.fechaInicio);
+    if (isNaN(fechaReserva.getTime())) {
+      return false;
+    }
+
+    // Validación según tipo de negocio
+    const config = this.configSubject.value;
+    switch (config.tipoNegocio) {
+      case BusinessType.PELUQUERIA:
+        return this.validateHairSalonBooking(reserva);
+      case BusinessType.HOTEL:
+        return this.validateHotelBooking(reserva);
+      default:
+        return true;
+    }
+  }
+
+  private validateHairSalonBooking(reserva: Reserva): boolean {
+    const config = this.configSubject.value;
+    
+    // Validar servicio
+    const servicio = config.servicios.find(s => s.id === reserva.servicio);
+    if (!servicio) {
+      console.error('Servicio no encontrado:', reserva.servicio);
+      return false;
+    }
+
+    // Validar horario laboral
+    if (!config.horarioLaboral?.diasLaborables) {
+      console.error('Configuración incompleta: días laborables no definidos');
+      return false;
+    }
+
+    const fechaInicio = new Date(reserva.fechaInicio);
+    const diaSemana = fechaInicio.getDay(); // 0=Domingo, 1=Lunes, etc.
+    
+    // Validar día laborable
+    if (!config.horarioLaboral.diasLaborables.includes(diaSemana)) {
+      return false;
+    }
+
+    // Validar disponibilidad en el slot
+    const duracion = servicio.duracion;
+    const fechaFin = new Date(fechaInicio);
+    fechaFin.setMinutes(fechaInicio.getMinutes() + duracion);
+
+    const reservasEnSlot = this.reservasSubject.value.filter(r => {
+      if (!r.fechaInicio) return false;
+      
+      const rInicio = new Date(r.fechaInicio);
+      const rServicio = config.servicios.find(s => s.id === r.servicio);
+      const rDuracion = rServicio?.duracion || config.duracionBase;
+      const rFin = new Date(rInicio);
+      rFin.setMinutes(rInicio.getMinutes() + rDuracion);
+      
+      return rInicio < fechaFin && rFin > fechaInicio;
+    }).length;
+
+    return reservasEnSlot < config.maxReservasPorSlot;
+  }
+
+  private validateHotelBooking(reserva: Reserva): boolean {
+    // Implementación específica para hoteles
+    // (Puedes añadir lógica particular para hoteles aquí)
+    return true;
   }
 }

@@ -1,7 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { BookingConfigService } from '../../services/booking-config.service';
+import { BookingConfigService, Reserva, Servicio } from '../../services/booking-config.service';
+import { registerLocaleData } from '@angular/common';
+import localeEs from '@angular/common/locales/es';
+
+registerLocaleData(localeEs);
 
 @Component({
   selector: 'app-booking-user',
@@ -10,10 +14,15 @@ import { BookingConfigService } from '../../services/booking-config.service';
   templateUrl: './booking-user.component.html',
   styleUrls: ['./booking-user.component.scss']
 })
-export class BookingUserComponent {
-  serviceTypes: string[] = ['cita', 'alojamiento', 'turno'];
+export class BookingUserComponent implements OnInit {
+  private readonly EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$/;
+  emailError: string | null = null;
+  emailTouched = false;
+  
+  serviceTypes: string[] = ['cita', 'consulta', 'servicio'];
+  serviciosDisponibles: Servicio[] = [];
+  selectedService: string = '';
   selectedType: string = 'cita';
-
   selectedDate: string = '';
   selectedTime: string = '';
   availableTimes: string[] = [
@@ -21,104 +30,163 @@ export class BookingUserComponent {
     '12:00', '13:00', '16:00',
     '17:00', '18:00'
   ];
+  negocioNombre: string = "";
+  reservas: Reserva[] = [];
 
-  negocioNombre: string = '';
-  maxReservasPorHora: number = 1;
+  userData = {
+    nombre: '',
+    email: '',
+    telefono: ''
+  };
+  today: string = new Date().toISOString().split('T')[0];
+  maxDate: string = new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0];
 
-  reservas: { fecha: string; hora: string; id: string }[] = [];  // Añadir id al tipo de reserva
-  reservasPorHora: { [fecha: string]: { [hora: string]: number } } = {};
+  constructor(private bookingService: BookingConfigService) {}
 
-  constructor(private configService: BookingConfigService) {
-    this.configService.reservas$.subscribe(reservas => {
-      this.reservas = reservas;
-      this.recalcularReservasPorHora();
+  ngOnInit(): void {
+    this.loadServices();
+    this.loadBusinessName();
+    this.loadReservas();
+  }
+
+  private loadServices(): void {
+    this.serviciosDisponibles = this.bookingService.getServicios();
+    if (this.serviciosDisponibles.length > 0) {
+      this.selectedService = this.serviciosDisponibles[0].id;
+    }
+  }
+
+  validateEmail(email: string, forceValidation = false): void {
+    if (!this.emailTouched && !forceValidation) return;
+  
+    this.emailError = null;
+    
+    if (!email) {
+      this.emailError = 'El email es requerido';
+    } else if (!this.EMAIL_REGEX.test(email)) {
+      this.emailError = 'Ingrese un email válido (ejemplo@dominio.com)';
+    }
+    // Elimina esta línea: this.cdr.detectChanges();
+  }
+
+
+
+  onServiceTypeChange(): void {
+    this.selectedDate = '';
+    this.selectedTime = '';
+  }
+
+  onDateChange(): void {
+    this.selectedTime = '';
+  }
+
+  private loadBusinessName(): void {
+    this.bookingService.config$.subscribe(config => {
+      this.negocioNombre = config.nombre || 'Sistema de Reservas';
     });
   }
 
-  cargarReservas(): void {
-    this.reservas = this.configService.loadReservas();
-    this.reservasPorHora = {};
-
-    for (const reserva of this.reservas) {
-      if (!this.reservasPorHora[reserva.fecha]) {
-        this.reservasPorHora[reserva.fecha] = {};
-      }
-      if (!this.reservasPorHora[reserva.fecha][reserva.hora]) {
-        this.reservasPorHora[reserva.fecha][reserva.hora] = 0;
-      }
-      this.reservasPorHora[reserva.fecha][reserva.hora]++;
-    }
+  private loadReservas(): void {
+    this.bookingService.getReservas().subscribe({
+      next: (reservas) => {
+        this.reservas = reservas.sort((a, b) => 
+          new Date(b.fechaInicio).getTime() - new Date(a.fechaInicio).getTime()
+        );
+      },
+      error: (err) => console.error('Error cargando reservas', err)
+    });
   }
 
   esHoraDisponible(hora: string): boolean {
     if (!this.selectedDate) return true;
-    const reservas = this.reservasPorHora[this.selectedDate]?.[hora] || 0;
-    return reservas < this.maxReservasPorHora;
+    
+    const reservasEnHora = this.reservas.filter(r => 
+      r.fechaInicio?.includes(this.selectedDate) && 
+      r.fechaInicio?.includes(hora)
+    ).length;
+    
+    return reservasEnHora < (this.bookingService.getConfig().maxReservasPorSlot || 1);
   }
 
+  isFormValid(): boolean {
+    const hasRequiredFields = !!this.userData.nombre?.trim() && 
+                            !!this.selectedDate && 
+                            !!this.selectedTime &&
+                            !!this.selectedService;
+  
+    const emailIsValidOrUntouched = !this.emailTouched || 
+                                  (!!this.userData.email && this.isEmailValid(this.userData.email));
+  
+    return hasRequiredFields && emailIsValidOrUntouched;
+  }
+  
+  private isEmailValid(email: string): boolean {
+    if (!this.EMAIL_REGEX.test(email)) {
+      this.emailError = 'Ingrese un email válido';
+      return false;
+    }
+    this.emailError = null;
+    return true;
+  }
+
+  onEmailBlur(): void {
+    this.emailTouched = true;
+    // La validación se realizará automáticamente en isFormValid()
+  }
+
+
+
   confirmarReserva(): void {
-    if (this.selectedDate && this.selectedTime) {
-      if (!this.reservasPorHora[this.selectedDate]) {
-        this.reservasPorHora[this.selectedDate] = {};
+    if (!this.isFormValid()) {
+      alert('Complete todos los campos correctamente');
+      return;
+    }
+  
+    const fechaISO = new Date(`${this.selectedDate}T${this.selectedTime}:00`).toISOString();
+  
+    this.bookingService.addReserva({
+      usuario: this.userData,
+      fechaInicio: fechaISO,
+      servicio: this.selectedService
+    }).subscribe({
+      next: () => {
+        alert('Reserva confirmada!');
+        this.resetForm();
+        this.loadReservas();
+      },
+      error: (err) => {
+        console.error('Error en reserva:', err);
+        alert(`Error: ${this.getFriendlyError(err.message)}`);
       }
+    });
+  }
 
-      if (!this.reservasPorHora[this.selectedDate][this.selectedTime]) {
-        this.reservasPorHora[this.selectedDate][this.selectedTime] = 0;
-      }
+  private getFriendlyError(error: string): string {
+    const errors: Record<string, string> = {
+      'Email inválido': 'Por favor ingrese un email válido',
+      'Nombre debe tener al menos 3 caracteres': 'El nombre es demasiado corto',
+      'Validación fallida': 'El horario no está disponible o hay un error en los datos'
+    };
+    return errors[error] || 'Ocurrió un error al procesar la reserva';
+  }
 
-      const reservasActuales = this.reservasPorHora[this.selectedDate][this.selectedTime];
-
-      if (reservasActuales < this.maxReservasPorHora) {
-        this.reservasPorHora[this.selectedDate][this.selectedTime]++;
-
-        // Añadir la propiedad id a cada nueva reserva
-        const nuevaReserva = {
-          fecha: this.selectedDate,
-          hora: this.selectedTime,
-          id: this.generateId() // Generar un id único
-        };
-
-        this.reservas.push(nuevaReserva);
-
-        // Guardar reservas en localStorage
-        this.configService.saveReservas(this.reservas);
-
-        this.selectedDate = '';
-        this.selectedTime = '';
-      } else {
-        alert('Lo sentimos, esa hora ya está llena.');
-      }
+  cancelarReserva(id: string): void {
+    if (confirm('¿Estás seguro de cancelar esta reserva?')) {
+      this.bookingService.deleteReserva(id).subscribe({
+        next: () => {
+          this.loadReservas();
+          alert('Reserva cancelada');
+        },
+        error: (err) => alert('Error al cancelar: ' + err.message)
+      });
     }
   }
 
-  // Método para generar un id único para cada reserva
-  private generateId(): string {
-    return Math.random().toString(36).substr(2, 9);
-  }
-
-  // Método para eliminar una reserva
-  eliminarReserva(id: string): void {
-    // Eliminar la reserva por id
-    this.reservas = this.reservas.filter(reserva => reserva.id !== id);
-    
-    // Actualizar las reservas en localStorage
-    this.configService.saveReservas(this.reservas);
-
-    // Actualizar el objeto reservasPorHora
-    this.recalcularReservasPorHora();
-  }
-
-  // Recalcular las reservas por hora
-  private recalcularReservasPorHora(): void {
-    this.reservasPorHora = {};
-    this.reservas.forEach(reserva => {
-      if (!this.reservasPorHora[reserva.fecha]) {
-        this.reservasPorHora[reserva.fecha] = {};
-      }
-      if (!this.reservasPorHora[reserva.fecha][reserva.hora]) {
-        this.reservasPorHora[reserva.fecha][reserva.hora] = 0;
-      }
-      this.reservasPorHora[reserva.fecha][reserva.hora]++;
-    });
+  private resetForm(): void {
+    this.userData = { nombre: '', email: '', telefono: '' };
+    this.selectedDate = '';
+    this.selectedTime = '';
+    this.emailError = null;
+    this.emailTouched = false;
   }
 }

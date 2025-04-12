@@ -1,84 +1,193 @@
-<div class="mb-4">
-  <h2 class="mb-4">{{ negocioNombre }}</h2>
+<div class="container mb-4">
+  <h2 class="text-center mb-4">{{ negocioNombre || 'Sistema de Reservas' }}</h2>
 
-    <label for="serviceType" class="form-label">Selecciona el tipo de servicio:</label>
-    <select
-      id="serviceType"
-      class="form-select"
-      [(ngModel)]="selectedType"
-    >
-      <option *ngFor="let type of serviceTypes" [value]="type">
-        {{ type | titlecase }}
-      </option>
-    </select>
-  </div>
-  
   <div class="card p-4 shadow-sm">
-    <h5>Tipo seleccionado: <span class="badge bg-primary text-uppercase">{{ selectedType }}</span></h5>
-  
+    <!-- Selector de Servicio -->
+    <div class="mb-3">
+      <label for="servicioSelect" class="form-label fw-bold">Servicio:</label>
+      <select
+        id="servicioSelect"
+        class="form-select"
+        [(ngModel)]="selectedService"
+        name="servicio"
+        #servicioSelect="ngModel"
+        required
+      >
+        <option value="" disabled selected>Seleccione un servicio</option>
+        <option 
+          *ngFor="let servicio of serviciosDisponibles" 
+          [value]="servicio.id"
+        >
+          {{servicio.nombre}} (Duración: {{servicio.duracion}} minutos)
+        </option>
+      </select>
+      <div *ngIf="servicioSelect.invalid && servicioSelect.touched" class="text-danger">
+        Por favor seleccione un servicio
+      </div>
+    </div>
+
+    <div class="alert alert-info mb-3 d-flex align-items-center">
+      <i class="bi bi-info-circle me-2"></i>
+      <div>
+        <strong>Tipo seleccionado:</strong> 
+        <span class="badge bg-primary text-uppercase ms-2">{{ selectedType }}</span>
+      </div>
+    </div>
+
     <div class="mt-3">
-      <!-- CITA -->
-      <div *ngIf="selectedType === 'cita'">
-        <div class="row mb-3">
-          <div class="col-md-6 mb-3">
-            <label for="date" class="form-label">Selecciona una fecha:</label>
+      <div *ngIf="selectedType === 'cita'" class="reservation-form">
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label for="reservationDate" class="form-label fw-bold">Fecha:</label>
             <input
               type="date"
-              id="date"
+              id="reservationDate"
               class="form-control"
               [(ngModel)]="selectedDate"
+              name="date"
+              required
+              (change)="onDateChange()"
+              [min]="today"
+              [max]="maxDate"
             />
           </div>
-  
-          <div class="col-md-6 mb-3">
-            <label for="time" class="form-label">Selecciona una hora:</label>
+
+          <div class="col-md-6">
+            <label for="reservationTime" class="form-label fw-bold">Hora:</label>
             <select
-              id="time"
+              id="reservationTime"
               class="form-select"
               [(ngModel)]="selectedTime"
+              name="time"
               [disabled]="!selectedDate"
+              required
             >
+              <option value="" disabled selected>Selecciona hora</option>
               <option
                 *ngFor="let time of availableTimes"
                 [value]="time"
                 [disabled]="!esHoraDisponible(time)"
+                [ngClass]="{'text-muted': !esHoraDisponible(time)}"
               >
-                {{ time }} <span *ngIf="!esHoraDisponible(time)"> (completo) </span>
+                {{ time }} 
+                <span *ngIf="!esHoraDisponible(time)" class="badge bg-secondary ms-2">No disponible</span>
               </option>
             </select>
           </div>
         </div>
-  
-        <div *ngIf="selectedDate && selectedTime" class="alert alert-success">
-          Reserva para el <strong>{{ selectedDate }}</strong> a las <strong>{{ selectedTime }}</strong>
+
+        <div *ngIf="selectedDate && selectedTime" class="alert alert-success mb-3 d-flex align-items-center">
+          <i class="bi bi-calendar-check me-2"></i>
+          <div>
+            <strong>Reserva programada:</strong> 
+            <div>{{ selectedDate | date:'fullDate':'':'es' }} a las {{ selectedTime }}</div>
+          </div>
         </div>
-  
+
+        <div class="mb-3">
+          <label for="userName" class="form-label fw-bold">Nombre completo:</label>
+          <input 
+            type="text" 
+            id="userName"
+            class="form-control" 
+            [(ngModel)]="userData.nombre" 
+            name="nombre" 
+            required
+            placeholder="Ej: Juan Pérez"
+            minlength="3"
+          >
+        </div>
+
+        <div class="mb-3">
+          <label for="userEmail" class="form-label fw-bold">Correo electrónico:</label>
+          <input 
+            type="email"
+            id="userEmail"
+            class="form-control {{emailTouched && emailError ? 'is-invalid' : ''}}" 
+            [(ngModel)]="userData.email" 
+            name="email" 
+            required
+            placeholder="Ej: ejemplo@correo.com"
+            (blur)="onEmailBlur()"
+          >
+          <div *ngIf="emailTouched && emailError" class="invalid-feedback">
+            {{emailError}}
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="userPhone" class="form-label">Teléfono (opcional):</label>
+          <input 
+            type="tel" 
+            id="userPhone"
+            class="form-control" 
+            [(ngModel)]="userData.telefono" 
+            name="telefono"
+            placeholder="Ej: 600123456"
+          >
+        </div>
+
         <button
-          class="btn btn-primary mt-3"
+          class="btn btn-primary w-100 py-2 fw-bold"
           (click)="confirmarReserva()"
-          [disabled]="!selectedDate || !selectedTime"
+          [disabled]="!isFormValid()"
         >
+          <i class="bi bi-check-circle me-2"></i>
           Confirmar reserva
         </button>
-  
-        <hr class="my-4" />
-        <h5>Reservas realizadas:</h5>
-        <ul class="list-group">
-          <li class="list-group-item" *ngFor="let r of reservas">
-            {{ r.fecha }} a las {{ r.hora }}
-          </li>
-        </ul>
       </div>
-  
-      <!-- ALOJAMIENTO -->
-      <div *ngIf="selectedType === 'alojamiento'">
-        <p>[Calendario por rango de días aquí]</p>
+
+      <div *ngIf="selectedType !== 'cita'" class="alert alert-warning d-flex align-items-center">
+        <i class="bi bi-info-circle me-2"></i>
+        <div>
+          <strong>Funcionalidad en desarrollo</strong>
+          <div>La reserva de {{ selectedType }} estará disponible próximamente</div>
+        </div>
       </div>
-  
-      <!-- TURNO -->
-      <div *ngIf="selectedType === 'turno'">
-        <p>[Selector de turnos aquí]</p>
+
+      <div class="mt-4">
+        <h5 class="border-bottom pb-2 d-flex align-items-center">
+          <i class="bi bi-list-check me-2"></i>
+          Mis Reservas
+        </h5>
+        
+        <div *ngIf="reservas.length === 0" class="alert alert-info d-flex align-items-center">
+          <i class="bi bi-calendar-x me-2"></i>
+          No tienes reservas registradas
+        </div>
+        
+        <div *ngIf="reservas.length > 0" class="reservations-list">
+          <div *ngFor="let r of reservas; let i = index" class="mb-2">
+            <div class="card">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <span class="badge bg-primary me-2">{{ r.servicio || 'Servicio' }}</span>
+                    <strong>{{ (r.fechaInicio | date:'medium':'':'es') || 'Fecha no especificada' }}</strong>
+                    <div *ngIf="r.usuario" class="mt-2">
+                      <div class="d-flex align-items-center text-muted mb-1">
+                        <i class="bi bi-person me-1"></i>
+                        {{ r.usuario.nombre || 'Nombre no especificado' }}
+                      </div>
+                      <div class="d-flex align-items-center text-muted">
+                        <i class="bi bi-envelope me-1"></i>
+                        {{ r.usuario.email || 'Email no especificado' }}
+                      </div>
+                    </div>
+                  </div>
+                  <button 
+                    class="btn btn-outline-danger btn-sm ms-2" 
+                    (click)="cancelarReserva(r.id)"
+                    title="Cancelar reserva"
+                  >
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
-  
+</div>

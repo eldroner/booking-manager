@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BookingConfigService, Reserva, Servicio } from '../../services/booking-config.service';
@@ -41,7 +41,11 @@ export class BookingUserComponent implements OnInit {
   today: string = new Date().toISOString().split('T')[0];
   maxDate: string = new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0];
 
-  constructor(private bookingService: BookingConfigService) {}
+  constructor(
+    private bookingService: BookingConfigService,
+    private cdr: ChangeDetectorRef
+
+  ) {}
 
   ngOnInit(): void {
     this.loadServices();
@@ -78,6 +82,8 @@ export class BookingUserComponent implements OnInit {
 
   onDateChange(): void {
     this.selectedTime = '';
+    // Forzar detección de cambios para actualizar la lista de horas
+    this.cdr.detectChanges();
   }
 
   private loadBusinessName(): void {
@@ -98,14 +104,32 @@ export class BookingUserComponent implements OnInit {
   }
 
   esHoraDisponible(hora: string): boolean {
-    if (!this.selectedDate) return true;
+    if (!this.selectedDate || !this.selectedService) return true;
     
-    const reservasEnHora = this.reservas.filter(r => 
-      r.fechaInicio?.includes(this.selectedDate) && 
-      r.fechaInicio?.includes(hora)
-    ).length;
+    const config = this.bookingService.getConfig();
+    const servicio = this.serviciosDisponibles.find(s => s.id === this.selectedService);
     
-    return reservasEnHora < (this.bookingService.getConfig().maxReservasPorSlot || 1);
+    if (!servicio) return true;
+  
+    // Calcular slot de tiempo considerando duración del servicio
+    const fechaInicio = new Date(`${this.selectedDate}T${hora}:00`);
+    const fechaFin = new Date(fechaInicio);
+    fechaFin.setMinutes(fechaInicio.getMinutes() + servicio.duracion);
+  
+    // Contar reservas que se solapan con este slot
+    const reservasEnSlot = this.reservas.filter(r => {
+      if (!r.fechaInicio) return false;
+      
+      const rInicio = new Date(r.fechaInicio);
+      const rServicio = this.serviciosDisponibles.find(s => s.id === r.servicio);
+      const rDuracion = rServicio?.duracion || config.duracionBase;
+      const rFin = new Date(rInicio);
+      rFin.setMinutes(rInicio.getMinutes() + rDuracion);
+      
+      return rInicio < fechaFin && rFin > fechaInicio;
+    }).length;
+  
+    return reservasEnSlot < config.maxReservasPorSlot;
   }
 
   isFormValid(): boolean {

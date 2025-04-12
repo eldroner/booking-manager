@@ -55,24 +55,24 @@
           <div class="col-md-6">
             <label for="reservationTime" class="form-label fw-bold">Hora:</label>
             <select
-              id="reservationTime"
-              class="form-select"
-              [(ngModel)]="selectedTime"
-              name="time"
-              [disabled]="!selectedDate"
-              required
+            id="reservationTime"
+            class="form-select"
+            [(ngModel)]="selectedTime"
+            name="time"
+            [disabled]="!selectedDate"
+            required
+          >
+            <option value="" disabled selected>Selecciona hora</option>
+            <option
+              *ngFor="let time of availableTimes"
+              [value]="time"
+              [disabled]="!esHoraDisponible(time)"
+              [ngClass]="{'text-muted': !esHoraDisponible(time)}"
             >
-              <option value="" disabled selected>Selecciona hora</option>
-              <option
-                *ngFor="let time of availableTimes"
-                [value]="time"
-                [disabled]="!esHoraDisponible(time)"
-                [ngClass]="{'text-muted': !esHoraDisponible(time)}"
-              >
-                {{ time }} 
-                <span *ngIf="!esHoraDisponible(time)" class="badge bg-secondary ms-2">No disponible</span>
-              </option>
-            </select>
+              {{ time }} 
+              <span *ngIf="!esHoraDisponible(time)" class="badge bg-danger ms-2">Completo</span>
+            </option>
+          </select>
           </div>
         </div>
 

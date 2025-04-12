@@ -29,12 +29,10 @@ export class BookingAdminComponent implements OnInit {
   }
 
   private cargarReservas(): void {
-    this.reservas = this.configService.loadReservas().map(reserva => ({
-      ...reserva,
-      id: this.generateId() // Asignar un id único a cada reserva
-    }));
+    this.reservas = this.configService.loadReservas();
     this.recalcularReservasPorHora();
   }
+  
 
   private recalcularReservasPorHora(): void {
     this.reservasPorHora = {};
@@ -58,4 +56,12 @@ export class BookingAdminComponent implements OnInit {
   private generateId(): string {
     return Math.random().toString(36).substr(2, 9);
   }
+
+  eliminarReserva(id: string): void {
+    this.reservas = this.reservas.filter(reserva => reserva.id !== id);
+    this.configService.saveReservas(this.reservas);
+    this.recalcularReservasPorHora();
+    alert('Reserva eliminada');
+  }
+  
 }

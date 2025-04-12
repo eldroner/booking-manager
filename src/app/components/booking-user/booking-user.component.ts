@@ -64,23 +64,25 @@ export class BookingUserComponent {
       if (!this.reservasPorHora[this.selectedDate]) {
         this.reservasPorHora[this.selectedDate] = {};
       }
-
+  
       if (!this.reservasPorHora[this.selectedDate][this.selectedTime]) {
         this.reservasPorHora[this.selectedDate][this.selectedTime] = 0;
       }
-
+  
       const reservasActuales = this.reservasPorHora[this.selectedDate][this.selectedTime];
-
+  
       if (reservasActuales < this.maxReservasPorHora) {
         this.reservasPorHora[this.selectedDate][this.selectedTime]++;
-        this.reservas.push({
+        const nuevaReserva = {
           fecha: this.selectedDate,
-          hora: this.selectedTime
-        });
-
+          hora: this.selectedTime,
+          id: Math.random().toString(36).substr(2, 9) // Genera un id único
+        };
+        this.reservas.push(nuevaReserva);
+  
         // Guardar reservas en localStorage
         this.configService.saveReservas(this.reservas);
-
+  
         this.selectedDate = '';
         this.selectedTime = '';
       } else {
@@ -88,4 +90,5 @@ export class BookingUserComponent {
       }
     }
   }
+  
 }

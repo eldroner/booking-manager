@@ -25,17 +25,14 @@ export class BookingUserComponent {
   negocioNombre: string = '';
   maxReservasPorHora: number = 1;
 
-  reservas: { fecha: string; hora: string }[] = [];
+  reservas: { fecha: string; hora: string; id: string }[] = [];  // Añadir id al tipo de reserva
   reservasPorHora: { [fecha: string]: { [hora: string]: number } } = {};
 
   constructor(private configService: BookingConfigService) {
-    // Escuchar cambios en la configuración
-    this.configService.config$.subscribe(config => {
-      this.negocioNombre = config.nombre;
-      this.maxReservasPorHora = config.maxCitasPorHora;
+    this.configService.reservas$.subscribe(reservas => {
+      this.reservas = reservas;
+      this.recalcularReservasPorHora();
     });
-
-    this.cargarReservas();
   }
 
   cargarReservas(): void {
@@ -73,10 +70,15 @@ export class BookingUserComponent {
 
       if (reservasActuales < this.maxReservasPorHora) {
         this.reservasPorHora[this.selectedDate][this.selectedTime]++;
-        this.reservas.push({
+
+        // Añadir la propiedad id a cada nueva reserva
+        const nuevaReserva = {
           fecha: this.selectedDate,
-          hora: this.selectedTime
-        });
+          hora: this.selectedTime,
+          id: this.generateId() // Generar un id único
+        };
+
+        this.reservas.push(nuevaReserva);
 
         // Guardar reservas en localStorage
         this.configService.saveReservas(this.reservas);
@@ -87,5 +89,36 @@ export class BookingUserComponent {
         alert('Lo sentimos, esa hora ya está llena.');
       }
     }
+  }
+
+  // Método para generar un id único para cada reserva
+  private generateId(): string {
+    return Math.random().toString(36).substr(2, 9);
+  }
+
+  // Método para eliminar una reserva
+  eliminarReserva(id: string): void {
+    // Eliminar la reserva por id
+    this.reservas = this.reservas.filter(reserva => reserva.id !== id);
+    
+    // Actualizar las reservas en localStorage
+    this.configService.saveReservas(this.reservas);
+
+    // Actualizar el objeto reservasPorHora
+    this.recalcularReservasPorHora();
+  }
+
+  // Recalcular las reservas por hora
+  private recalcularReservasPorHora(): void {
+    this.reservasPorHora = {};
+    this.reservas.forEach(reserva => {
+      if (!this.reservasPorHora[reserva.fecha]) {
+        this.reservasPorHora[reserva.fecha] = {};
+      }
+      if (!this.reservasPorHora[reserva.fecha][reserva.hora]) {
+        this.reservasPorHora[reserva.fecha][reserva.hora] = 0;
+      }
+      this.reservasPorHora[reserva.fecha][reserva.hora]++;
+    });
   }
 }

@@ -35,12 +35,13 @@ export class BookingAdminComponent implements OnInit {
     });
   }
 
+  // Reemplaza cargarReservas por:
   private cargarReservas(): void {
-    this.reservas = this.configService.loadReservas().map(reserva => ({
-      ...reserva,
-      id: this.generateId(),
-    }));
-    this.recalcularReservasPorHora();
+    this.configService.reservas$.subscribe(reservas => {
+      this.reservas = reservas;
+      this.recalcularReservasPorHora();
+      this.setupCalendar(); // Actualizar calendario
+    });
   }
 
   private recalcularReservasPorHora(): void {
@@ -62,7 +63,8 @@ export class BookingAdminComponent implements OnInit {
   }
 
   eliminarReserva(id: string): void {
-    this.reservas = this.reservas.filter(reserva => reserva.id !== id);
+    this.configService.deleteReserva(id); // Primero eliminar del servicio
+    this.reservas = this.reservas.filter(reserva => reserva.id !== id); // Luego actualizar vista
     this.recalcularReservasPorHora();
   }
 

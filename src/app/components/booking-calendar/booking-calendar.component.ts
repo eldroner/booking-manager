@@ -1,5 +1,6 @@
-import { Component, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { BookingConfigService } from '../../services/booking-config.service';
+import { CommonModule } from '@angular/common';
 
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -8,22 +9,28 @@ import { FullCalendarModule } from '@fullcalendar/angular';
 @Component({
   selector: 'app-booking-calendar',
   standalone: true,
-  imports: [FullCalendarModule],
+  imports: [CommonModule, FullCalendarModule],
   templateUrl: './booking-calendar.component.html',
   styleUrls: ['./booking-calendar.component.scss'],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA]  // Añadir el esquema de elementos personalizados
 })
 export class BookingCalendarComponent implements OnInit {
-  calendarOptions: any;
+  calendarOptions: any = {}; // Opciones iniciales del calendario
+  monthViewDay: { date: Date; color: string; isToday: boolean }[] = []; // Datos para la vista mensual
 
   constructor(private configService: BookingConfigService) {}
 
   ngOnInit(): void {
+    this.setupCalendar();
+    this.generateMonthViewDays();
+  }
+
+  private setupCalendar(): void {
     const reservas = this.configService.loadReservas();
-    const eventos = reservas.map(reserva => ({
-      title: `${reserva.fecha} ${reserva.hora}`,
+
+    const eventos = reservas.map((reserva) => ({
+      title: `Reserva a las ${reserva.hora}`,
       date: reserva.fecha,
-      backgroundColor: this.getReservaColor(reserva),
+      backgroundColor: this.getReservaColor(reserva.fecha),
     }));
 
     this.calendarOptions = {
@@ -31,15 +38,37 @@ export class BookingCalendarComponent implements OnInit {
       initialView: 'dayGridMonth',
       events: eventos,
       dateClick: (info: any) => {
-        alert('Fecha clickeada: ' + info.dateStr);
-      }
+        this.handleDateClick(info.dateStr);
+      },
     };
   }
 
-  private getReservaColor(reserva: { fecha: string, hora: string }): string {
-    const reservasPorDia = this.configService.loadReservas().filter(r => r.fecha === reserva.fecha);
-    if (reservasPorDia.length >= 5) return 'red';
-    if (reservasPorDia.length > 2) return 'yellow';
+  private handleDateClick(date: string): void {
+    alert(`Has seleccionado la fecha: ${date}`);
+  }
+
+  private getReservaColor(fecha: string): string {
+    const reservas = this.configService.loadReservas();
+    const reservasPorDia = reservas.filter((r) => r.fecha === fecha).length;
+
+    const maxCitasPorDia = this.configService.getMaxCitasPorDia();
+    if (reservasPorDia >= maxCitasPorDia) return 'red';
+    if (reservasPorDia > Math.floor(maxCitasPorDia / 2)) return 'yellow';
     return 'green';
+  }
+
+  private generateMonthViewDays(): void {
+    const today = new Date();
+    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+
+    this.monthViewDay = Array.from({ length: daysInMonth }, (_, i) => {
+      const date = new Date(today.getFullYear(), today.getMonth(), i + 1);
+      const dateString = date.toISOString().split('T')[0];
+      return {
+        date,
+        color: this.getReservaColor(dateString),
+        isToday: date.toDateString() === today.toDateString(),
+      };
+    });
   }
 }

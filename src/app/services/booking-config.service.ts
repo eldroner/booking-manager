@@ -8,6 +8,9 @@ import { v4 as uuidv4 } from 'uuid';
 export class BookingConfigService {
   private readonly storageKey = 'booking-config';
   private readonly reservasKey = 'booking-reservas';
+  config = {
+    maxCitasPorHora: 2, // Valor predeterminado
+  };
 
   private defaultConfig = {
     nombre: 'Mi negocio',
@@ -35,6 +38,11 @@ export class BookingConfigService {
   updateConfig(newConfig: { nombre: string; maxCitasPorHora: number }) {
     localStorage.setItem(this.storageKey, JSON.stringify(newConfig));
     this.configSubject.next(newConfig);
+  }
+
+  // En BookingConfigService
+  getMaxCitasPorDia(): number {
+    return this.config?.maxCitasPorHora ? this.config.maxCitasPorHora * 12 : 60; // Ejemplo
   }
 
   saveReservas(reservas: { fecha: string; hora: string; id?: string }[]): void {

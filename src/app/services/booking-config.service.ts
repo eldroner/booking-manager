@@ -45,12 +45,18 @@ export interface HorarioLaboral {
   horaFin: string;
 }
 
+export interface TramoHorario {
+  hora: string;
+  activo: boolean;
+}
+
 export interface BusinessConfig {
   nombre: string;
   tipoNegocio: BusinessType;
   duracionBase: number;
   maxReservasPorSlot: number;
   horarioLaboral: HorarioLaboral;
+  tramosHorarios: TramoHorario[];
   servicios: Servicio[];
 }
 
@@ -61,19 +67,45 @@ export class BookingConfigService {
   private readonly EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$/;
 
   private defaultConfig: BusinessConfig = {
-    nombre: 'Mi Negocio',
+    nombre: 'Mi Peluquería',
     tipoNegocio: BusinessType.PELUQUERIA,
-    duracionBase: 60,
+    duracionBase: 30, // Duración mínima de slot
     maxReservasPorSlot: 2,
     horarioLaboral: {
-      diasLaborables: [1, 2, 3, 4, 5], // Lunes a Viernes
+      diasLaborables: [1, 2, 3, 4, 5, 6], // Lunes a Sábado
       horaInicio: '09:00',
-      horaFin: '18:00'
+      horaFin: '20:00'
     },
     servicios: [
-      { id: 'corte-pelo', nombre: 'Corte de pelo', duracion: 30 },
-      { id: 'tinte', nombre: 'Tinte', duracion: 60 }
-    ]
+      { id: 'corte-hombre', nombre: 'Corte de Caballero', duracion: 30, precio: 15 },
+      { id: 'corte-lavado-peinado', nombre: 'Corte, Lavado y Peinado Dama', duracion: 60, precio: 25 },
+      { id: 'tinte', nombre: 'Tinte Completo', duracion: 120, precio: 40 }
+    ],
+    tramosHorarios: [
+      { hora: '09:00', activo: true },
+      { hora: '09:30', activo: true },
+      { hora: '10:00', activo: true },
+      { hora: '10:30', activo: true },
+      { hora: '11:00', activo: true },
+      { hora: '11:30', activo: true },
+      { hora: '12:00', activo: true },
+      { hora: '12:30', activo: true },
+      { hora: '13:00', activo: true },
+      { hora: '13:30', activo: true },
+      { hora: '14:00', activo: true },
+      { hora: '14:30', activo: true },
+      { hora: '15:00', activo: true },
+      { hora: '15:30', activo: true },
+      { hora: '16:00', activo: true },
+      { hora: '16:30', activo: true },
+      { hora: '17:00', activo: true },
+      { hora: '17:30', activo: true },
+      { hora: '18:00', activo: true },
+      { hora: '18:30', activo: true },
+      { hora: '19:00', activo: true },
+      { hora: '19:30', activo: true },
+      { hora: '20:00', activo: true }
+    ],
   };
 
   private configSubject = new BehaviorSubject<BusinessConfig>(this.loadConfig());

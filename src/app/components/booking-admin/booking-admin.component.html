@@ -39,7 +39,56 @@
       />
     </div>
 
-    <button class="btn btn-success" type="submit">Guardar configuración</button>
+    <div class="mb-4">
+      <h5 class="mb-3">Horario Laboral</h5>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Hora de apertura</label>
+          <input
+            type="time"
+            class="form-control"
+            [(ngModel)]="configNegocio.horarioLaboral.horaInicio"
+            name="horaInicio"
+            step="1800"
+            required
+          >
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Hora de cierre</label>
+          <input
+            type="time"
+            class="form-control"
+            [(ngModel)]="configNegocio.horarioLaboral.horaFin"
+            name="horaFin"
+            step="1800"
+            required
+          >
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Días laborables</label>
+          <select
+            class="form-select"
+            [(ngModel)]="configNegocio.horarioLaboral.diasLaborables"
+            name="diasLaborables"
+            multiple
+            required
+          >
+            <option [value]="1">Lunes</option>
+            <option [value]="2">Martes</option>
+            <option [value]="3">Miércoles</option>
+            <option [value]="4">Jueves</option>
+            <option [value]="5">Viernes</option>
+            <option [value]="6">Sábado</option>
+            <option [value]="0">Domingo</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Componente de tramos horarios -->
+    <app-tramos-horarios [config]="configNegocio"></app-tramos-horarios>
+
+    <button class="btn btn-success mb-4" type="submit">Guardar configuración</button>
   </form>
 
   <hr class="my-4" />
@@ -47,17 +96,21 @@
   <h5>Calendario de reservas:</h5>
   <app-booking-calendar *ngIf="calendarVisible"></app-booking-calendar>
   
-  <h5>Reservas actuales:</h5>
+  <h5 class="mt-4">Reservas actuales:</h5>
   <ul class="list-group mb-3">
       <li class="list-group-item d-flex justify-content-between align-items-center" *ngFor="let r of reservas">
-          {{ formatDate(r.fechaInicio) }}
-          <span *ngIf="r.fechaFin"> hasta {{ formatDate(r.fechaFin) }}</span>
+          <div>
+            <strong>{{getServiceName(r.servicio)}}</strong> - 
+            {{ formatDate(r.fechaInicio) }}
+            <span *ngIf="r.fechaFin"> hasta {{ formatDate(r.fechaFin) }}</span>
+          </div>
           <button class="btn btn-danger btn-sm" (click)="deleteReservation(r.id)">Eliminar</button>
       </li>
   </ul>
 
   <h5>Resumen por fecha:</h5>
-  <div *ngFor="let entry of reservasPorDia | keyvalue">
-    <strong>{{ entry.key }}</strong> → {{ entry.value }} reserva(s)
+  <div *ngFor="let entry of reservasPorDia | keyvalue" class="mb-2">
+    <strong>{{ entry.key | date:'fullDate':'':'es' }}</strong> - 
+    {{ entry.value }} reserva(s)
   </div>
 </div>

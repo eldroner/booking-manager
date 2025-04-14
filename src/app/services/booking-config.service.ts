@@ -39,14 +39,18 @@ export interface Reserva {
   metadata?: any;
 }
 
-export interface HorarioLaboral {
-  diasLaborables: number[];
-  horaInicio: string;
-  horaFin: string;
+export interface HorarioNormal {
+  dia: number; // 0-6 (Domingo-Sábado)
+  tramos: {
+    horaInicio: string;
+    horaFin: string;
+  }[];
 }
 
-export interface TramoHorario {
-  hora: string;
+export interface HorarioEspecial {
+  fecha: string; // Formato YYYY-MM-DD
+  horaInicio: string;
+  horaFin: string;
   activo: boolean;
 }
 
@@ -55,9 +59,9 @@ export interface BusinessConfig {
   tipoNegocio: BusinessType;
   duracionBase: number;
   maxReservasPorSlot: number;
-  horarioLaboral: HorarioLaboral;
-  tramosHorarios: TramoHorario[];
   servicios: Servicio[];
+  horariosNormales: HorarioNormal[];
+  horariosEspeciales: HorarioEspecial[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -67,45 +71,20 @@ export class BookingConfigService {
   private readonly EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$/;
 
   private defaultConfig: BusinessConfig = {
-    nombre: 'Mi Peluquería',
-    tipoNegocio: BusinessType.PELUQUERIA,
-    duracionBase: 30, // Duración mínima de slot
-    maxReservasPorSlot: 2,
-    horarioLaboral: {
-      diasLaborables: [1, 2, 3, 4, 5, 6], // Lunes a Sábado
-      horaInicio: '09:00',
-      horaFin: '20:00'
-    },
-    servicios: [
-      { id: 'corte-hombre', nombre: 'Corte de Caballero', duracion: 30, precio: 15 },
-      { id: 'corte-lavado-peinado', nombre: 'Corte, Lavado y Peinado Dama', duracion: 60, precio: 25 },
-      { id: 'tinte', nombre: 'Tinte Completo', duracion: 120, precio: 40 }
+    nombre: '',
+    tipoNegocio: BusinessType.GENERAL,
+    duracionBase: 30,
+    maxReservasPorSlot: 1,
+    servicios: [],
+    horariosNormales: [
+      { dia: 1, tramos: [{ horaInicio: '09:00', horaFin: '13:00' }, { horaInicio: '15:00', horaFin: '19:00' }] },
+      { dia: 2, tramos: [{ horaInicio: '09:00', horaFin: '13:00' }, { horaInicio: '15:00', horaFin: '19:00' }] },
+      { dia: 3, tramos: [{ horaInicio: '09:00', horaFin: '13:00' }, { horaInicio: '15:00', horaFin: '19:00' }] },
+      { dia: 4, tramos: [{ horaInicio: '09:00', horaFin: '13:00' }, { horaInicio: '15:00', horaFin: '19:00' }] },
+      { dia: 5, tramos: [{ horaInicio: '09:00', horaFin: '13:00' }, { horaInicio: '15:00', horaFin: '19:00' }] },
+      { dia: 6, tramos: [{ horaInicio: '10:00', horaFin: '14:00' }] }
     ],
-    tramosHorarios: [
-      { hora: '09:00', activo: true },
-      { hora: '09:30', activo: true },
-      { hora: '10:00', activo: true },
-      { hora: '10:30', activo: true },
-      { hora: '11:00', activo: true },
-      { hora: '11:30', activo: true },
-      { hora: '12:00', activo: true },
-      { hora: '12:30', activo: true },
-      { hora: '13:00', activo: true },
-      { hora: '13:30', activo: true },
-      { hora: '14:00', activo: true },
-      { hora: '14:30', activo: true },
-      { hora: '15:00', activo: true },
-      { hora: '15:30', activo: true },
-      { hora: '16:00', activo: true },
-      { hora: '16:30', activo: true },
-      { hora: '17:00', activo: true },
-      { hora: '17:30', activo: true },
-      { hora: '18:00', activo: true },
-      { hora: '18:30', activo: true },
-      { hora: '19:00', activo: true },
-      { hora: '19:30', activo: true },
-      { hora: '20:00', activo: true }
-    ],
+    horariosEspeciales: []
   };
 
   private configSubject = new BehaviorSubject<BusinessConfig>(this.loadConfig());
@@ -119,8 +98,7 @@ export class BookingConfigService {
   }
 
   getServicios(): Servicio[] {
-    const servicios = this.configSubject.value.servicios;
-    return Array.isArray(servicios) ? [...servicios] : [];
+    return [...this.configSubject.value.servicios];
   }
 
   updateConfig(newConfig: Partial<BusinessConfig>): void {
@@ -129,7 +107,8 @@ export class BookingConfigService {
       ...currentConfig,
       ...newConfig,
       servicios: newConfig.servicios || currentConfig.servicios,
-      horarioLaboral: newConfig.horarioLaboral || currentConfig.horarioLaboral
+      horariosNormales: newConfig.horariosNormales || currentConfig.horariosNormales,
+      horariosEspeciales: newConfig.horariosEspeciales || currentConfig.horariosEspeciales
     };
     this.saveConfig(mergedConfig);
   }
@@ -138,17 +117,27 @@ export class BookingConfigService {
     return this.reservas$;
   }
 
+  getHorariosNormales(): HorarioNormal[] {
+    return [...this.configSubject.value.horariosNormales];
+  }
+
+  updateHorariosNormales(horarios: HorarioNormal[]): void {
+    this.updateConfig({ horariosNormales: horarios });
+  }
+
+  getHorariosEspeciales(): HorarioEspecial[] {
+    return [...this.configSubject.value.horariosEspeciales];
+  }
+
+  updateHorariosEspeciales(horarios: HorarioEspecial[]): void {
+    this.updateConfig({ horariosEspeciales: horarios });
+  }
+
   addReserva(reservaData: Omit<Reserva, 'id' | 'estado'>): Observable<Reserva> {
-    // Validación básica del usuario
-    if (!reservaData.usuario?.email || !this.EMAIL_REGEX.test(reservaData.usuario.email)) {
-      return throwError(() => new Error('Email inválido'));
+    if (!this.validateUserData(reservaData.usuario)) {
+      return throwError(() => new Error('Datos de usuario inválidos'));
     }
 
-    if (!reservaData.usuario?.nombre || reservaData.usuario.nombre.trim().length < 3) {
-      return throwError(() => new Error('Nombre debe tener al menos 3 caracteres'));
-    }
-
-    // Crear nueva reserva
     const nuevaReserva: Reserva = {
       ...reservaData,
       id: uuidv4(),
@@ -157,12 +146,10 @@ export class BookingConfigService {
       fechaFin: reservaData.fechaFin ? new Date(reservaData.fechaFin).toISOString() : undefined
     };
 
-    // Validación específica de la reserva
     if (!this.validateBooking(nuevaReserva)) {
-      return throwError(() => new Error('Validación fallida: horario no disponible o datos incorrectos'));
+      return throwError(() => new Error('Horario no disponible o datos incorrectos'));
     }
 
-    // Guardar y retornar
     const reservas = [...this.reservasSubject.value, nuevaReserva];
     this.saveReservas(reservas);
     return of(nuevaReserva);
@@ -174,22 +161,147 @@ export class BookingConfigService {
     return of(void 0);
   }
 
+  getReservasSnapshot(): Reserva[] {
+    return this.reservasSubject.value;
+  }
+
+  isHoraDisponible(fecha: string, hora: string): boolean {
+    const config = this.getConfig();
+    const reservasEnSlot = this.reservasSubject.value.filter(r =>
+      r.fechaInicio.includes(fecha) &&
+      r.fechaInicio.includes(hora)
+    ).length;
+
+    return reservasEnSlot < config.maxReservasPorSlot;
+  }
+
+  validateHorarioEspecial(horario: Partial<HorarioEspecial>): boolean {
+    if (!horario?.fecha || !horario.horaInicio || !horario.horaFin) return false;
+    
+    return this.isValidDate(horario.fecha) && 
+           this.isValidTime(horario.horaInicio) && 
+           this.isValidTime(horario.horaFin) &&
+           this.compareTimes(horario.horaInicio, horario.horaFin) < 0;
+  }
+
+  checkSolapamientoHorarios(nuevoHorario: HorarioEspecial): boolean {
+    return this.getHorariosEspeciales().some(h => 
+      h.activo &&
+      h.fecha === nuevoHorario.fecha &&
+      !(this.compareTimes(nuevoHorario.horaFin, h.horaInicio) <= 0 || 
+       this.compareTimes(nuevoHorario.horaInicio, h.horaFin) >= 0)
+    );
+  }
+
+  private validateBooking(reserva: Reserva): boolean {
+    if (!reserva.usuario?.nombre || !reserva.usuario?.email) {
+      return false;
+    }
+
+    const fechaReserva = new Date(reserva.fechaInicio);
+    if (isNaN(fechaReserva.getTime())) {
+      return false;
+    }
+
+    const config = this.configSubject.value;
+    switch (config.tipoNegocio) {
+      case BusinessType.PELUQUERIA:
+        return this.validateHairSalonBooking(reserva);
+      case BusinessType.HOTEL:
+        return this.validateHotelBooking(reserva);
+      default:
+        return true;
+    }
+  }
+
+  private validateHairSalonBooking(reserva: Reserva): boolean {
+    const config = this.configSubject.value;
+    const servicio = config.servicios.find(s => s.id === reserva.servicio);
+    if (!servicio) return false;
+
+    const fechaInicio = new Date(reserva.fechaInicio);
+    const diaSemana = fechaInicio.getDay();
+    const horarioDia = config.horariosNormales.find(h => h.dia === diaSemana);
+    
+    if (!horarioDia) return false;
+
+    const horaReserva = fechaInicio.getHours() + fechaInicio.getMinutes() / 60;
+    const enTramoValido = horarioDia.tramos.some(tramo => {
+      const [hIni, mIni] = tramo.horaInicio.split(':').map(Number);
+      const [hFin, mFin] = tramo.horaFin.split(':').map(Number);
+      const inicioTramo = hIni + mIni / 60;
+      const finTramo = hFin + mFin / 60;
+      return horaReserva >= inicioTramo && horaReserva < finTramo;
+    });
+
+    if (!enTramoValido) return false;
+
+    const duracion = servicio.duracion;
+    const fechaFin = new Date(fechaInicio);
+    fechaFin.setMinutes(fechaInicio.getMinutes() + duracion);
+
+    const reservasEnSlot = this.reservasSubject.value.filter(r => {
+      if (!r.fechaInicio) return false;
+      const rInicio = new Date(r.fechaInicio);
+      const rServicio = config.servicios.find(s => s.id === r.servicio);
+      const rDuracion = rServicio?.duracion || config.duracionBase;
+      const rFin = new Date(rInicio);
+      rFin.setMinutes(rInicio.getMinutes() + rDuracion);
+      return rInicio < fechaFin && rFin > fechaInicio;
+    }).length;
+
+    return reservasEnSlot < config.maxReservasPorSlot;
+  }
+
+  private validateHotelBooking(reserva: Reserva): boolean {
+    // Implementar lógica específica para hoteles si es necesario
+    return true;
+  }
+
+  private validateUserData(usuario: UserData): boolean {
+    // Verificar que el nombre tenga al menos 3 caracteres
+    const nombreValido = !!usuario?.nombre && usuario.nombre.trim().length >= 3;
+    
+    // Verificar que el email sea válido
+    const emailValido = !!usuario?.email && this.EMAIL_REGEX.test(usuario.email);
+    
+    return nombreValido && emailValido;
+}
+
+  private compareTimes(time1: string, time2: string): number {
+    const [h1, m1] = time1.split(':').map(Number);
+    const [h2, m2] = time2.split(':').map(Number);
+    return h1 - h2 || m1 - m2;
+  }
+
+  private isValidTime(time: string): boolean {
+    if (!time) return false;
+    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    return timeRegex.test(time);
+  }
+
+  private isValidDate(date: string): boolean {
+    return !isNaN(Date.parse(date));
+  }
+
   private loadConfig(): BusinessConfig {
     try {
       const saved = localStorage.getItem(this.storageKey);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return {
-          ...this.defaultConfig,
-          ...parsed,
-          servicios: Array.isArray(parsed.servicios) ? parsed.servicios : this.defaultConfig.servicios,
-          horarioLaboral: parsed.horarioLaboral || this.defaultConfig.horarioLaboral
-        };
-      }
+      return saved ? this.parseConfig(JSON.parse(saved)) : this.defaultConfig;
     } catch (e) {
       console.error('Error cargando configuración', e);
+      return this.defaultConfig;
     }
-    return this.defaultConfig;
+  }
+
+  private parseConfig(parsed: any): BusinessConfig {
+    return {
+      ...this.defaultConfig,
+      ...parsed,
+      servicios: Array.isArray(parsed.servicios) ? parsed.servicios : this.defaultConfig.servicios,
+      horariosNormales: Array.isArray(parsed.horariosNormales) ? parsed.horariosNormales : this.defaultConfig.horariosNormales,
+      horariosEspeciales: Array.isArray(parsed.horariosEspeciales) ? parsed.horariosEspeciales : this.defaultConfig.horariosEspeciales
+    };
   }
 
   private saveConfig(config: BusinessConfig): void {
@@ -210,78 +322,5 @@ export class BookingConfigService {
   private saveReservas(reservas: Reserva[]): void {
     localStorage.setItem(this.reservasKey, JSON.stringify(reservas));
     this.reservasSubject.next(reservas);
-  }
-
-  private validateBooking(reserva: Reserva): boolean {
-    // Validaciones básicas
-    if (!reserva.usuario?.nombre || !reserva.usuario?.email) {
-      return false;
-    }
-
-    const fechaReserva = new Date(reserva.fechaInicio);
-    if (isNaN(fechaReserva.getTime())) {
-      return false;
-    }
-
-    // Validación según tipo de negocio
-    const config = this.configSubject.value;
-    switch (config.tipoNegocio) {
-      case BusinessType.PELUQUERIA:
-        return this.validateHairSalonBooking(reserva);
-      case BusinessType.HOTEL:
-        return this.validateHotelBooking(reserva);
-      default:
-        return true;
-    }
-  }
-
-  private validateHairSalonBooking(reserva: Reserva): boolean {
-    const config = this.configSubject.value;
-    
-    // Validar servicio
-    const servicio = config.servicios.find(s => s.id === reserva.servicio);
-    if (!servicio) {
-      console.error('Servicio no encontrado:', reserva.servicio);
-      return false;
-    }
-
-    // Validar horario laboral
-    if (!config.horarioLaboral?.diasLaborables) {
-      console.error('Configuración incompleta: días laborables no definidos');
-      return false;
-    }
-
-    const fechaInicio = new Date(reserva.fechaInicio);
-    const diaSemana = fechaInicio.getDay(); // 0=Domingo, 1=Lunes, etc.
-    
-    // Validar día laborable
-    if (!config.horarioLaboral.diasLaborables.includes(diaSemana)) {
-      return false;
-    }
-
-    // Validar disponibilidad en el slot
-    const duracion = servicio.duracion;
-    const fechaFin = new Date(fechaInicio);
-    fechaFin.setMinutes(fechaInicio.getMinutes() + duracion);
-
-    const reservasEnSlot = this.reservasSubject.value.filter(r => {
-      if (!r.fechaInicio) return false;
-      
-      const rInicio = new Date(r.fechaInicio);
-      const rServicio = config.servicios.find(s => s.id === r.servicio);
-      const rDuracion = rServicio?.duracion || config.duracionBase;
-      const rFin = new Date(rInicio);
-      rFin.setMinutes(rInicio.getMinutes() + rDuracion);
-      
-      return rInicio < fechaFin && rFin > fechaInicio;
-    }).length;
-
-    return reservasEnSlot < config.maxReservasPorSlot;
-  }
-
-  private validateHotelBooking(reserva: Reserva): boolean {
-    // Implementación específica para hoteles
-    // (Puedes añadir lógica particular para hoteles aquí)
-    return true;
   }
 }

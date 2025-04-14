@@ -40,9 +40,8 @@ export class BookingCalendarComponent implements OnInit, OnDestroy {
   
   private setupCalendar(): void {
     const eventos = this.reservas.map((reserva) => {
-      const hora = new Date(reserva.fechaInicio).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       return {
-        title: `Reserva ${hora} - ${reserva.usuario.nombre}`,
+        title: `Reserva - ${reserva.usuario.nombre}`, // ← Eliminamos la hora del título
         start: reserva.fechaInicio,
         end: reserva.fechaFin,
         backgroundColor: this.getReservaColor(reserva.fechaInicio),
@@ -58,6 +57,15 @@ export class BookingCalendarComponent implements OnInit, OnDestroy {
       plugins: [dayGridPlugin, interactionPlugin],
       initialView: 'dayGridMonth',
       events: eventos,
+      // Añade estas configuraciones para controlar el formato:
+      eventTimeFormat: { // Elimina la hora del evento
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        meridiem: false
+      },
+      dayHeaderFormat: { weekday: 'short', day: 'numeric' },
+      eventDisplay: 'block', // Fuerza mostrar solo el título
       eventClick: (info: any) => {
         const reserva = info.event.extendedProps;
         alert(`Reserva de ${reserva.usuario.nombre}\nServicio: ${reserva.servicio}`);

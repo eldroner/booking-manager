@@ -1,16 +1,15 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { BookingConfigService, BusinessConfig, Reserva, BusinessType } from '../../services/booking-config.service';
+import { BookingConfigService, BusinessConfig, Reserva, BusinessType, HorarioEspecial } from '../../services/booking-config.service';
 import { FullCalendarModule } from '@fullcalendar/angular';
 import { BookingCalendarComponent } from '../booking-calendar/booking-calendar.component';
 import { Subscription } from 'rxjs';
-import { TramosHorariosComponent } from "../tramos-horarios/tramos-horarios.component";
 
 @Component({
   selector: 'app-booking-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, FullCalendarModule, BookingCalendarComponent, TramosHorariosComponent],
+  imports: [CommonModule, FormsModule, FullCalendarModule, BookingCalendarComponent],
   templateUrl: './booking-admin.component.html',
   styleUrls: ['./booking-admin.component.scss'],
 })
@@ -20,13 +19,18 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     tipoNegocio: BusinessType.PELUQUERIA,
     duracionBase: 30,
     maxReservasPorSlot: 1,
-    horarioLaboral: {
-      diasLaborables: [1, 2, 3, 4, 5], // Lunes a Viernes por defecto
-      horaInicio: '09:00',
-      horaFin: '18:00'
-    },
-    tramosHorarios: [],
-    servicios: []
+    servicios: [],
+    horariosNormales: [
+      { 
+        dia: 1, // Lunes
+        tramos: [{ horaInicio: '09:00', horaFin: '13:00' }, { horaInicio: '15:00', horaFin: '19:00' }]
+      },
+      { 
+        dia: 2, // Martes
+        tramos: [{ horaInicio: '09:00', horaFin: '13:00' }, { horaInicio: '15:00', horaFin: '19:00' }]
+      },
+    ],
+    horariosEspeciales: []
   };
 
   businessTypes = [
@@ -36,49 +40,120 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     { value: BusinessType.GENERAL, label: 'General' }
   ];
 
+  diasSemana = [
+    { id: 0, nombre: 'Domingo' },
+    { id: 1, nombre: 'Lunes' },
+    { id: 2, nombre: 'Martes' },
+    { id: 3, nombre: 'Miércoles' },
+    { id: 4, nombre: 'Jueves' },
+    { id: 5, nombre: 'Viernes' },
+    { id: 6, nombre: 'Sábado' }
+  ];
+
+  nuevoHorarioEspecial: Partial<HorarioEspecial> = {
+    fecha: '',
+    horaInicio: '09:00',
+    horaFin: '14:00',
+    activo: true
+  };
+
+  // Variables para controlar los acordeones
+  showNormalSchedules = false;
+  showSpecialSchedules = false;
+
   calendarVisible = true;
   reservas: Reserva[] = [];
   reservasPorDia: { [fecha: string]: number } = {};
   private subscriptions: Subscription = new Subscription();
 
-  constructor(public bookingService: BookingConfigService) {}
+  constructor(public bookingService: BookingConfigService) {
+    this.configNegocio = this.getDefaultConfig();
+  }
 
   ngOnInit(): void {
     this.loadData();
+    this.loadReservas();
   }
 
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
   }
 
-  refreshCalendar(): void {
-    this.calendarVisible = false;
-    setTimeout(() => this.calendarVisible = true, 100);
+  // Métodos para horarios normales
+  getTramosDia(dia: number): { horaInicio: string; horaFin: string }[] {
+    const horarioDia = this.configNegocio.horariosNormales.find(h => h.dia === dia);
+    return horarioDia ? horarioDia.tramos : [];
   }
 
-  private loadData(): void {
-    this.subscriptions.add(
-      this.bookingService.getReservas().subscribe({
-        next: (reservas) => {
-          this.reservas = reservas;
-          this.updateSummary();
-        },
-        error: (err) => console.error('Error cargando reservas:', err)
-      })
-    );
+  agregarTramo(dia: number): void {
+    let horarioDia = this.configNegocio.horariosNormales.find(h => h.dia === dia);
+    
+    if (!horarioDia) {
+      horarioDia = { dia, tramos: [] };
+      this.configNegocio.horariosNormales.push(horarioDia);
+    }
+    
+    horarioDia.tramos.push({
+      horaInicio: '09:00',
+      horaFin: '13:00'
+    });
+  }
 
+  eliminarTramo(dia: number, index: number): void {
+    const horarioDia = this.configNegocio.horariosNormales.find(h => h.dia === dia);
+    if (horarioDia && horarioDia.tramos.length > index) {
+      horarioDia.tramos.splice(index, 1);
+    }
+  }
+
+  // Métodos para horarios especiales
+  agregarHorarioEspecial(): void {
+    if (!this.nuevoHorarioEspecial.fecha) {
+      alert('Por favor seleccione una fecha');
+      return;
+    }
+
+    const nuevoHorario: HorarioEspecial = {
+      fecha: this.nuevoHorarioEspecial.fecha!,
+      horaInicio: this.nuevoHorarioEspecial.horaInicio!,
+      horaFin: this.nuevoHorarioEspecial.horaFin!,
+      activo: this.nuevoHorarioEspecial.activo !== false
+    };
+
+    if (!this.bookingService.validateHorarioEspecial(nuevoHorario)) {
+      alert('Por favor verifique los datos del horario');
+      return;
+    }
+
+    if (this.bookingService.checkSolapamientoHorarios(nuevoHorario)) {
+      alert('Este horario se solapa con otro ya existente para la misma fecha');
+      return;
+    }
+
+    this.configNegocio.horariosEspeciales = [...this.configNegocio.horariosEspeciales, nuevoHorario];
+    this.bookingService.updateHorariosEspeciales(this.configNegocio.horariosEspeciales);
+    this.resetNuevoHorarioEspecial();
+  }
+
+  eliminarHorarioEspecial(index: number): void {
+    if (confirm('¿Eliminar este horario especial?')) {
+      this.configNegocio.horariosEspeciales.splice(index, 1);
+    }
+  }
+
+  toggleActivoHorarioEspecial(index: number): void {
+    this.configNegocio.horariosEspeciales[index].activo = !this.configNegocio.horariosEspeciales[index].activo;
+  }
+
+  // Métodos principales
+  private loadData(): void {
     this.subscriptions.add(
       this.bookingService.config$.subscribe({
         next: (config) => {
-          // Asegurarnos de que todos los campos estén inicializados
           this.configNegocio = { 
-            ...this.configNegocio, // Valores por defecto
-            ...config,             // Valores guardados
-            horarioLaboral: {
-              ...this.configNegocio.horarioLaboral,
-              ...(config.horarioLaboral || {})
-            },
-            tramosHorarios: config.tramosHorarios || this.generateDefaultTimeSlots()
+            ...this.getDefaultConfig(),
+            ...config,
+            horariosEspeciales: config.horariosEspeciales || []
           };
         },
         error: (err) => console.error('Error cargando configuración:', err)
@@ -86,33 +161,15 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     );
   }
 
-  private generateDefaultTimeSlots(): { hora: string; activo: boolean }[] {
-    const slots: { hora: string; activo: boolean }[] = [];
-    let currentHour = 9;
-    let currentMinute = 0;
-    
-    while (currentHour < 18 || (currentHour === 18 && currentMinute === 0)) {
-      slots.push({
-        hora: `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`,
-        activo: true
-      });
-      
-      // Añadir 30 minutos
-      currentMinute += 30;
-      if (currentMinute >= 60) {
-        currentHour += 1;
-        currentMinute = 0;
-      }
-    }
-    
-    return slots;
-  }
-
-  private updateSummary(): void {
-    this.reservasPorDia = {};
-    this.reservas.forEach(reserva => {
-      const fecha = new Date(reserva.fechaInicio).toISOString().split('T')[0];
-      this.reservasPorDia[fecha] = (this.reservasPorDia[fecha] || 0) + 1;
+  private loadReservas(): void {
+    this.bookingService.getReservas().subscribe({
+      next: (reservas) => {
+        this.reservas = reservas.sort((a, b) => 
+          new Date(b.fechaInicio).getTime() - new Date(a.fechaInicio).getTime()
+        );
+        this.updateSummary();
+      },
+      error: (err) => console.error('Error cargando reservas', err)
     });
   }
 
@@ -124,16 +181,6 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     } else {
       alert('Por favor complete todos los campos requeridos');
     }
-  }
-
-  private isFormValid(): boolean {
-    return !!this.configNegocio.nombre && 
-           !!this.configNegocio.maxReservasPorSlot &&
-           !!this.configNegocio.tipoNegocio &&
-           !!this.configNegocio.horarioLaboral?.horaInicio &&
-           !!this.configNegocio.horarioLaboral?.horaFin &&
-           !!this.configNegocio.horarioLaboral?.diasLaborables &&
-           this.configNegocio.horarioLaboral.diasLaborables.length > 0;
   }
 
   deleteReservation(id: string): void {
@@ -148,6 +195,55 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
         })
       );
     }
+  }
+
+  // Helpers
+  private getDefaultConfig(): BusinessConfig {
+    return {
+      nombre: '',
+      tipoNegocio: BusinessType.PELUQUERIA,
+      duracionBase: 30,
+      maxReservasPorSlot: 1,
+      servicios: [],
+      horariosNormales: this.diasSemana.map(dia => ({
+        dia: dia.id,
+        tramos: dia.id >= 1 && dia.id <= 5 ? // Lunes a Viernes
+          [{ horaInicio: '09:00', horaFin: '13:00' }, { horaInicio: '15:00', horaFin: '19:00' }] :
+          dia.id === 6 ? // Sábado
+          [{ horaInicio: '10:00', horaFin: '14:00' }] :
+          [] // Domingo - cerrado por defecto
+      })),
+      horariosEspeciales: []
+    };
+  }
+
+  private resetNuevoHorarioEspecial(): void {
+    this.nuevoHorarioEspecial = {
+      fecha: '',
+      horaInicio: '09:00',
+      horaFin: '14:00',
+      activo: true
+    };
+  }
+
+  private updateSummary(): void {
+    this.reservasPorDia = {};
+    this.reservas.forEach(reserva => {
+      const fecha = new Date(reserva.fechaInicio).toISOString().split('T')[0];
+      this.reservasPorDia[fecha] = (this.reservasPorDia[fecha] || 0) + 1;
+    });
+  }
+
+  refreshCalendar(): void {
+    this.calendarVisible = false;
+    setTimeout(() => this.calendarVisible = true, 100);
+  }
+
+  private isFormValid(): boolean {
+    return !!this.configNegocio.nombre && 
+           !!this.configNegocio.maxReservasPorSlot &&
+           !!this.configNegocio.tipoNegocio &&
+           this.configNegocio.horariosNormales.length > 0;
   }
 
   formatDate(dateString: string): string {

@@ -1,0 +1,23 @@
+/* Estilos básicos para mejorar la visualización */
+.card {
+    margin-top: 20px;
+  }
+  
+  .border {
+    border-radius: 5px;
+    background-color: #f8f9fa;
+  }
+  
+  .form-switch .form-check-input {
+    width: 3em;
+    height: 1.5em;
+  }
+  
+  select[multiple] {
+    min-height: 120px;
+  }
+  
+  .btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+  }

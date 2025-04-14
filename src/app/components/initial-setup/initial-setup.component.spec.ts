@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { TramosHorariosComponent } from './tramos-horarios.component';
+import { InitialSetupComponent } from './initial-setup.component';
 
-describe('TramosHorariosComponent', () => {
-  let component: TramosHorariosComponent;
-  let fixture: ComponentFixture<TramosHorariosComponent>;
+describe('InitialSetupComponent', () => {
+  let component: InitialSetupComponent;
+  let fixture: ComponentFixture<InitialSetupComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [TramosHorariosComponent]
+      imports: [InitialSetupComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(TramosHorariosComponent);
+    fixture = TestBed.createComponent(InitialSetupComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

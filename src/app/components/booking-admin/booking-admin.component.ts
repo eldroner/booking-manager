@@ -21,17 +21,20 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     maxReservasPorSlot: 1,
     servicios: [],
     horariosNormales: [
-      { 
+      {
         dia: 1, // Lunes
         tramos: [{ horaInicio: '09:00', horaFin: '13:00' }, { horaInicio: '15:00', horaFin: '19:00' }]
       },
-      { 
+      {
         dia: 2, // Martes
         tramos: [{ horaInicio: '09:00', horaFin: '13:00' }, { horaInicio: '15:00', horaFin: '19:00' }]
       },
     ],
     horariosEspeciales: []
   };
+  
+  showCurrentBookings: boolean = false;  // Puedes cambiar a true si prefieres que inicie abierto
+  showSummaryByDate: boolean = false;    // Puedes cambiar a true si prefieres que inicie abierto
 
   businessTypes = [
     { value: BusinessType.PELUQUERIA, label: 'Peluquería' },
@@ -58,8 +61,10 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
   };
 
   // Variables para controlar los acordeones
+  loadingReservas = false;
   showNormalSchedules = false;
   showSpecialSchedules = false;
+  iconosCargados: boolean = false;
 
   calendarVisible = true;
   reservas: Reserva[] = [];
@@ -73,10 +78,26 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadData();
     this.loadReservas();
+    this.checkIconsLoaded();
   }
 
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
+  }
+
+  getResumenEntries(): { key: string, value: number }[] {
+    return Object.keys(this.reservasPorDia).map(key => ({
+      key,
+      value: this.reservasPorDia[key]
+    }));
+  }
+
+  get reservasPorDiaArray(): { key: string, value: number }[] {
+    if (!this.reservasPorDia) return [];
+    return Object.keys(this.reservasPorDia).map(key => ({
+      key,
+      value: this.reservasPorDia[key]
+    }));
   }
 
   // Métodos para horarios normales
@@ -87,16 +108,33 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
 
   agregarTramo(dia: number): void {
     let horarioDia = this.configNegocio.horariosNormales.find(h => h.dia === dia);
-    
+
     if (!horarioDia) {
       horarioDia = { dia, tramos: [] };
       this.configNegocio.horariosNormales.push(horarioDia);
     }
-    
+
     horarioDia.tramos.push({
       horaInicio: '09:00',
       horaFin: '13:00'
     });
+  }
+
+  private checkIconsLoaded() {
+    const testIcon = document.createElement('i');
+    testIcon.className = 'bi bi-chevron-down';
+    document.body.appendChild(testIcon);
+
+    setTimeout(() => {
+      this.iconosCargados = window.getComputedStyle(testIcon).fontFamily.includes('bootstrap-icons');
+      document.body.removeChild(testIcon);
+    }, 100);
+  }
+
+  verReservasDia(fecha: string): void {
+    // Opcional: Implementar lógica para filtrar reservas por fecha
+    console.log('Mostrar reservas del día:', fecha);
+    // Ejemplo: this.reservasDelDia = this.reservas.filter(r => r.fechaInicio.startsWith(fecha));
   }
 
   eliminarTramo(dia: number, index: number): void {
@@ -150,7 +188,7 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     this.subscriptions.add(
       this.bookingService.config$.subscribe({
         next: (config) => {
-          this.configNegocio = { 
+          this.configNegocio = {
             ...this.getDefaultConfig(),
             ...config,
             horariosEspeciales: config.horariosEspeciales || []
@@ -162,15 +200,21 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
   }
 
   private loadReservas(): void {
-    this.bookingService.getReservas().subscribe({
-      next: (reservas) => {
-        this.reservas = reservas.sort((a, b) => 
-          new Date(b.fechaInicio).getTime() - new Date(a.fechaInicio).getTime()
-        );
-        this.updateSummary();
-      },
-      error: (err) => console.error('Error cargando reservas', err)
-    });
+    this.subscriptions.add(
+      this.bookingService.getReservas().subscribe({
+        next: (reservas) => {
+          this.reservas = reservas.sort((a, b) => 
+            new Date(b.fechaInicio).getTime() - new Date(a.fechaInicio).getTime()
+          );
+          this.updateSummary();
+        },
+        error: (err) => {
+          console.error('Error cargando reservas', err);
+          this.reservas = [];
+          this.reservasPorDia = {};
+        }
+      })
+    );
   }
 
   saveConfiguration(): void {
@@ -189,12 +233,23 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
         this.bookingService.deleteReserva(id).subscribe({
           next: () => {
             this.reservas = this.reservas.filter(r => r.id !== id);
-            this.updateSummary();
+            this.updateSummary(); // <-- Asegurar que se actualice
+            this.showSuccessToast('Reserva eliminada');
           },
-          error: (err) => alert('Error al eliminar reserva: ' + err.message)
+          error: (err) => this.showErrorToast('Error al eliminar reserva: ' + err.message)
         })
       );
     }
+  }
+
+  private showSuccessToast(message: string): void {
+    // Implementar con tu librería de notificaciones preferida
+    console.log('Éxito:', message);
+  }
+  
+  private showErrorToast(message: string): void {
+    // Implementar con tu librería de notificaciones preferida
+    console.error('Error:', message);
   }
 
   // Helpers
@@ -210,8 +265,8 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
         tramos: dia.id >= 1 && dia.id <= 5 ? // Lunes a Viernes
           [{ horaInicio: '09:00', horaFin: '13:00' }, { horaInicio: '15:00', horaFin: '19:00' }] :
           dia.id === 6 ? // Sábado
-          [{ horaInicio: '10:00', horaFin: '14:00' }] :
-          [] // Domingo - cerrado por defecto
+            [{ horaInicio: '10:00', horaFin: '14:00' }] :
+            [] // Domingo - cerrado por defecto
       })),
       horariosEspeciales: []
     };
@@ -229,8 +284,14 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
   private updateSummary(): void {
     this.reservasPorDia = {};
     this.reservas.forEach(reserva => {
-      const fecha = new Date(reserva.fechaInicio).toISOString().split('T')[0];
-      this.reservasPorDia[fecha] = (this.reservasPorDia[fecha] || 0) + 1;
+      try {
+        const fecha = new Date(reserva.fechaInicio).toISOString().split('T')[0];
+        if (fecha) {
+          this.reservasPorDia[fecha] = (this.reservasPorDia[fecha] || 0) + 1;
+        }
+      } catch (e) {
+        console.error('Fecha inválida:', reserva.fechaInicio);
+      }
     });
   }
 
@@ -240,10 +301,10 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
   }
 
   private isFormValid(): boolean {
-    return !!this.configNegocio.nombre && 
-           !!this.configNegocio.maxReservasPorSlot &&
-           !!this.configNegocio.tipoNegocio &&
-           this.configNegocio.horariosNormales.length > 0;
+    return !!this.configNegocio.nombre &&
+      !!this.configNegocio.maxReservasPorSlot &&
+      !!this.configNegocio.tipoNegocio &&
+      this.configNegocio.horariosNormales.length > 0;
   }
 
   formatDate(dateString: string): string {

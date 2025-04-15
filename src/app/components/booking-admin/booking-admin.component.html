@@ -5,23 +5,12 @@
     <!-- Configuración básica -->
     <div class="mb-3">
       <label class="form-label">Nombre del negocio</label>
-      <input
-        type="text"
-        class="form-control"
-        [(ngModel)]="configNegocio.nombre"
-        name="nombre"
-        required
-      />
+      <input type="text" class="form-control" [(ngModel)]="configNegocio.nombre" name="nombre" required />
     </div>
 
     <div class="mb-3">
       <label class="form-label">Tipo de negocio</label>
-      <select
-        class="form-control"
-        [(ngModel)]="configNegocio.tipoNegocio"
-        name="tipoNegocio"
-        required
-      >
+      <select class="form-control" [(ngModel)]="configNegocio.tipoNegocio" name="tipoNegocio" required>
         <option *ngFor="let type of businessTypes" [value]="type.value">
           {{type.label}}
         </option>
@@ -30,14 +19,8 @@
 
     <div class="mb-3">
       <label class="form-label">Máximo de reservas por slot</label>
-      <input
-        type="number"
-        class="form-control"
-        [(ngModel)]="configNegocio.maxReservasPorSlot"
-        name="maxReservasPorSlot"
-        min="1"
-        required
-      />
+      <input type="number" class="form-control" [(ngModel)]="configNegocio.maxReservasPorSlot" name="maxReservasPorSlot"
+        min="1" required />
     </div>
 
     <app-booking-calendar *ngIf="calendarVisible"></app-booking-calendar>
@@ -49,31 +32,31 @@
       <div class="card-header d-flex justify-content-between align-items-center" 
            (click)="showNormalSchedules = !showNormalSchedules"
            style="cursor: pointer">
-        <h5 class="mb-0">Horarios Normales</h5>
-        <i class="bi" [class.bi-chevron-down]="!showNormalSchedules" [class.bi-chevron-up]="showNormalSchedules"></i>
+        <h5 class="mb-0">Editar horario</h5>
+        <i class="bi" 
+           [class.bi-chevron-down]="!showNormalSchedules" 
+           [class.bi-chevron-up]="showNormalSchedules"
+           style="font-size: 1.2rem;"></i>
       </div>
       <div class="card-body" *ngIf="showNormalSchedules">
         <div *ngFor="let dia of diasSemana" class="mb-3 p-3 border rounded">
           <h6>{{dia.nombre}}</h6>
           <div *ngFor="let tramo of getTramosDia(dia.id); let i = index" class="row g-2 mb-2 align-items-center">
             <div class="col-md-4">
-              <input type="time" class="form-control" 
-                     [(ngModel)]="tramo.horaInicio"
-                     [ngModelOptions]="{standalone: true}">
+              <input type="time" class="form-control" [(ngModel)]="tramo.horaInicio"
+                [ngModelOptions]="{standalone: true}">
             </div>
             <div class="col-md-4">
-              <input type="time" class="form-control" 
-                     [(ngModel)]="tramo.horaFin"
-                     [ngModelOptions]="{standalone: true}">
+              <input type="time" class="form-control" [(ngModel)]="tramo.horaFin" [ngModelOptions]="{standalone: true}">
             </div>
             <div class="col-md-4">
               <button (click)="eliminarTramo(dia.id, i)" class="btn btn-sm btn-danger">
-                Eliminar tramo
+                <i class="bi bi-trash"></i> Eliminar
               </button>
             </div>
           </div>
           <button (click)="agregarTramo(dia.id)" class="btn btn-sm btn-primary mt-2">
-            + Añadir horario
+            <i class="bi bi-plus-circle"></i> Añadir horario
           </button>
         </div>
       </div>
@@ -84,36 +67,36 @@
       <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center"
            (click)="showSpecialSchedules = !showSpecialSchedules"
            style="cursor: pointer">
-        <h5 class="mb-0">Horarios Especiales (Días Concretos)</h5>
-        <i class="bi" [class.bi-chevron-down]="!showSpecialSchedules" [class.bi-chevron-up]="showSpecialSchedules"></i>
+        <h5 class="mb-0">Añadir horario especial</h5>
+        <i class="bi" 
+           [class.bi-chevron-down]="!showSpecialSchedules" 
+           [class.bi-chevron-up]="showSpecialSchedules"
+           style="font-size: 1.2rem;"></i>
       </div>
       <div class="card-body" *ngIf="showSpecialSchedules">
         <!-- Formulario para nuevo horario especial -->
         <div class="row g-3 mb-4 p-3 bg-light rounded">
           <div class="col-md-4">
             <label class="form-label fw-bold">Fecha</label>
-            <input type="date" class="form-control" 
-                   [(ngModel)]="nuevoHorarioEspecial.fecha"
-                   [ngModelOptions]="{standalone: true}">
+            <input type="date" class="form-control" [(ngModel)]="nuevoHorarioEspecial.fecha"
+              [ngModelOptions]="{standalone: true}">
           </div>
-          
+
           <div class="col-md-3">
             <label class="form-label fw-bold">Hora inicio</label>
-            <input type="time" class="form-control" 
-                   [(ngModel)]="nuevoHorarioEspecial.horaInicio"
-                   [ngModelOptions]="{standalone: true}">
+            <input type="time" class="form-control" [(ngModel)]="nuevoHorarioEspecial.horaInicio"
+              [ngModelOptions]="{standalone: true}">
           </div>
-          
+
           <div class="col-md-3">
             <label class="form-label fw-bold">Hora fin</label>
-            <input type="time" class="form-control" 
-                   [(ngModel)]="nuevoHorarioEspecial.horaFin"
-                   [ngModelOptions]="{standalone: true}">
+            <input type="time" class="form-control" [(ngModel)]="nuevoHorarioEspecial.horaFin"
+              [ngModelOptions]="{standalone: true}">
           </div>
-          
+
           <div class="col-md-2 d-flex align-items-end">
             <button class="btn btn-success w-100" (click)="agregarHorarioEspecial()"
-                    [disabled]="!nuevoHorarioEspecial.fecha">
+              [disabled]="!nuevoHorarioEspecial.fecha">
               <i class="bi bi-plus-circle me-1"></i> Añadir
             </button>
           </div>
@@ -132,23 +115,20 @@
             </thead>
             <tbody>
               <tr *ngFor="let horario of configNegocio.horariosEspeciales; let i = index"
-                  [class.table-warning]="!horario.activo">
+                [class.table-warning]="!horario.activo">
                 <td>{{ horario.fecha | date:'mediumDate':'':'es' }}</td>
                 <td>{{ horario.horaInicio }} - {{ horario.horaFin }}</td>
                 <td>
                   <div class="form-check form-switch">
-                    <input type="checkbox" class="form-check-input"
-                           [(ngModel)]="horario.activo"
-                           [ngModelOptions]="{standalone: true}"
-                           (change)="toggleActivoHorarioEspecial(i)">
+                    <input type="checkbox" class="form-check-input" [(ngModel)]="horario.activo"
+                      [ngModelOptions]="{standalone: true}" (change)="toggleActivoHorarioEspecial(i)">
                     <label class="form-check-label">
                       {{ horario.activo ? 'Activo' : 'Inactivo' }}
                     </label>
                   </div>
                 </td>
                 <td>
-                  <button class="btn btn-sm btn-outline-danger"
-                          (click)="eliminarHorarioEspecial(i)">
+                  <button class="btn btn-sm btn-outline-danger" (click)="eliminarHorarioEspecial(i)">
                     <i class="bi bi-trash"></i> Eliminar
                   </button>
                 </td>
@@ -162,22 +142,64 @@
 
   <hr class="my-4" />
 
-  <!-- Listado de reservas -->
-  <h5 class="mt-4">Reservas actuales:</h5>
-  <ul class="list-group mb-3">
-      <li class="list-group-item d-flex justify-content-between align-items-center" *ngFor="let r of reservas">
+  <!-- Acordeón para Reservas Actuales -->
+  <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center" 
+         (click)="showCurrentBookings = !showCurrentBookings"
+         style="cursor: pointer">
+      <h5 class="mb-0">Reservas Actuales</h5>
+      <i class="bi" 
+         [class.bi-chevron-down]="!showCurrentBookings" 
+         [class.bi-chevron-up]="showCurrentBookings"
+         style="font-size: 1.2rem;"></i>
+    </div>
+    <div class="card-body" *ngIf="showCurrentBookings">
+      <div *ngIf="reservas.length === 0" class="alert alert-info">
+        No hay reservas actualmente
+      </div>
+      <ul class="list-group" *ngIf="reservas.length > 0">
+        <li class="list-group-item d-flex justify-content-between align-items-center" *ngFor="let r of reservas">
           <div>
             <strong>{{getServiceName(r.servicio)}}</strong> - 
             {{ formatDate(r.fechaInicio) }}
             <span *ngIf="r.fechaFin"> hasta {{ formatDate(r.fechaFin) }}</span>
+            <span class="badge bg-secondary ms-2">{{ r.estado | titlecase }}</span>
           </div>
-          <button class="btn btn-danger btn-sm" (click)="deleteReservation(r.id)">Eliminar</button>
-      </li>
-  </ul>
+          <button class="btn btn-danger btn-sm" (click)="deleteReservation(r.id)">
+            <i class="bi bi-trash"></i> Eliminar
+          </button>
+        </li>
+      </ul>
+    </div>
+  </div>
 
-  <h5>Resumen por fecha:</h5>
-  <div *ngFor="let entry of reservasPorDia | keyvalue" class="mb-2">
-    <strong>{{ entry.key | date:'fullDate':'':'es' }}</strong> - 
-    {{ entry.value }} reserva(s)
+  <!-- Acordeón para Resumen por Fecha -->
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center"
+         (click)="showSummaryByDate = !showSummaryByDate"
+         style="cursor: pointer">
+      <h5 class="mb-0">Resumen por Fecha</h5>
+      <i class="bi" 
+         [class.bi-chevron-down]="!showSummaryByDate" 
+         [class.bi-chevron-up]="showSummaryByDate"
+         style="font-size: 1.2rem;"></i>
+    </div>
+    <div class="card-body" *ngIf="showSummaryByDate">
+      <div *ngIf="(reservasPorDia | keyvalue)?.length === 0" class="alert alert-info">
+        No hay reservas para mostrar
+      </div>
+      <ul class="list-group" *ngIf="reservasPorDiaArray.length > 0">
+        <li class="list-group-item d-flex justify-content-between align-items-center"
+            *ngFor="let entry of reservasPorDiaArray">
+          <div>
+            <span class="badge bg-primary rounded-pill ms-2">{{ entry.value }}</span>&nbsp;&nbsp;
+            <strong>{{ entry.key | date:'fullDate':'':'es' | titlecase }}</strong>           
+          </div>
+          <button class="btn btn-sm btn-outline-secondary" (click)="verReservasDia(entry.key)">
+            <i class="bi bi-eye"></i> Ver
+          </button>
+        </li>
+      </ul>
+    </div>
   </div>
 </div>

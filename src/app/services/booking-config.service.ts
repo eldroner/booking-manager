@@ -1,5 +1,8 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, of, throwError, forkJoin } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
+import { catchError, map, tap } from 'rxjs/operators';
 import { v4 as uuidv4 } from 'uuid';
 
 export enum BusinessType {
@@ -40,7 +43,7 @@ export interface Reserva {
 }
 
 export interface HorarioNormal {
-  dia: number; // 0-6 (Domingo-Sábado)
+  dia: number;
   tramos: {
     horaInicio: string;
     horaFin: string;
@@ -48,7 +51,7 @@ export interface HorarioNormal {
 }
 
 export interface HorarioEspecial {
-  fecha: string; // Formato YYYY-MM-DD
+  fecha: string;
   horaInicio: string;
   horaFin: string;
   activo: boolean;
@@ -66,9 +69,6 @@ export interface BusinessConfig {
 
 @Injectable({ providedIn: 'root' })
 export class BookingConfigService {
-  private readonly storageKey = 'booking-config';
-  private readonly reservasKey = 'booking-reservas';
-  private readonly EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$/;
 
   private defaultConfig: BusinessConfig = {
     nombre: '',
@@ -87,57 +87,70 @@ export class BookingConfigService {
     horariosEspeciales: []
   };
 
-  private configSubject = new BehaviorSubject<BusinessConfig>(this.loadConfig());
-  private reservasSubject = new BehaviorSubject<Reserva[]>(this.loadReservas());
+  private configSubject = new BehaviorSubject<BusinessConfig>(this.defaultConfig);
+  private reservasSubject = new BehaviorSubject<Reserva[]>([]);
 
   config$ = this.configSubject.asObservable();
   reservas$ = this.reservasSubject.asObservable();
+
+  constructor(private http: HttpClient) {
+    this.initializeData();
+  }
+
+  private initializeData(): void {
+    forkJoin({
+      config: this.loadBackendConfig(),
+      reservas: this.loadBackendReservas()
+    }).pipe(
+      catchError(() => {
+        return of({
+          config: this.defaultConfig,
+          reservas: []
+        });
+      })
+    ).subscribe(({ config, reservas }) => {
+      this.configSubject.next(config);
+      this.reservasSubject.next(reservas);
+    });
+  }
+
+  private loadBackendConfig(): Observable<BusinessConfig> {
+    return this.http.get<BusinessConfig>(`${environment.apiUrl}/api/config`).pipe(
+      catchError(() => of(this.defaultConfig))
+    )
+  }
+
+  private loadBackendReservas(): Observable<Reserva[]> {
+    return this.http.get<Reserva[]>(`${environment.apiUrl}/api/reservas`).pipe(
+      catchError(() => of([]))
+    );
+  }
 
   getConfig(): BusinessConfig {
     return { ...this.configSubject.value };
   }
 
-  getServicios(): Servicio[] {
-    return [...this.configSubject.value.servicios];
+  getServicios(): Observable<Servicio[]> {
+    return this.config$.pipe(
+      map(config => [...config.servicios]),
+      catchError(() => of([]))
+    );
   }
 
   updateConfig(newConfig: Partial<BusinessConfig>): void {
-    const currentConfig = this.configSubject.value;
-    const mergedConfig: BusinessConfig = {
-      ...currentConfig,
-      ...newConfig,
-      servicios: newConfig.servicios || currentConfig.servicios,
-      horariosNormales: newConfig.horariosNormales || currentConfig.horariosNormales,
-      horariosEspeciales: newConfig.horariosEspeciales || currentConfig.horariosEspeciales
-    };
-    this.saveConfig(mergedConfig);
+    const mergedConfig = { ...this.configSubject.value, ...newConfig };
+    
+    this.http.put<BusinessConfig>(`${environment.apiUrl}/api/config`, mergedConfig).pipe(
+      tap(config => this.configSubject.next(config)),
+      catchError(error => throwError(() => error))
+    ).subscribe();
   }
 
   getReservas(): Observable<Reserva[]> {
     return this.reservas$;
   }
 
-  getHorariosNormales(): HorarioNormal[] {
-    return [...this.configSubject.value.horariosNormales];
-  }
-
-  updateHorariosNormales(horarios: HorarioNormal[]): void {
-    this.updateConfig({ horariosNormales: horarios });
-  }
-
-  getHorariosEspeciales(): HorarioEspecial[] {
-    return [...this.configSubject.value.horariosEspeciales];
-  }
-
-  updateHorariosEspeciales(horarios: HorarioEspecial[]): void {
-    this.updateConfig({ horariosEspeciales: horarios });
-  }
-
   addReserva(reservaData: Omit<Reserva, 'id' | 'estado'>): Observable<Reserva> {
-    if (!this.validateUserData(reservaData.usuario)) {
-      return throwError(() => new Error('Datos de usuario inválidos'));
-    }
-
     const nuevaReserva: Reserva = {
       ...reservaData,
       id: uuidv4(),
@@ -146,33 +159,29 @@ export class BookingConfigService {
       fechaFin: reservaData.fechaFin ? new Date(reservaData.fechaFin).toISOString() : undefined
     };
 
-    if (!this.validateBooking(nuevaReserva)) {
-      return throwError(() => new Error('Horario no disponible o datos incorrectos'));
-    }
-
-    const reservas = [...this.reservasSubject.value, nuevaReserva];
-    this.saveReservas(reservas);
-    return of(nuevaReserva);
+    return this.http.post<Reserva>(`${environment.apiUrl}/api/reservas`, nuevaReserva).pipe(
+      tap(reserva => {
+        const reservas = [...this.reservasSubject.value, reserva];
+        this.reservasSubject.next(reservas);
+      }),
+      catchError(error => throwError(() => error))
+    );
   }
 
   deleteReserva(id: string): Observable<void> {
-    const reservas = this.reservasSubject.value.filter(r => r.id !== id);
-    this.saveReservas(reservas);
-    return of(void 0);
+    return this.http.delete<void>(`${environment.apiUrl}/api/reservas/${id}`).pipe(
+      tap(() => {
+        const reservas = this.reservasSubject.value.filter(r => r.id !== id);
+        this.reservasSubject.next(reservas);
+      }),
+      catchError(error => throwError(() => error))
+    );
   }
 
-  getReservasSnapshot(): Reserva[] {
-    return this.reservasSubject.value;
-  }
-
-  isHoraDisponible(fecha: string, hora: string): boolean {
-    const config = this.getConfig();
-    const reservasEnSlot = this.reservasSubject.value.filter(r =>
-      r.fechaInicio.includes(fecha) &&
-      r.fechaInicio.includes(hora)
-    ).length;
-
-    return reservasEnSlot < config.maxReservasPorSlot;
+  isHoraDisponible(fecha: string, hora: string): Observable<boolean> {
+    return this.http.get<boolean>(`${environment.apiUrl}/api/disponibilidad`, {
+      params: { fecha, hora }
+    });
   }
 
   validateHorarioEspecial(horario: Partial<HorarioEspecial>): boolean {
@@ -193,80 +202,29 @@ export class BookingConfigService {
     );
   }
 
-  private validateBooking(reserva: Reserva): boolean {
-    if (!reserva.usuario?.nombre || !reserva.usuario?.email) {
-      return false;
-    }
-
-    const fechaReserva = new Date(reserva.fechaInicio);
-    if (isNaN(fechaReserva.getTime())) {
-      return false;
-    }
-
-    const config = this.configSubject.value;
-    switch (config.tipoNegocio) {
-      case BusinessType.PELUQUERIA:
-        return this.validateHairSalonBooking(reserva);
-      case BusinessType.HOTEL:
-        return this.validateHotelBooking(reserva);
-      default:
-        return true;
-    }
+  getHorariosNormales(): HorarioNormal[] {
+    return [...this.configSubject.value.horariosNormales];
   }
 
-  private validateHairSalonBooking(reserva: Reserva): boolean {
-    const config = this.configSubject.value;
-    const servicio = config.servicios.find(s => s.id === reserva.servicio);
-    if (!servicio) return false;
-
-    const fechaInicio = new Date(reserva.fechaInicio);
-    const diaSemana = fechaInicio.getDay();
-    const horarioDia = config.horariosNormales.find(h => h.dia === diaSemana);
-    
-    if (!horarioDia) return false;
-
-    const horaReserva = fechaInicio.getHours() + fechaInicio.getMinutes() / 60;
-    const enTramoValido = horarioDia.tramos.some(tramo => {
-      const [hIni, mIni] = tramo.horaInicio.split(':').map(Number);
-      const [hFin, mFin] = tramo.horaFin.split(':').map(Number);
-      const inicioTramo = hIni + mIni / 60;
-      const finTramo = hFin + mFin / 60;
-      return horaReserva >= inicioTramo && horaReserva < finTramo;
+  updateHorariosNormales(horarios: HorarioNormal[]): void {
+    const currentConfig = this.configSubject.value;
+    this.updateConfig({ 
+      ...currentConfig,
+      horariosNormales: horarios 
     });
-
-    if (!enTramoValido) return false;
-
-    const duracion = servicio.duracion;
-    const fechaFin = new Date(fechaInicio);
-    fechaFin.setMinutes(fechaInicio.getMinutes() + duracion);
-
-    const reservasEnSlot = this.reservasSubject.value.filter(r => {
-      if (!r.fechaInicio) return false;
-      const rInicio = new Date(r.fechaInicio);
-      const rServicio = config.servicios.find(s => s.id === r.servicio);
-      const rDuracion = rServicio?.duracion || config.duracionBase;
-      const rFin = new Date(rInicio);
-      rFin.setMinutes(rInicio.getMinutes() + rDuracion);
-      return rInicio < fechaFin && rFin > fechaInicio;
-    }).length;
-
-    return reservasEnSlot < config.maxReservasPorSlot;
   }
 
-  private validateHotelBooking(reserva: Reserva): boolean {
-    // Implementar lógica específica para hoteles si es necesario
-    return true;
+  getHorariosEspeciales(): HorarioEspecial[] {
+    return [...this.configSubject.value.horariosEspeciales];
   }
 
-  private validateUserData(usuario: UserData): boolean {
-    // Verificar que el nombre tenga al menos 3 caracteres
-    const nombreValido = !!usuario?.nombre && usuario.nombre.trim().length >= 3;
-    
-    // Verificar que el email sea válido
-    const emailValido = !!usuario?.email && this.EMAIL_REGEX.test(usuario.email);
-    
-    return nombreValido && emailValido;
-}
+  updateHorariosEspeciales(horarios: HorarioEspecial[]): void {
+    const currentConfig = this.configSubject.value;
+    this.updateConfig({ 
+      ...currentConfig,
+      horariosEspeciales: horarios 
+    });
+  }
 
   private compareTimes(time1: string, time2: string): number {
     const [h1, m1] = time1.split(':').map(Number);
@@ -282,45 +240,5 @@ export class BookingConfigService {
 
   private isValidDate(date: string): boolean {
     return !isNaN(Date.parse(date));
-  }
-
-  private loadConfig(): BusinessConfig {
-    try {
-      const saved = localStorage.getItem(this.storageKey);
-      return saved ? this.parseConfig(JSON.parse(saved)) : this.defaultConfig;
-    } catch (e) {
-      console.error('Error cargando configuración', e);
-      return this.defaultConfig;
-    }
-  }
-
-  private parseConfig(parsed: any): BusinessConfig {
-    return {
-      ...this.defaultConfig,
-      ...parsed,
-      servicios: Array.isArray(parsed.servicios) ? parsed.servicios : this.defaultConfig.servicios,
-      horariosNormales: Array.isArray(parsed.horariosNormales) ? parsed.horariosNormales : this.defaultConfig.horariosNormales,
-      horariosEspeciales: Array.isArray(parsed.horariosEspeciales) ? parsed.horariosEspeciales : this.defaultConfig.horariosEspeciales
-    };
-  }
-
-  private saveConfig(config: BusinessConfig): void {
-    localStorage.setItem(this.storageKey, JSON.stringify(config));
-    this.configSubject.next(config);
-  }
-
-  private loadReservas(): Reserva[] {
-    try {
-      const reservasStr = localStorage.getItem(this.reservasKey);
-      return reservasStr ? JSON.parse(reservasStr) : [];
-    } catch (error) {
-      console.error('Error cargando reservas', error);
-      return [];
-    }
-  }
-
-  private saveReservas(reservas: Reserva[]): void {
-    localStorage.setItem(this.reservasKey, JSON.stringify(reservas));
-    this.reservasSubject.next(reservas);
   }
 }

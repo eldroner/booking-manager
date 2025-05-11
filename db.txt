@@ -1,0 +1,4 @@
+database mongodb booking-manager
+
+ip: 89.141.69.151
+password: WqsbPe8KXv7hogb1

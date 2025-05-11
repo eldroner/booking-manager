@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { catchError, map, tap } from 'rxjs/operators';
 import { v4 as uuidv4 } from 'uuid';
+import { NotificationsService } from './notifications.service';
 
 export enum BusinessType {
   PELUQUERIA = 'peluqueria',
@@ -93,7 +94,11 @@ export class BookingConfigService {
   config$ = this.configSubject.asObservable();
   reservas$ = this.reservasSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private notifications: NotificationsService
+  
+  ) {
     this.initializeData();
   }
 
@@ -137,14 +142,33 @@ export class BookingConfigService {
     );
   }
 
-  updateConfig(newConfig: Partial<BusinessConfig>): void {
-    const mergedConfig = { ...this.configSubject.value, ...newConfig };
-    
-    this.http.put<BusinessConfig>(`${environment.apiUrl}/api/config`, mergedConfig).pipe(
-      tap(config => this.configSubject.next(config)),
-      catchError(error => throwError(() => error))
-    ).subscribe();
-  }
+  private refreshCalendar(): void {
+  this.configSubject.next({...this.configSubject.value}); // Forzar actualización reactiva
+}
+
+updateConfig(newConfig: Partial<BusinessConfig>): void {
+  const currentConfig = this.configSubject.value;
+  const mergedConfig = { 
+    ...currentConfig,
+    ...newConfig,
+    servicios: newConfig.servicios || currentConfig.servicios,
+    horariosNormales: newConfig.horariosNormales || currentConfig.horariosNormales,
+    horariosEspeciales: newConfig.horariosEspeciales || currentConfig.horariosEspeciales
+  };
+
+  this.http.put<BusinessConfig>(`${environment.apiUrl}/api/config`, mergedConfig).pipe(
+    tap(updatedConfig => {
+      this.configSubject.next(updatedConfig);
+      alert('✅ Configuración actualizada correctamente');
+      this.refreshCalendar(); // Añadido para actualizar el calendario si existe
+    }),
+    catchError(error => {
+      console.error('Error actualizando configuración:', error);
+      alert(`❌ Error al guardar: ${error.message}`);
+      return throwError(() => new Error('No se pudo guardar la configuración'));
+    })
+  ).subscribe();
+}
 
   getReservas(): Observable<Reserva[]> {
     return this.reservas$;

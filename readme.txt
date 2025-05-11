@@ -1,260 +1,236 @@
-DOCUMENTACIÓN DEL SISTEMA DE GESTIÓN DE RESERVAS
-===============================================
+DOCUMENTACIÓN PROYECTO BOOKING MANAGER - ESTADO ACTUAL
 
 1. ARQUITECTURA GENERAL
------------------------
-• Tecnología: Angular 16+ (Standalone Components)
-• Gestión de estado: RxJS (BehaviorSubject)
-• Persistencia: LocalStorage (simula backend)
-• Calendario: FullCalendar
-• Validaciones: Formularios reactivos y template-driven
-• UI: Bootstrap 5 + Acordeones para gestión de horarios
+Tecnología: Angular 16+ (Standalone Components)
+
+Gestión de estado: RxJS (BehaviorSubject + Observables)
+
+Backend: En proceso de migración (HTTP Client)
+
+UI: Bootstrap 5 + Bootstrap Icons
+
+Validaciones: Reactivas + Template-driven
 
 2. ESTRUCTURA DE ARCHIVOS
--------------------------
-app
-├───components
-│   ├───booking-admin
-│   ├───booking-calendar
-│   ├───booking-page
-│   ├───booking-user
-│   ├───horarios-especiales
-│   └───initial-setup
-├───models
-└───services
+app/
+├── components/
+│ ├── booking-admin/
+│ ├── booking-user/
+│ ├── booking-calendar/
+│ └── booking-page/
+├── services/
+│ └── booking-config.service.ts
+├── models/
+│ └── interfaces.ts (tipos exportados)
+└── pipes/
+└── not.pipe.ts
 
-3. MODELOS DE DATOS
--------------------
+3. MODELOS DE DATOS (INTERFACES)
+// booking-config.service.ts
+export enum BusinessType { PELUQUERIA, HOTEL, CONSULTA, GENERAL }
+export enum BookingStatus { PENDIENTE, CONFIRMADA, CANCELADA }
 
-3.1 BusinessConfig (Configuración del negocio)
-----------------------------------------------
-interface BusinessConfig {
-  nombre: string;
-  tipoNegocio: BusinessType;          # Peluquería, Hotel, Consulta Médica, etc.
-  duracionBase: number;               # Duración mínima de slots (minutos)
-  maxReservasPorSlot: number;         # Máximo de reservas por franja horaria
-  servicios: Servicio[];              # Listado de servicios ofrecidos
-  horariosNormales: HorarioNormal[];  # Horarios regulares por día
-  horariosEspeciales: HorarioEspecial[]; # Horarios excepcionales
+export interface UserData {
+nombre: string;
+email: string;
+telefono?: string;
 }
 
-3.2 HorarioNormal
------------------
-interface HorarioNormal {
-  dia: number;                        # 0 (Domingo) a 6 (Sábado)
-  tramos: {
-    horaInicio: string;               # Formato "HH:MM"
-    horaFin: string;
-  }[];
+export interface Servicio {
+id: string;
+nombre: string;
+duracion: number;
+precio?: number;
 }
 
-3.3 HorarioEspecial
--------------------
-interface HorarioEspecial {
-  fecha: string;                      # Formato "YYYY-MM-DD"
-  horaInicio: string;
-  horaFin: string;
-  activo: boolean;
+export interface Reserva {
+id: string;
+usuario: UserData;
+fechaInicio: string;
+servicio: string;
+estado: BookingStatus;
 }
 
-3.4 Servicio
-------------
-interface Servicio {
-  id: string;
-  nombre: string;
-  duracion: number;                   # Duración en minutos
-  precio?: number;                    # Opcional
-}
-
-3.5 Reserva
------------
-interface Reserva {
-  id: string;
-  usuario: UserData;
-  fechaInicio: string;                # Fecha-hora ISO
-  fechaFin?: string;                  # Opcional
-  servicio: string;                   # ID del servicio
-  estado: BookingStatus;              # Confirmada, Pendiente, Cancelada
-  metadata?: any;                     # Datos adicionales
+export interface BusinessConfig {
+nombre: string;
+tipoNegocio: BusinessType;
+duracionBase: number;
+maxReservasPorSlot: number;
+servicios: Servicio[];
+horariosNormales: HorarioNormal[];
+horariosEspeciales: HorarioEspecial[];
 }
 
 4. SERVICIO PRINCIPAL (BookingConfigService)
--------------------------------------------
+Funcionalidades implementadas:
 
-4.1 Funcionalidades Clave
--------------------------
-• Gestión centralizada de la configuración del negocio
-• Administración de reservas (CRUD completo)
-• Validación de horarios y disponibilidad
-• Persistencia en localStorage
-• Notificación de cambios (vía Observables)
+Gestión completa de reservas (CRUD vía HTTP)
 
-4.2 Métodos Principales
------------------------
-• updateConfig(): Actualiza configuración global
-• addReserva(): Crea nueva reserva con validación
-• getReservas(): Obtiene todas las reservas
-• validateHorarioEspecial(): Valida horarios excepcionales
-• isHoraDisponible(): Verifica disponibilidad en tiempo real
+Configuración del negocio
+
+Validación de horarios
+
+Gestión de disponibilidad
+
+Métodos clave:
+
+getConfig(): Obtiene configuración actual
+
+addReserva(): Crea nueva reserva
+
+deleteReserva(): Elimina reserva por ID
+
+updateConfig(): Actualiza configuración global
+
+validateHorarioEspecial(): Valida formato de horarios
+
+Cambios recientes:
+
+Eliminada toda lógica de localStorage
+
+Migración completa a HTTP Client
+
+Simplificación de métodos de validación
 
 5. COMPONENTES PRINCIPALES
---------------------------
+5.1 BookingUserComponent
 
-5.1 BookingPageComponent
------------------------
-• Función: Componente contenedor principal
-• Lógica: Alterna entre vistas Admin/User
-• Template: Simple contenedor con switch de vistas
+Funcionalidad: Interfaz de usuario para reservas
 
-5.2 BookingAdminComponent (Actualizado con Acordeones)
-------------------------------------------------------
-• Funcionalidades:
-  - Configuración completa del negocio
-  - Gestión de horarios mediante acordeones plegables
-  - Visualización de reservas
-  - Administración de servicios
+Características:
 
-• Características UI:
-  - Acordeón para Horarios Normales (plegable)
-  - Acordeón para Horarios Especiales (plegable)
-  - Iconos de flecha (chevron) indican estado
-  - Secciones colapsables para ahorrar espacio
+Selección de servicio/fecha/hora
 
-• Métodos clave:
-  - saveConfiguration(): Guarda toda la configuración
-  - agregarTramo(): Añade franja horaria a un día
-  - agregarHorarioEspecial(): Crea horario excepcional
-  - toggleAcordeon(): Controla visibilidad de secciones
+Validación en tiempo real
 
-5.3 BookingUserComponent
------------------------
-• Funcionalidades:
-  - Interfaz para reservas de clientes
-  - Selección de servicio/fecha/hora
-  - Validación de disponibilidad en tiempo real
-  - Formulario de datos personales
+Formulario de datos personales
 
-• Métodos clave:
-  - confirmarReserva(): Procesa nueva reserva
-  - updateAvailableTimes(): Actualiza horarios disponibles
-  - isTimeAvailable(): Verifica si un slot está libre
+Listado de reservas existentes
 
-5.4 BookingCalendarComponent
----------------------------
-• Integración con FullCalendar
-• Visualización gráfica de reservas
-• Color coding por disponibilidad
-• Interacción para ver detalles
+5.2 BookingAdminComponent
 
-6. FLUJO DE TRABAJO
--------------------
+Funcionalidad: Panel de administración
 
-6.1 Configuración Inicial (Admin)
---------------------------------
-1. Establecer nombre y tipo de negocio
-2. Definir horarios normales (usando acordeón plegable)
-3. Configurar servicios disponibles
-4. Establecer máximo de reservas por slot
-5. Añadir horarios especiales cuando sea necesario (mediante acordeón)
+Características:
 
-6.2 Proceso de Reserva (User)
------------------------------
-1. Usuario selecciona servicio
-2. Elige fecha (con restricciones de horario)
-3. Selecciona hora disponible
-4. Completa datos personales
-5. Confirma reserva (con validación)
+Gestión de horarios normales/especiales
 
-6.3 Gestión Diaria (Admin)
---------------------------
-1. Ver calendario con reservas
-2. Usar acordeones para gestionar horarios
-3. Cancelar/modificar reservas existentes
-4. Monitorizar disponibilidad
+Configuración de servicios
 
-7. VALIDACIONES
----------------
+Visualización de reservas
 
-7.1 Reglas de Validación
-------------------------
-• Email: Formato válido (regex estricto)
-• Nombre: Mínimo 3 caracteres
-• Horarios: No solapamiento de franjas
-• Disponibilidad: Respetar máximo por slot
-• Fechas: No permitir reservas pasadas
+Actualización de parámetros del negocio
 
-8. MEJORAS FUTURAS
-------------------
-• Integración con backend real (Firebase/API REST)
-• Notificaciones por email/SMS
-• Pasarela de pago integrada
-• Sistema de fidelización
-• Dashboard de analytics
-• Multi-idioma
-• Persistencia del estado de los acordeones
+5.3 BookingPageComponent
 
-9. DEPENDENCIAS
----------------
-• @angular/core: ^16.0.0
-• @fullcalendar/angular: ^6.1.8
-• rxjs: ^7.8.0
-• uuid: ^9.0.0
-• bootstrap-icons: ^1.10.0 (para iconos de acordeones)
+Funcionalidad: Contenedor principal
 
-10. CONFIGURACIÓN TÉCNICA
--------------------------
-• Estrategia: Standalone Components
-• Change Detection: OnPush
-• LocalStorage: Persistencia automática
-• Responsive: Diseño adaptable a móviles
-• Internacionalización: Preparado para i18n
-• UI: Acordeones implementados con *ngIf y propiedades de estado
+Lógica: Alternar entre vistas Admin/User
 
-ANEXO A: EJEMPLOS DE USO
--------------------------
+6. FLUJOS DE TRABAJO IMPLEMENTADOS
+6.1 Reserva de usuario:
 
-A.1 Crear nueva reserva:
-const reservaData = {
-  usuario: {
-    nombre: "Juan Pérez",
-    email: "juan@example.com",
-    telefono: "600123456"
-  },
-  fechaInicio: "2023-11-15T10:00:00",
-  servicio: "corte-pelo"
-};
+Selección de servicio
 
-this.bookingService.addReserva(reservaData).subscribe(
-  res => console.log("Reserva confirmada:", res),
-  err => console.error("Error:", err)
-);
+Elección de fecha/hora disponible
 
-A.2 Uso de acordeones en Admin:
-// En el template:
-<div class="card">
-  <div class="card-header" (click)="toggleSection('horarios')">
-    Horarios 
-    <i class="bi" [class.bi-chevron-down]="!showHorarios" [class.bi-chevron-up]="showHorarios"></i>
-  </div>
-  <div class="card-body" *ngIf="showHorarios">
-    <!-- Contenido de horarios -->
-  </div>
-</div>
+Validación de datos personales
 
-// En el componente:
-showHorarios = false;
-toggleSection(section: string) {
-  this[`show${section}`] = !this[`show${section}`];
+Confirmación vía HTTP POST
+
+6.2 Gestión de horarios (Admin):
+
+Edición de tramos horarios
+
+Añadir horarios especiales
+
+Validación contra solapamientos
+
+Guardado mediante HTTP PUT
+
+7. VALIDACIONES IMPLEMENTADAS
+Formato de email (regex estricto)
+
+Solapamiento de horarios
+
+Disponibilidad de slots
+
+Integridad de datos en reservas
+
+Formato correcto de fechas/horas
+
+8. ESTADO ACTUAL DEL PROYECTO
+Avances:
+
+Migración completa del servicio a HTTP
+
+Eliminación de dependencias de localStorage
+
+Corrección de errores de tipos en templates
+
+Optimización de flujos de datos
+
+Problemas pendientes:
+
+Integración completa con endpoints reales
+
+Manejo de errores detallado
+
+Loading states en UI
+
+Persistencia de estado en acordeones
+
+9. PRÓXIMOS PASOS
+Implementar autenticación JWT
+
+Crear servicio de notificaciones
+
+Desarrollar módulo de reportes
+
+Implementar cancelación de reservas
+
+Crear sistema de recordatorios
+
+ARCHIVOS CLAVE ACTUALIZADOS (ÚLTIMOS CAMBIOS):
+
+// booking-config.service.ts (fragmento)
+@Injectable({ providedIn: 'root' })
+export class BookingConfigService {
+private defaultConfig: BusinessConfig = { /.../ };
+
+private configSubject = new BehaviorSubject<BusinessConfig>(this.defaultConfig);
+private reservasSubject = new BehaviorSubject<Reserva[]>([]);
+
+constructor(private http: HttpClient) {
+this.initializeData();
 }
 
-ANEXO B: DIAGRAMA DE FLUJO
---------------------------
-[Reserva exitosa]
-Usuario → Selecciona servicio → Elige fecha → Selecciona hora → 
-→ Completa datos → Validación → Confirmación → Reserva creada
+private initializeData(): void {
+forkJoin({
+config: this.loadBackendConfig(),
+reservas: this.loadBackendReservas()
+}).pipe(
+catchError(() => of({ config: this.defaultConfig, reservas: [] }))
+).subscribe(/.../);
+}
 
-[Gestión de Horarios]
-Admin → Abre acordeón → Edita horarios → Guarda cambios → 
-→ Cambios se reflejan en calendario
+private loadBackendConfig(): Observable<BusinessConfig> {
+return this.http.get<BusinessConfig>(${environment.apiUrl}/api/config);
+}
+}
 
-FIN DE DOCUMENTACIÓN
+// booking-user.component.html (fragmento corregido)
+<span *ngIf="(isTimeAvailable(time) | async) === false"
+class="badge bg-secondary ms-2">
+No disponible
+</span>
+
+NOTAS PARA CONTINUAR:
+
+Endpoints actuales: /api/config, /api/reservas, /api/disponibilidad
+
+Variables de entorno: environment.apiUrl debe estar configurado
+
+Próxima prioridad: Implementar carga de servicios desde backend
+
+FIN DEL DOCUMENTO

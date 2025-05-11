@@ -47,15 +47,16 @@ export class BookingUserComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.loadInitialData(); // <-- Añade esta línea
     this.reservas$ = this.bookingService.getReservas().pipe(
-      map(reservas => reservas.sort((a, b) => 
+      map(reservas => reservas.sort((a, b) =>
         new Date(b.fechaInicio).getTime() - new Date(a.fechaInicio).getTime()
       )),
-      catchError(() => of([] as Reserva[])) // Forzar array vacío tipado
+      catchError(() => of([] as Reserva[]))
     );
   }
 
- /* private loadInitialData(): void {
+  private loadInitialData(): void {
     this.serviciosDisponibles$ = this.bookingService.getServicios().pipe(
       catchError(() => of([]))
     );
@@ -73,19 +74,22 @@ export class BookingUserComponent implements OnInit {
 
     this.reservas$ = this.bookingService.getReservas().pipe(
       map(reservas => reservas.sort((a, b) =>
-          new Date(b.fechaInicio).getTime() - new Date(a.fechaInicio).getTime()
-        )
+        new Date(b.fechaInicio).getTime() - new Date(a.fechaInicio).getTime()
+      )
       ),
       catchError(error => {
         console.error('Error cargando reservas:', error);
         return of([]);
       })
     );
-  } */
+  }
 
   onServiceChange(): void {
+    console.log('Fecha seleccionada:', this.selectedDate);
+    console.log('Configuración actual:', this.config);
     this.selectedTime = '';
     this.updateAvailableTimes();
+    console.log('Horas generadas:', this.availableTimes)
   }
 
   onDateChange(): void {
@@ -93,7 +97,40 @@ export class BookingUserComponent implements OnInit {
     this.updateAvailableTimes();
   }
 
+  private generateSlotsFromRange(start: string, end: string): string[] {
+    const slots: string[] = [];
+    const [startHour, startMin] = start.split(':').map(Number);
+    const [endHour, endMin] = end.split(':').map(Number);
+
+    // Obtener duración del servicio seleccionado
+    const servicio = this.config.servicios?.find(s => s.id === this.selectedService);
+    const duracion = servicio?.duracion || this.config.duracionBase;
+
+    let currentHour = startHour;
+    let currentMin = startMin;
+
+    while (currentHour < endHour || (currentHour === endHour && currentMin < endMin)) {
+      slots.push(
+        `${currentHour.toString().padStart(2, '0')}:${currentMin.toString().padStart(2, '0')}`
+      );
+
+      // Usar duración del servicio
+      currentMin += duracion;
+      if (currentMin >= 60) {
+        currentHour++;
+        currentMin = currentMin % 60;
+      }
+    }
+
+    return slots;
+  }
+
+
+
   private updateAvailableTimes(): void {
+    console.log('Fecha seleccionada:', this.selectedDate);
+    console.log('Día de la semana:', new Date(this.selectedDate).getDay());
+    console.log('Config recibida:', this.config); // <- Ver horariosNormales
     if (!this.selectedDate) {
       this.availableTimes = [];
       return;
@@ -126,56 +163,35 @@ export class BookingUserComponent implements OnInit {
     );
   }
 
-  private generateSlotsFromRange(start: string, end: string): string[] {
-    const slots: string[] = [];
-    const [startHour, startMin] = start.split(':').map(Number);
-    const [endHour, endMin] = end.split(':').map(Number);
 
-    let currentHour = startHour;
-    let currentMin = startMin;
-
-    while (currentHour < endHour || (currentHour === endHour && currentMin < endMin)) {
-      slots.push(
-        `${currentHour.toString().padStart(2, '0')}:${currentMin.toString().padStart(2, '0')}`
-      );
-
-      currentMin += this.config.duracionBase;
-      if (currentMin >= 60) {
-        currentHour++;
-        currentMin = 0;
-      }
-    }
-    return slots;
-  }
 
   isTimeAvailable(time: string): Observable<boolean> {
+    if (!this.selectedDate || !this.selectedService) return of(false);
+
     return combineLatest([
       this.serviciosDisponibles$,
       this.reservas$.pipe(take(1))
     ]).pipe(
       map(([servicios, reservas]) => {
-        if (!this.selectedDate || !this.selectedService) return false;
-
         const servicio = servicios.find(s => s.id === this.selectedService);
         if (!servicio) return false;
 
-        const startTime = new Date(`${this.selectedDate}T${time}:00`);
-        const endTime = new Date(startTime);
-        endTime.setMinutes(startTime.getMinutes() + servicio.duracion);
+        // Crear fechas en UTC
+        const startTime = new Date(`${this.selectedDate}T${time}:00Z`);
+        const endTime = new Date(startTime.getTime() + servicio.duracion * 60000);
 
-        const overlappingReservations = reservas.filter((reserva: Reserva) => {
+        // Calcular solapamientos
+        const overlaps = reservas.some(reserva => {
           const reservaStart = new Date(reserva.fechaInicio);
           const reservaService = servicios.find(s => s.id === reserva.servicio);
-          const reservaEnd = new Date(reservaStart);
-          reservaEnd.setMinutes(
-            reservaStart.getMinutes() +
-            (reservaService?.duracion ?? this.config.duracionBase)
+          const reservaEnd = new Date(
+            reservaStart.getTime() + (reservaService?.duracion || this.config.duracionBase) * 60000
           );
 
-          return reservaStart < endTime && reservaEnd > startTime;
+          return startTime < reservaEnd && endTime > reservaStart;
         });
 
-        return overlappingReservations.length < this.config.maxReservasPorSlot;
+        return !overlaps;
       }),
       catchError(() => of(false))
     );

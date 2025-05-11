@@ -19,8 +19,13 @@
 
     <div class="mb-3">
       <label class="form-label">Máximo de reservas por slot</label>
-      <input type="number" class="form-control" [(ngModel)]="configNegocio.maxReservasPorSlot" name="maxReservasPorSlot"
-        min="1" required />
+    <input 
+      type="number" 
+      [(ngModel)]="configNegocio.maxReservasPorSlot"
+      name="maxReservasPorSlot"
+      min="1"
+      required
+    >
     </div>
 
     <app-booking-calendar *ngIf="calendarVisible"></app-booking-calendar>

@@ -15,26 +15,32 @@
       <select id="servicioSelect" class="form-select" [(ngModel)]="selectedService" name="servicio"
         #servicioSelect="ngModel" required (change)="onServiceChange()">
         <option value="" disabled selected>Seleccione un servicio</option>
-        <option *ngFor="let servicio of serviciosDisponibles$ | async" [value]="servicio.id">
-          {{servicio.nombre}} ({{servicio.duracion}} min) - {{servicio.precio | currency:'EUR'}}
-        </option>
+        @for (servicio of serviciosDisponibles$ | async; track servicio.id) {
+          <option [value]="servicio.id">
+            {{servicio.nombre}} ({{servicio.duracion}} min) - {{servicio.precio | currency:'EUR'}}
+          </option>
+        }
       </select>
-      <div *ngIf="servicioSelect.invalid && servicioSelect.touched" class="text-danger">
-        Por favor seleccione un servicio
-      </div>
+      @if (servicioSelect.invalid && servicioSelect.touched) {
+        <div class="text-danger">
+          Por favor seleccione un servicio
+        </div>
+      }
 
       <!-- Información del servicio seleccionado -->
-      <div *ngIf="selectedService" class="alert alert-info mt-3">
-        <ng-container *ngIf="getSelectedService() | async as servicio">
-          <div class="d-flex justify-content-between">
-            <div>
-              <strong>{{servicio.nombre}}</strong>
-              <div class="small">Duración: {{servicio.duracion}} minutos</div>
+      @if (selectedService) {
+        <div class="alert alert-info mt-3">
+          @if (getSelectedService() | async; as servicio) {
+            <div class="d-flex justify-content-between">
+              <div>
+                <strong>{{servicio.nombre}}</strong>
+                <div class="small">Duración: {{servicio.duracion}} minutos</div>
+              </div>
+              <div class="fw-bold">{{servicio.precio | currency:'EUR'}}</div>
             </div>
-            <div class="fw-bold">{{servicio.precio | currency:'EUR'}}</div>
-          </div>
-        </ng-container>
-      </div>
+          }
+        </div>
+      }
     </div>
 
     <div class="mt-3">
@@ -52,29 +58,37 @@
             <select id="reservationTime" class="form-select" [(ngModel)]="selectedTime" name="time"
               [disabled]="!selectedDate" required>
               <option value="" disabled selected>Selecciona hora</option>
-              <option *ngFor="let time of availableTimes" [value]="time" [disabled]="!(isTimeAvailable(time) | async)">
-                {{ time }}
-                <span *ngIf="!!(isTimeAvailable(time) | async) | not" class="badge bg-secondary ms-2">
-                  No disponible
-                </span>
-              </option>
+              @for (time of availableTimes; track $index) {
+                <option [value]="time" [disabled]="!(isTimeAvailable(time) | async)">
+                  {{ time }}
+                  @if (!!(isTimeAvailable(time) | async) | not) {
+                    <span class="badge bg-secondary ms-2">
+                      No disponible
+                    </span>
+                  }
+                </option>
+              }
             </select>
           </div>
         </div>
 
         <!-- Confirmación de reserva -->
-        <div *ngIf="selectedDate && selectedTime" class="alert alert-success mb-3 d-flex align-items-center">
-          <i class="bi bi-calendar-check me-2"></i>
-          <div>
-            <strong>Reserva programada:</strong>
+        @if (selectedDate && selectedTime) {
+          <div class="alert alert-success mb-3 d-flex align-items-center">
+            <i class="bi bi-calendar-check me-2"></i>
             <div>
-              {{ selectedDate | date:'fullDate':'':'es' }} a las {{ selectedTime }}
-              <span *ngIf="getHoraFinalizacion() | async as horaFin" class="ms-2">
-                (Finaliza ~{{horaFin}})
-              </span>
+              <strong>Reserva programada:</strong>
+              <div>
+                {{ selectedDate | date:'fullDate':'':'es' }} a las {{ selectedTime }}
+                @if (getHoraFinalizacion() | async; as horaFin) {
+                  <span class="ms-2">
+                    (Finaliza ~{{horaFin}})
+                  </span>
+                }
+              </div>
             </div>
           </div>
-        </div>
+        }
 
         <!-- Datos del usuario -->
         <div class="mb-3">
@@ -88,9 +102,11 @@
           <input type="email" id="userEmail" class="form-control {{emailTouched && emailError ? 'is-invalid' : ''}}"
             [(ngModel)]="userData.email" name="email" required placeholder="Ej: ejemplo@correo.com"
             (blur)="onEmailBlur()">
-          <div *ngIf="emailTouched && emailError" class="invalid-feedback">
-            {{emailError}}
-          </div>
+          @if (emailTouched && emailError) {
+            <div class="invalid-feedback">
+              {{emailError}}
+            </div>
+          }
         </div>
 
         <div class="mb-3">
@@ -106,53 +122,57 @@
         </button>
       </div>
 
-      <!-- Listado de reservas existentes - SECCIÓN CORREGIDA -->
+      <!-- Listado de reservas existentes -->
       <div class="mt-4">
         <h5 class="border-bottom pb-2 d-flex align-items-center">
           <i class="bi bi-list-check me-2"></i>
           Mis Reservas
         </h5>
 
-        <div *ngIf="(reservas$ | async)?.length === 0" class="alert alert-info d-flex align-items-center">
-          <i class="bi bi-calendar-x me-2"></i>
-          No items reserves registrads
-        </div>
+        @if ((reservas$ | async)?.length === 0) {
+          <div class="alert alert-info d-flex align-items-center">
+            <i class="bi bi-calendar-x me-2"></i>
+            No hay reservas registradas
+          </div>
+        }
 
-        
-        <div *ngIf="(reservas$ | async)?.length" class="reservations-list">
-
-          <div *ngFor="let reserva of reservas$ | async" class="mb-2">
-            <div class="card">
-              <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start">
-                  <div>
-                    <ng-container *ngIf="getServiceName(reserva.servicio) | async as nombreService">
-                      <span class="badge bg-primary me-2">{{ nombreService }}</span>
-                    </ng-container>
-                    <strong>{{ reserva.fechaInicio | date:'mediumDate':'':'es' }}</strong>
-                    <div class="mt-2 text-muted">
-                      <div class="d-flex align-items-center mb-1">
-                        <i class="bi bi-clock me-1"></i>
-                        {{ reserva.fechaInicio | date:'shortTime':'':'es' }}
-                        <ng-container *ngIf="calcularHoraFinReserva(reserva) | async as horaFin">
-                          {{ horaFin }}
-                        </ng-container>
-                      </div>
-                      <div class="d-flex align-items-center mb-1">
-                        <i class="bi bi-person me-1"></i>
-                        {{ reserva.usuario.nombre }}
-                      </div>
-                      <div class="d-flex align-items-center">
-                        <i class="bi bi-envelope me-1"></i>
-                        {{ reserva.usuario.email }}
+        @if ((reservas$ | async)?.length) {
+          <div class="reservations-list">
+            @for (reserva of reservas$ | async; track reserva?.id || $index) {
+              <div class="mb-2">
+                <div class="card">
+                  <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                      <div>
+                        @if (getServiceName(reserva.servicio) | async; as nombreService) {
+                          <span class="badge bg-primary me-2">{{ nombreService }}</span>
+                        }
+                        <strong>{{ reserva.fechaInicio | date:'mediumDate':'':'es' }}</strong>
+                        <div class="mt-2 text-muted">
+                          <div class="d-flex align-items-center mb-1">
+                            <i class="bi bi-clock me-1"></i>
+                            {{ reserva.fechaInicio | date:'shortTime':'':'es' }}
+                            @if (calcularHoraFinReserva(reserva) | async; as horaFin) {
+                              {{ horaFin }}
+                            }
+                          </div>
+                          <div class="d-flex align-items-center mb-1">
+                            <i class="bi bi-person me-1"></i>
+                            {{ reserva.usuario.nombre }}
+                          </div>
+                          <div class="d-flex align-items-center">
+                            <i class="bi bi-envelope me-1"></i>
+                            {{ reserva.usuario.email }}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+            }
           </div>
-        </div>
+        }
       </div>
     </div>
   </div>

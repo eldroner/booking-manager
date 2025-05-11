@@ -1,20 +1,20 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { BookingConfigService } from '../../services/booking-config.service';
 import { CommonModule } from '@angular/common';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import interactionPlugin from '@fullcalendar/interaction';
 import { FullCalendarModule } from '@fullcalendar/angular';
 import { Subscription } from 'rxjs';
 import { Reserva } from '../../services/booking-config.service';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
 
 @Component({
-  selector: 'app-booking-calendar',
-  standalone: true,
-  imports: [CommonModule, FullCalendarModule],
-  templateUrl: './booking-calendar.component.html',
-  styleUrls: ['./booking-calendar.component.scss'],
+    selector: 'app-booking-calendar',
+    standalone: true, // <-- Añadir esto
+    imports: [CommonModule, FullCalendarModule],
+    templateUrl: './booking-calendar.component.html',
+    styleUrls: ['./booking-calendar.component.scss']
 })
-export class BookingCalendarComponent implements OnInit, OnDestroy {
+export class BookingCalendarComponent implements OnInit {
   calendarOptions: any = {};
   reservas: Reserva[] = [];
   private reservasSubscription: Subscription = new Subscription();

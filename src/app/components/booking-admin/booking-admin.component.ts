@@ -7,11 +7,11 @@ import { BookingCalendarComponent } from '../booking-calendar/booking-calendar.c
 import { Subscription } from 'rxjs';
 
 @Component({
-  selector: 'app-booking-admin',
-  standalone: true,
-  imports: [CommonModule, FormsModule, FullCalendarModule, BookingCalendarComponent],
-  templateUrl: './booking-admin.component.html',
-  styleUrls: ['./booking-admin.component.scss'],
+    selector: 'app-booking-admin',
+    standalone: true,
+    imports: [CommonModule, FormsModule, FullCalendarModule, BookingCalendarComponent],
+    templateUrl: './booking-admin.component.html',
+    styleUrls: ['./booking-admin.component.scss']
 })
 export class BookingAdminComponent implements OnInit, OnDestroy {
   configNegocio: BusinessConfig = {

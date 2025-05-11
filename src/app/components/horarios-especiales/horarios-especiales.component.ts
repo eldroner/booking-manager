@@ -5,11 +5,10 @@ import { BookingConfigService } from '../../services/booking-config.service';
 import { HorarioEspecial } from '../../services/booking-config.service';
 
 @Component({
-  selector: 'app-horarios-especiales',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './horarios-especiales.component.html',
-  styleUrls: ['./horarios-especiales.component.css']
+    selector: 'app-horarios-especiales',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './horarios-especiales.component.html',
+    styleUrls: ['./horarios-especiales.component.css']
 })
 export class HorariosEspecialesComponent implements OnInit {
   horarios: HorarioEspecial[] = [];

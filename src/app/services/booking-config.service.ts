@@ -96,26 +96,37 @@ export class BookingConfigService {
 
   constructor(
     private http: HttpClient,
-    private notifications: NotificationsService
-  
+    private notifications: NotificationsService,
+
   ) {
     this.initializeData();
   }
 
   private initializeData(): void {
+    console.log('🔄 Iniciando carga de datos...');
+
     forkJoin({
-      config: this.loadBackendConfig(),
-      reservas: this.loadBackendReservas()
+      config: this.loadBackendConfig().pipe(
+        tap(config => console.log('Config del backend:', config))
+      ),
+      reservas: this.loadBackendReservas().pipe(
+        tap(reservas => console.log('Reservas del backend:', reservas))
+      )
     }).pipe(
-      catchError(() => {
+      catchError(error => {
+        console.error('Error en carga inicial:', error);
         return of({
           config: this.defaultConfig,
           reservas: []
         });
       })
-    ).subscribe(({ config, reservas }) => {
-      this.configSubject.next(config);
-      this.reservasSubject.next(reservas);
+    ).subscribe({
+      next: ({ config, reservas }) => {
+        console.log('🔥 Actualizando estado interno');
+        this.configSubject.next(config);
+        this.reservasSubject.next(reservas);
+      },
+      error: err => console.error('Error crítico:', err)
     });
   }
 
@@ -143,32 +154,30 @@ export class BookingConfigService {
   }
 
   private refreshCalendar(): void {
-  this.configSubject.next({...this.configSubject.value}); // Forzar actualización reactiva
-}
+    this.configSubject.next({ ...this.configSubject.value }); // Forzar actualización reactiva
+  }
 
-updateConfig(newConfig: Partial<BusinessConfig>): void {
-  const currentConfig = this.configSubject.value;
-  const mergedConfig = { 
-    ...currentConfig,
-    ...newConfig,
-    servicios: newConfig.servicios || currentConfig.servicios,
-    horariosNormales: newConfig.horariosNormales || currentConfig.horariosNormales,
-    horariosEspeciales: newConfig.horariosEspeciales || currentConfig.horariosEspeciales
-  };
+  updateConfig(newConfig: Partial<BusinessConfig>): void {
+    const currentConfig = this.configSubject.value;
+    const mergedConfig = {
+      ...currentConfig,
+      ...newConfig,
+      servicios: newConfig.servicios || currentConfig.servicios,
+      horariosNormales: newConfig.horariosNormales || currentConfig.horariosNormales
+    };
 
-  this.http.put<BusinessConfig>(`${environment.apiUrl}/api/config`, mergedConfig).pipe(
-    tap(updatedConfig => {
-      this.configSubject.next(updatedConfig);
-      alert('✅ Configuración actualizada correctamente');
-      this.refreshCalendar(); // Añadido para actualizar el calendario si existe
-    }),
-    catchError(error => {
-      console.error('Error actualizando configuración:', error);
-      alert(`❌ Error al guardar: ${error.message}`);
-      return throwError(() => new Error('No se pudo guardar la configuración'));
-    })
-  ).subscribe();
-}
+    this.http.put<BusinessConfig>(`${environment.apiUrl}/api/config`, mergedConfig).pipe(
+      tap(updatedConfig => {
+        this.configSubject.next(updatedConfig);
+        this.notifications.showSuccess('Configuración actualizada'); // Usar el servicio
+        this.refreshCalendar();
+      }),
+      catchError(error => {
+        this.notifications.showError('Error al guardar: ' + error.message); // Usar el servicio
+        return throwError(() => error);
+      })
+    ).subscribe();
+  }
 
   getReservas(): Observable<Reserva[]> {
     return this.reservas$;
@@ -210,19 +219,19 @@ updateConfig(newConfig: Partial<BusinessConfig>): void {
 
   validateHorarioEspecial(horario: Partial<HorarioEspecial>): boolean {
     if (!horario?.fecha || !horario.horaInicio || !horario.horaFin) return false;
-    
-    return this.isValidDate(horario.fecha) && 
-           this.isValidTime(horario.horaInicio) && 
-           this.isValidTime(horario.horaFin) &&
-           this.compareTimes(horario.horaInicio, horario.horaFin) < 0;
+
+    return this.isValidDate(horario.fecha) &&
+      this.isValidTime(horario.horaInicio) &&
+      this.isValidTime(horario.horaFin) &&
+      this.compareTimes(horario.horaInicio, horario.horaFin) < 0;
   }
 
   checkSolapamientoHorarios(nuevoHorario: HorarioEspecial): boolean {
-    return this.getHorariosEspeciales().some(h => 
+    return this.getHorariosEspeciales().some(h =>
       h.activo &&
       h.fecha === nuevoHorario.fecha &&
-      !(this.compareTimes(nuevoHorario.horaFin, h.horaInicio) <= 0 || 
-       this.compareTimes(nuevoHorario.horaInicio, h.horaFin) >= 0)
+      !(this.compareTimes(nuevoHorario.horaFin, h.horaInicio) <= 0 ||
+        this.compareTimes(nuevoHorario.horaInicio, h.horaFin) >= 0)
     );
   }
 
@@ -232,9 +241,9 @@ updateConfig(newConfig: Partial<BusinessConfig>): void {
 
   updateHorariosNormales(horarios: HorarioNormal[]): void {
     const currentConfig = this.configSubject.value;
-    this.updateConfig({ 
+    this.updateConfig({
       ...currentConfig,
-      horariosNormales: horarios 
+      horariosNormales: horarios
     });
   }
 
@@ -244,9 +253,9 @@ updateConfig(newConfig: Partial<BusinessConfig>): void {
 
   updateHorariosEspeciales(horarios: HorarioEspecial[]): void {
     const currentConfig = this.configSubject.value;
-    this.updateConfig({ 
+    this.updateConfig({
       ...currentConfig,
-      horariosEspeciales: horarios 
+      horariosEspeciales: horarios
     });
   }
 

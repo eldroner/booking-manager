@@ -16,30 +16,30 @@
         #servicioSelect="ngModel" required (change)="onServiceChange()">
         <option value="" disabled selected>Seleccione un servicio</option>
         @for (servicio of serviciosDisponibles$ | async; track servicio.id) {
-          <option [value]="servicio.id">
-            {{servicio.nombre}} ({{servicio.duracion}} min) - {{servicio.precio | currency:'EUR'}}
-          </option>
+        <option [value]="servicio.id">
+          {{servicio.nombre}} ({{servicio.duracion}} min) - {{servicio.precio | currency:'EUR'}}
+        </option>
         }
       </select>
       @if (servicioSelect.invalid && servicioSelect.touched) {
-        <div class="text-danger">
-          Por favor seleccione un servicio
-        </div>
+      <div class="text-danger">
+        Por favor seleccione un servicio
+      </div>
       }
 
       <!-- Información del servicio seleccionado -->
       @if (selectedService) {
-        <div class="alert alert-info mt-3">
-          @if (getSelectedService() | async; as servicio) {
-            <div class="d-flex justify-content-between">
-              <div>
-                <strong>{{servicio.nombre}}</strong>
-                <div class="small">Duración: {{servicio.duracion}} minutos</div>
-              </div>
-              <div class="fw-bold">{{servicio.precio | currency:'EUR'}}</div>
-            </div>
-          }
+      <div class="alert alert-info mt-3">
+        @if (getSelectedService() | async; as servicio) {
+        <div class="d-flex justify-content-between">
+          <div>
+            <strong>{{servicio.nombre}}</strong>
+            <div class="small">Duración: {{servicio.duracion}} minutos</div>
+          </div>
+          <div class="fw-bold">{{servicio.precio | currency:'EUR'}}</div>
         </div>
+        }
+      </div>
       }
     </div>
 
@@ -59,14 +59,14 @@
               [disabled]="!selectedDate" required>
               <option value="" disabled selected>Selecciona hora</option>
               @for (time of availableTimes; track $index) {
-                <option [value]="time" [disabled]="!(isTimeAvailable(time) | async)">
-                  {{ time }}
-                  @if (!!(isTimeAvailable(time) | async) | not) {
-                    <span class="badge bg-secondary ms-2">
-                      No disponible
-                    </span>
-                  }
-                </option>
+              <option [value]="time" [disabled]="!(isTimeAvailable(time) | async)">
+                {{ time }}
+                @if (!!(isTimeAvailable(time) | async) | not) {
+                <span class="badge bg-secondary ms-2">
+                  No disponible
+                </span>
+                }
+              </option>
               }
             </select>
           </div>
@@ -74,20 +74,20 @@
 
         <!-- Confirmación de reserva -->
         @if (selectedDate && selectedTime) {
-          <div class="alert alert-success mb-3 d-flex align-items-center">
-            <i class="bi bi-calendar-check me-2"></i>
+        <div class="alert alert-success mb-3 d-flex align-items-center">
+          <i class="bi bi-calendar-check me-2"></i>
+          <div>
+            <strong>Reserva programada:</strong>
             <div>
-              <strong>Reserva programada:</strong>
-              <div>
-                {{ selectedDate | date:'fullDate':'':'es' }} a las {{ selectedTime }}
-                @if (getHoraFinalizacion() | async; as horaFin) {
-                  <span class="ms-2">
-                    (Finaliza ~{{horaFin}})
-                  </span>
-                }
-              </div>
+              {{ selectedDate | date:'fullDate':'':'es' }} a las {{ selectedTime }}
+              @if (getHoraFinalizacion() | async; as horaFin) {
+              <span class="ms-2">
+                (Finaliza ~{{horaFin}})
+              </span>
+              }
             </div>
           </div>
+        </div>
         }
 
         <!-- Datos del usuario -->
@@ -103,9 +103,9 @@
             [(ngModel)]="userData.email" name="email" required placeholder="Ej: ejemplo@correo.com"
             (blur)="onEmailBlur()">
           @if (emailTouched && emailError) {
-            <div class="invalid-feedback">
-              {{emailError}}
-            </div>
+          <div class="invalid-feedback">
+            {{emailError}}
+          </div>
           }
         </div>
 
@@ -130,48 +130,52 @@
         </h5>
 
         @if ((reservas$ | async)?.length === 0) {
-          <div class="alert alert-info d-flex align-items-center">
-            <i class="bi bi-calendar-x me-2"></i>
-            No hay reservas registradas
-          </div>
+        <div class="alert alert-info d-flex align-items-center">
+          <i class="bi bi-calendar-x me-2"></i>
+          No hay reservas registradas
+        </div>
         }
 
         @if ((reservas$ | async)?.length) {
-          <div class="reservations-list">
-            @for (reserva of reservas$ | async; track reserva?.id || $index) {
-              <div class="mb-2">
-                <div class="card">
-                  <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                      <div>
-                        @if (getServiceName(reserva.servicio) | async; as nombreService) {
-                          <span class="badge bg-primary me-2">{{ nombreService }}</span>
+        <div class="reservations-list">
+          @for (reserva of reservas$ | async; track reserva?.id || $index) {
+          <div class="mb-2">
+            <div class="card">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    @if (getServiceName(reserva.servicio) | async; as nombreService) {
+                    <span class="badge bg-primary me-2">{{ nombreService }}</span>
+                    }
+                    <strong>{{ reserva.fechaInicio | date:'mediumDate':'':'es' }}</strong>
+                    <div class="mt-2 text-muted">
+                      <div class="d-flex align-items-center mb-1">
+                        <i class="bi bi-clock me-1"></i>
+                        {{ reserva.fechaInicio | date:'shortTime':'':'es' }}
+                        @if (calcularHoraFinReserva(reserva) | async; as horaFin) {
+                        {{ horaFin }}
                         }
-                        <strong>{{ reserva.fechaInicio | date:'mediumDate':'':'es' }}</strong>
-                        <div class="mt-2 text-muted">
-                          <div class="d-flex align-items-center mb-1">
-                            <i class="bi bi-clock me-1"></i>
-                            {{ reserva.fechaInicio | date:'shortTime':'':'es' }}
-                            @if (calcularHoraFinReserva(reserva) | async; as horaFin) {
-                              {{ horaFin }}
-                            }
-                          </div>
-                          <div class="d-flex align-items-center mb-1">
-                            <i class="bi bi-person me-1"></i>
-                            {{ reserva.usuario.nombre }}
-                          </div>
-                          <div class="d-flex align-items-center">
-                            <i class="bi bi-envelope me-1"></i>
-                            {{ reserva.usuario.email }}
-                          </div>
-                        </div>
+                      </div>
+                      <div class="d-flex align-items-center mb-1">
+                        <i class="bi bi-person me-1"></i>
+                        {{ reserva.usuario.nombre }}
+                      </div>
+                      <div class="d-flex align-items-center">
+                        <i class="bi bi-envelope me-1"></i>
+                        {{ reserva.usuario.email }}
                       </div>
                     </div>
                   </div>
+                  <!-- Botón de cancelar añadido aquí -->
+                  <button class="btn btn-sm btn-danger" (click)="cancelarReserva(reserva.id)">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                  </button>
                 </div>
               </div>
-            }
+            </div>
           </div>
+          }
+        </div>
         }
       </div>
     </div>

@@ -6,6 +6,7 @@ import { registerLocaleData } from '@angular/common';
 import localeEs from '@angular/common/locales/es';
 import { Observable, combineLatest, map, take, of, catchError, forkJoin } from 'rxjs';
 import { NotPipe } from '../../pipes/not.pipe';
+import { NotificationsService } from '../../services/notifications.service';
 
 registerLocaleData(localeEs);
 
@@ -39,8 +40,12 @@ export class BookingUserComponent implements OnInit {
   today: string = new Date().toISOString().split('T')[0];
   maxDate: string = new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0];
 
-  constructor(private bookingService: BookingConfigService) {
+  constructor(
+    private bookingService: BookingConfigService, 
+    private notifications: NotificationsService
+  ) {
     this.config = this.bookingService.getConfig();
+    
     // this.reservas$ = this.bookingService.getReservas().pipe(
     //   catchError(() => of([]))
     // );
@@ -62,6 +67,8 @@ export class BookingUserComponent implements OnInit {
       catchError(() => of([] as Reserva[]))
     );
   }
+
+  
 
   private loadInitialData(): void {
     forkJoin({
@@ -281,17 +288,18 @@ export class BookingUserComponent implements OnInit {
     );
   }
 
-  cancelarReserva(id: string): void {
-    if (confirm('¿Estás seguro de cancelar esta reserva?')) {
-      this.bookingService.deleteReserva(id).subscribe({
-        next: () => {
-          this.loadReservas();
-          alert('Reserva cancelada');
-        },
-        error: (err) => alert('Error al cancelar: ' + err.message)
-      });
-    }
+cancelarReserva(id: string): void {
+  console.log('ID de reserva a cancelar:', id);
+  if (confirm('¿Estás seguro de cancelar esta reserva?')) {
+    this.bookingService.deleteReserva(id).subscribe({
+      next: () => {
+        this.loadReservas();
+        /*this.notifications.showSuccess*/alert('Reserva cancelada');
+      },
+      error: (err) => this.notifications.showError('Error al cancelar: ' + err.message)
+    });
   }
+}
 
   private resetForm(): void {
     this.userData = { nombre: '', email: '', telefono: '' };

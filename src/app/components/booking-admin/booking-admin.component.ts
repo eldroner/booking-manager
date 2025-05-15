@@ -5,13 +5,15 @@ import { BookingConfigService, BusinessConfig, Reserva, BusinessType, HorarioEsp
 import { FullCalendarModule } from '@fullcalendar/angular';
 import { BookingCalendarComponent } from '../booking-calendar/booking-calendar.component';
 import { Subscription } from 'rxjs';
+import { NotificationsService } from '../../services/notifications.service';
+import { HorarioNormal } from '../../services/booking-config.service';
 
 @Component({
-    selector: 'app-booking-admin',
-    standalone: true,
-    imports: [CommonModule, FormsModule, FullCalendarModule, BookingCalendarComponent],
-    templateUrl: './booking-admin.component.html',
-    styleUrls: ['./booking-admin.component.scss']
+  selector: 'app-booking-admin',
+  standalone: true,
+  imports: [CommonModule, FormsModule, FullCalendarModule, BookingCalendarComponent],
+  templateUrl: './booking-admin.component.html',
+  styleUrls: ['./booking-admin.component.scss']
 })
 export class BookingAdminComponent implements OnInit, OnDestroy {
   configNegocio: BusinessConfig = {
@@ -32,7 +34,7 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     ],
     horariosEspeciales: []
   };
-  
+
   showCurrentBookings: boolean = false;  // Puedes cambiar a true si prefieres que inicie abierto
   showSummaryByDate: boolean = false;    // Puedes cambiar a true si prefieres que inicie abierto
 
@@ -71,7 +73,10 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
   reservasPorDia: { [fecha: string]: number } = {};
   private subscriptions: Subscription = new Subscription();
 
-  constructor(public bookingService: BookingConfigService) {
+  constructor(
+    public bookingService: BookingConfigService,
+    private notifications: NotificationsService
+  ) {
     this.configNegocio = this.getDefaultConfig();
   }
 
@@ -106,19 +111,41 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     return horarioDia ? horarioDia.tramos : [];
   }
 
-  agregarTramo(dia: number): void {
-    let horarioDia = this.configNegocio.horariosNormales.find(h => h.dia === dia);
+agregarTramo(dia: number): void {
+  // 1. Encontrar o crear el día en los horarios
+  let horarioDia = this.configNegocio.horariosNormales.find(h => h.dia === dia);
 
-    if (!horarioDia) {
-      horarioDia = { dia, tramos: [] };
-      this.configNegocio.horariosNormales.push(horarioDia);
-    }
-
-    horarioDia.tramos.push({
-      horaInicio: '09:00',
-      horaFin: '13:00'
-    });
+  if (!horarioDia) {
+    horarioDia = { dia, tramos: [] };
+    this.configNegocio.horariosNormales.push(horarioDia);
   }
+
+  // 2. Añadir el nuevo tramo horario
+  horarioDia.tramos.push({
+    horaInicio: '09:00',
+    horaFin: '13:00'
+  });
+
+  // 3. Actualizar en el backend
+  this.bookingService.updateConfig({
+    horariosNormales: [...this.configNegocio.horariosNormales] // Usamos spread operator para crear nueva referencia
+  }).subscribe({
+    next: () => {
+      this.notifications.showSuccess('Horario añadido correctamente');
+    },
+    error: (err) => {
+      console.error('Error al añadir horario:', err);
+      this.notifications.showError('Error al guardar horario: ' + err.message);
+      
+      // Revertir cambios locales si falla
+      const index = horarioDia.tramos.findIndex(t => 
+        t.horaInicio === '09:00' && t.horaFin === '13:00');
+      if (index !== -1) {
+        horarioDia.tramos.splice(index, 1);
+      }
+    }
+  });
+}
 
   private checkIconsLoaded() {
     const testIcon = document.createElement('i');
@@ -137,19 +164,42 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     // Ejemplo: this.reservasDelDia = this.reservas.filter(r => r.fechaInicio.startsWith(fecha));
   }
 
-  eliminarTramo(dia: number, index: number): void {
-    const horarioDia = this.configNegocio.horariosNormales.find(h => h.dia === dia);
-    if (horarioDia && horarioDia.tramos.length > index) {
-      horarioDia.tramos.splice(index, 1);
+eliminarTramo(dia: number, index: number): void {
+  // 1. Encontrar el día específico con tipado explícito
+  const horarioDia = this.configNegocio.horariosNormales.find((h: HorarioNormal) => h.dia === dia);
+  
+  if (horarioDia && horarioDia.tramos.length > index) {
+    // 2. Crear copia nueva del array con tipado adecuado
+    const nuevosHorarios: HorarioNormal[] = JSON.parse(JSON.stringify(this.configNegocio.horariosNormales));
+    
+    // 3. Encontrar el índice del día con tipado
+    const diaIndex = nuevosHorarios.findIndex((h: HorarioNormal) => h.dia === dia);
+    
+    // 4. Eliminar el tramo específico
+    nuevosHorarios[diaIndex].tramos.splice(index, 1);
+    
+    // 5. Eliminar día completo si no quedan tramos
+    if (nuevosHorarios[diaIndex].tramos.length === 0) {
+      nuevosHorarios.splice(diaIndex, 1);
     }
+    
+    // 6. Actualizar backend y estado local
+    this.bookingService.updateConfig({
+      horariosNormales: nuevosHorarios
+    }).subscribe({
+      next: () => {
+        this.configNegocio.horariosNormales = nuevosHorarios;
+        this.notifications.showSuccess('Horario eliminado correctamente');
+      },
+      error: (err: Error) => {
+        this.notifications.showError('Error al eliminar horario: ' + err.message);
+      }
+    });
   }
+}
 
   // Métodos para horarios especiales
   agregarHorarioEspecial(): void {
-    if (!this.nuevoHorarioEspecial.fecha) {
-      alert('Por favor seleccione una fecha');
-      return;
-    }
 
     const nuevoHorario: HorarioEspecial = {
       fecha: this.nuevoHorarioEspecial.fecha!,
@@ -157,6 +207,12 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
       horaFin: this.nuevoHorarioEspecial.horaFin!,
       activo: this.nuevoHorarioEspecial.activo !== false
     };
+
+    if (!this.nuevoHorarioEspecial.fecha) {
+      alert('Por favor seleccione una fecha');
+      this.configNegocio.horariosEspeciales = [...this.configNegocio.horariosEspeciales, nuevoHorario];
+      return;
+    }
 
     if (!this.bookingService.validateHorarioEspecial(nuevoHorario)) {
       alert('Por favor verifique los datos del horario');
@@ -169,7 +225,13 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     }
 
     this.configNegocio.horariosEspeciales = [...this.configNegocio.horariosEspeciales, nuevoHorario];
-    this.bookingService.updateHorariosEspeciales(this.configNegocio.horariosEspeciales);
+
+    this.bookingService.updateConfig({
+      horariosEspeciales: this.configNegocio.horariosEspeciales
+    }).subscribe({
+      error: (err) => console.error('Error al agregar horario:', err)
+    });
+
     this.resetNuevoHorarioEspecial();
   }
 
@@ -203,7 +265,7 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     this.subscriptions.add(
       this.bookingService.getReservas().subscribe({
         next: (reservas) => {
-          this.reservas = reservas.sort((a, b) => 
+          this.reservas = reservas.sort((a, b) =>
             new Date(b.fechaInicio).getTime() - new Date(a.fechaInicio).getTime()
           );
           this.updateSummary();
@@ -217,15 +279,22 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     );
   }
 
-  saveConfiguration(): void {
-    if (this.isFormValid()) {
-      this.bookingService.updateConfig(this.configNegocio);
-      alert('Configuración guardada correctamente');
-      this.refreshCalendar();
-    } else {
-      alert('Por favor complete todos los campos requeridos');
-    }
+saveConfiguration(): void {
+  if (!this.isFormValid()) {
+    this.notifications.showError('Por favor complete todos los campos requeridos');
+    return;
   }
+
+  this.bookingService.updateConfig(this.configNegocio).subscribe({
+    next: () => {
+      this.notifications.showSuccess('Configuración guardada correctamente');
+      this.refreshCalendar();
+    },
+    error: (err) => {
+      this.notifications.showError('Error al guardar: ' + err.message);
+    }
+  });
+}
 
   deleteReservation(id: string): void {
     if (confirm('¿Está seguro que desea eliminar esta reserva?')) {
@@ -246,7 +315,7 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     // Implementar con tu librería de notificaciones preferida
     console.log('Éxito:', message);
   }
-  
+
   private showErrorToast(message: string): void {
     // Implementar con tu librería de notificaciones preferida
     console.error('Error:', message);

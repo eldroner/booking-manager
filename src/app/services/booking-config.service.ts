@@ -167,27 +167,29 @@ private loadServiciosFromBackend(): void {
     this.configSubject.next({ ...this.configSubject.value }); // Forzar actualización reactiva
   }
 
-  updateConfig(newConfig: Partial<BusinessConfig>): void {
-    const currentConfig = this.configSubject.value;
-    const mergedConfig = {
-      ...currentConfig,
-      ...newConfig,
-      servicios: newConfig.servicios || currentConfig.servicios,
-      horariosNormales: newConfig.horariosNormales || currentConfig.horariosNormales
-    };
+updateConfig(newConfig: Partial<BusinessConfig>): Observable<BusinessConfig> {
+  const currentConfig = this.configSubject.value;
+  const mergedConfig = {
+    ...currentConfig,
+    ...newConfig,
+    servicios: newConfig.servicios ?? currentConfig.servicios,
+    horariosNormales: newConfig.horariosNormales ?? currentConfig.horariosNormales,
+    horariosEspeciales: newConfig.horariosEspeciales ?? currentConfig.horariosEspeciales
+  };
 
-    this.http.put<BusinessConfig>(`${environment.apiUrl}/api/config`, mergedConfig).pipe(
-      tap(updatedConfig => {
-        this.configSubject.next(updatedConfig);
-        this.notifications.showSuccess('Configuración actualizada'); // Usar el servicio
-        this.refreshCalendar();
-      }),
-      catchError(error => {
-        this.notifications.showError('Error al guardar: ' + error.message); // Usar el servicio
-        return throwError(() => error);
-      })
-    ).subscribe();
-  }
+  return this.http.put<BusinessConfig>(`${environment.apiUrl}/api/config`, mergedConfig).pipe(
+    tap(updatedConfig => {
+      this.configSubject.next(updatedConfig);
+      this.notifications.showSuccess('Configuración actualizada');
+      this.refreshCalendar();
+    }),
+    catchError(error => {
+      console.error('Error al guardar configuración:', error);
+      this.notifications.showError('Error al guardar: ' + (error.error?.message || error.message));
+      return throwError(() => error);
+    })
+  );
+}
 
   getReservas(): Observable<Reserva[]> {
     return this.reservas$;
@@ -257,25 +259,13 @@ deleteReserva(id: string): Observable<void> {
     return [...this.configSubject.value.horariosNormales];
   }
 
-  updateHorariosNormales(horarios: HorarioNormal[]): void {
-    const currentConfig = this.configSubject.value;
-    this.updateConfig({
-      ...currentConfig,
-      horariosNormales: horarios
-    });
-  }
+
 
   getHorariosEspeciales(): HorarioEspecial[] {
     return [...this.configSubject.value.horariosEspeciales];
   }
 
-  updateHorariosEspeciales(horarios: HorarioEspecial[]): void {
-    const currentConfig = this.configSubject.value;
-    this.updateConfig({
-      ...currentConfig,
-      horariosEspeciales: horarios
-    });
-  }
+
 
   private compareTimes(time1: string, time2: string): number {
     const [h1, m1] = time1.split(':').map(Number);

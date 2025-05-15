@@ -3,7 +3,7 @@ import { BehaviorSubject, Observable, of, throwError, forkJoin } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { catchError, map, tap } from 'rxjs/operators';
-import { v4 as uuidv4 } from 'uuid';
+//import { v4 as uuidv4 } from 'uuid';
 import { NotificationsService } from './notifications.service';
 
 export enum BusinessType {
@@ -146,11 +146,19 @@ private loadServiciosFromBackend(): void {
     )
   }
 
-  private loadBackendReservas(): Observable<Reserva[]> {
-    return this.http.get<Reserva[]>(`${environment.apiUrl}/api/reservas`).pipe(
-      catchError(() => of([]))
-    );
-  }
+private loadBackendReservas(): Observable<Reserva[]> {
+  return this.http.get<Reserva[]>(`${environment.apiUrl}/api/reservas`).pipe(
+    map(reservas => reservas.map(reserva => ({
+      ...reserva,
+      fechaInicio: new Date(reserva.fechaInicio).toISOString()
+    }))),
+    catchError(error => {
+      console.error('Error cargando reservas:', error);
+      this.notifications.showError('Error al cargar reservas');
+      return of([]);
+    })
+  );
+}
 
   getConfig(): BusinessConfig {
     return { ...this.configSubject.value };
@@ -193,23 +201,43 @@ private loadServiciosFromBackend(): void {
     return this.reservas$;
   }
 
-  addReserva(reservaData: Omit<Reserva, 'id' | 'estado'>): Observable<Reserva> {
-    const nuevaReserva: Reserva = {
-      ...reservaData,
-      id: uuidv4(),
-      estado: BookingStatus.CONFIRMADA,
-      fechaInicio: new Date(reservaData.fechaInicio).toISOString(),
-      fechaFin: reservaData.fechaFin ? new Date(reservaData.fechaFin).toISOString() : undefined
-    };
+  getReservasPorSlot(fecha: string, hora: string): Observable<Reserva[]> {
+  return this.reservas$.pipe(
+    map(reservas => reservas.filter(r => {
+      const reservaDate = new Date(r.fechaInicio);
+      const reservaHora = reservaDate.getHours().toString().padStart(2, '0') + ':' + 
+                         reservaDate.getMinutes().toString().padStart(2, '0');
+      return reservaDate.toISOString().split('T')[0] === fecha && reservaHora === hora;
+    }))
+  );
+}
 
-    return this.http.post<Reserva>(`${environment.apiUrl}/api/reservas`, nuevaReserva).pipe(
-      tap(reserva => {
-        const reservas = [...this.reservasSubject.value, reserva];
-        this.reservasSubject.next(reservas);
-      }),
-      catchError(error => throwError(() => error))
-    );
-  }
+addReserva(reservaData: Omit<Reserva, 'id' | 'estado'>): Observable<Reserva> {
+  // Asegurarse de no incluir ningún campo 'id'
+  const payload = {
+    usuario: {
+      nombre: reservaData.usuario.nombre.trim(),
+      email: reservaData.usuario.email.trim(),
+      telefono: reservaData.usuario.telefono?.trim() || ''
+    },
+    fechaInicio: reservaData.fechaInicio,
+    servicio: reservaData.servicio
+    // No incluir 'id' ni 'estado' - el backend los manejará
+  };
+
+  console.log('Payload enviado al backend:', payload); // Para depuración
+
+  return this.http.post<Reserva>(`${environment.apiUrl}/api/reservas`, payload).pipe(
+    tap(reserva => {
+      const reservas = [...this.reservasSubject.value, reserva];
+      this.reservasSubject.next(reservas);
+    }),
+    catchError(error => {
+      console.error('Error en addReserva:', error);
+      return throwError(() => error);
+    })
+  );
+}
 
 deleteReserva(id: string): Observable<void> {
   // Asegurar que el ID no está undefined

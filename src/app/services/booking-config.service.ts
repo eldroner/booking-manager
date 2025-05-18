@@ -26,6 +26,12 @@ export interface UserData {
   notas?: string;
 }
 
+interface ApiError {
+  message: string;
+  code?: number;
+  details?: any;
+}
+
 export interface Servicio {
   id: string;
   nombre: string;
@@ -214,32 +220,59 @@ updateConfig(newConfig: Partial<BusinessConfig>): Observable<BusinessConfig> {
   );
 }
 
-addReserva(reservaData: Omit<Reserva, 'id' | 'estado'>): Observable<Reserva> {
-  // Asegurarse de no incluir ningún campo 'id'
-  const payload = {
-    usuario: {
-      nombre: reservaData.usuario.nombre.trim(),
-      email: reservaData.usuario.email.trim(),
-      telefono: reservaData.usuario.telefono?.trim() || ''
-    },
-    fechaInicio: reservaData.fechaInicio,
-    servicio: reservaData.servicio
-    // No incluir 'id' ni 'estado' - el backend los manejará
-  };
+  private isValidEmail(email: string): boolean {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  }
 
-  console.log('Payload enviado al backend:', payload); // Para depuración
+  addReserva(reservaData: Omit<Reserva, 'id' | 'estado'>): Observable<Reserva> {
+    // Validación mejorada
+    if (!reservaData.usuario?.nombre?.trim()) {
+      return throwError(() => ({ message: 'El nombre del usuario es requerido', code: 400 }));
+    }
 
-  return this.http.post<Reserva>(`${environment.apiUrl}/api/reservas`, payload).pipe(
-    tap(reserva => {
-      const reservas = [...this.reservasSubject.value, reserva];
-      this.reservasSubject.next(reservas);
-    }),
-    catchError(error => {
-      console.error('Error en addReserva:', error);
-      return throwError(() => error);
-    })
-  );
-}
+    if (!reservaData.usuario?.email?.trim()) {
+      return throwError(() => ({ message: 'El email del usuario es requerido', code: 400 }));
+    }
+
+    if (!this.isValidEmail(reservaData.usuario.email)) {
+      return throwError(() => ({ message: 'El email no tiene un formato válido', code: 400 }));
+    }
+
+    if (!reservaData.fechaInicio || isNaN(new Date(reservaData.fechaInicio).getTime())) {
+      return throwError(() => ({ message: 'La fecha de inicio es inválida', code: 400 }));
+    }
+
+    if (reservaData.fechaFin && isNaN(new Date(reservaData.fechaFin).getTime())) {
+      return throwError(() => ({ message: 'La fecha de fin es inválida', code: 400 }));
+    }
+
+    const payload = {
+      usuario: {
+        nombre: reservaData.usuario.nombre.trim(),
+        email: reservaData.usuario.email.trim(),
+        telefono: reservaData.usuario.telefono?.trim() || '',
+        ...(reservaData.usuario.notas && { notas: reservaData.usuario.notas })
+      },
+      fechaInicio: reservaData.fechaInicio,
+      servicio: reservaData.servicio,
+      ...(reservaData.fechaFin && { fechaFin: reservaData.fechaFin }),
+      ...(reservaData.metadata && { metadata: reservaData.metadata })
+    };
+
+    return this.http.post<Reserva>(`${environment.apiUrl}/api/reservas`, payload).pipe(
+      tap(reserva => {
+        const reservas = [...this.reservasSubject.value, reserva];
+        this.reservasSubject.next(reservas);
+        this.notifications.showSuccess('Reserva creada exitosamente');
+      }),
+      catchError((error: ApiError) => {
+        const errorMessage = error.message || 'Error al crear la reserva';
+        this.notifications.showError(errorMessage);
+        return throwError(() => error);
+      })
+    );
+  }
 
 deleteReserva(id: string): Observable<void> {
   // Asegurar que el ID no está undefined

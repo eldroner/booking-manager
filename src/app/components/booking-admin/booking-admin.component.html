@@ -55,14 +55,18 @@
               <input type="time" class="form-control" [(ngModel)]="tramo.horaFin" [ngModelOptions]="{standalone: true}">
             </div>
             <div class="col-md-4">
-              <button (click)="eliminarTramo(dia.id, i)" class="btn btn-sm btn-danger">
-                <i class="bi bi-trash"></i> Eliminar
-              </button>
+        <button (click)="eliminarTramo(dia.id, i, $event)" class="btn btn-sm btn-danger">
+          <i class="bi bi-trash"></i> Eliminar
+        </button>
             </div>
           </div>
-          <button (click)="agregarTramo(dia.id)" class="btn btn-sm btn-primary mt-2">
-            <i class="bi bi-plus-circle"></i> Añadir horario
-          </button>
+<button 
+  type="button"
+  (click)="agregarTramo(dia.id)" 
+  class="btn btn-sm btn-primary mt-2"
+>
+  <i class="bi bi-plus-circle"></i> Añadir horario
+</button>
         </div>
       </div>
     </div>

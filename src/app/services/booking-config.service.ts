@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of, throwError, forkJoin } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
-import { catchError, map, tap } from 'rxjs/operators';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 //import { v4 as uuidv4 } from 'uuid';
 import { NotificationsService } from './notifications.service';
 
@@ -109,20 +109,32 @@ export class BookingConfigService {
   }
 
 private initializeData(): void {
-  forkJoin({
-    config: this.loadBackendConfig().pipe(
-      catchError(() => of(this.defaultConfig))
-    ),
-    reservas: this.loadBackendReservas().pipe(
-      catchError(() => of([]))
-    )
-  }).subscribe({
-    next: ({ config, reservas }) => {
+  // Primero carga la configuración
+  this.loadBackendConfig().pipe(
+    catchError(() => of(this.defaultConfig)),
+    switchMap(config => {
       this.configSubject.next(config);
+      
+      // Luego carga reservas y servicios en paralelo
+      return forkJoin({
+        reservas: this.loadBackendReservas().pipe(catchError(() => of([]))),
+        servicios: config.servicios?.length > 0 
+          ? of(config.servicios) 
+          : this.loadServiciosFromBackend()
+      });
+    })
+  ).subscribe({
+    next: ({ reservas, servicios }) => {
+      // Actualiza primero las reservas
       this.reservasSubject.next(reservas);
-      // Forzar carga de servicios
-      if (config.servicios.length === 0) {
-        this.loadServiciosFromBackend();
+      
+      // Luego actualiza la configuración con los servicios si es necesario
+      if (servicios.length > 0) {
+        const currentConfig = this.configSubject.value;
+        this.configSubject.next({
+          ...currentConfig,
+          servicios
+        });
       }
     },
     error: () => {
@@ -132,18 +144,19 @@ private initializeData(): void {
   });
 }
 
-private loadServiciosFromBackend(): void {
-  this.http.get<Servicio[]>(`${environment.apiUrl}/api/servicios`).pipe(
-    catchError(() => of([]))
-  ).subscribe(servicios => {
-    if (servicios.length > 0) {
-      const currentConfig = this.configSubject.value;
-      this.configSubject.next({
-        ...currentConfig,
-        servicios
-      });
-    }
-  });
+private loadServiciosFromBackend(): Observable<Servicio[]> {
+  // Si falla, usa datos por defecto
+  const serviciosPorDefecto: Servicio[] = [
+    { id: '1', nombre: 'Corte Básico', duracion: 30 },
+    { id: '2', nombre: 'Corte Premium', duracion: 45 }
+  ];
+
+  return this.http.get<Servicio[]>(`${environment.apiUrl}/api/servicios`).pipe(
+    catchError(() => {
+      console.warn('Usando servicios por defecto');
+      return of(serviciosPorDefecto);
+    })
+  );
 }
 
   private loadBackendConfig(): Observable<BusinessConfig> {
@@ -177,7 +190,7 @@ private loadBackendReservas(): Observable<Reserva[]> {
     );
   }
 
-  private refreshCalendar(): void {
+  refreshCalendar(): void {
     this.configSubject.next({ ...this.configSubject.value }); // Forzar actualización reactiva
   }
 
@@ -185,21 +198,16 @@ updateConfig(newConfig: Partial<BusinessConfig>): Observable<BusinessConfig> {
   const currentConfig = this.configSubject.value;
   const mergedConfig = {
     ...currentConfig,
-    ...newConfig,
-    servicios: newConfig.servicios ?? currentConfig.servicios,
-    horariosNormales: newConfig.horariosNormales ?? currentConfig.horariosNormales,
-    horariosEspeciales: newConfig.horariosEspeciales ?? currentConfig.horariosEspeciales
+    ...newConfig
   };
 
   return this.http.put<BusinessConfig>(`${environment.apiUrl}/api/config`, mergedConfig).pipe(
     tap(updatedConfig => {
       this.configSubject.next(updatedConfig);
-      this.notifications.showSuccess('Configuración actualizada');
-      this.refreshCalendar();
+      // Eliminamos la notificación aquí para evitar duplicados
     }),
     catchError(error => {
       console.error('Error al guardar configuración:', error);
-      this.notifications.showError('Error al guardar: ' + (error.error?.message || error.message));
       return throwError(() => error);
     })
   );

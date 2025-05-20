@@ -4,6 +4,7 @@ import { BookingPageComponent } from "./components/booking-page/booking-page.com
 
 @Component({
     selector: 'app-root',
+    standalone: true,
     imports: [RouterOutlet, BookingPageComponent],
     templateUrl: './app.component.html',
     styleUrl: './app.component.scss'

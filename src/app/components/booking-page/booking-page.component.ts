@@ -6,6 +6,7 @@ import { BookingAdminComponent } from '../booking-admin/booking-admin.component'
 
 @Component({
     selector: 'app-booking-page',
+    standalone: true,
     imports: [CommonModule, FormsModule, BookingUserComponent, BookingAdminComponent],
     templateUrl: './booking-page.component.html',
     styleUrls: ['./booking-page.component.scss']

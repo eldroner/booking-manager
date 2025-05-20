@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { BookingConfigService, BusinessConfig, Reserva, BusinessType, HorarioEspecial } from '../../services/booking-config.service';
 import { FullCalendarModule } from '@fullcalendar/angular';
 import { BookingCalendarComponent } from '../booking-calendar/booking-calendar.component';
-import { Subscription } from 'rxjs';
+import { Subscription, take } from 'rxjs';
 import { NotificationsService } from '../../services/notifications.service';
 import { HorarioNormal } from '../../services/booking-config.service';
 
@@ -111,41 +111,28 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     return horarioDia ? horarioDia.tramos : [];
   }
 
-agregarTramo(dia: number): void {
-  // 1. Encontrar o crear el día en los horarios
-  let horarioDia = this.configNegocio.horariosNormales.find(h => h.dia === dia);
+// En el componente booking-admin.ts (que no has compartido pero puedo inferir)
 
-  if (!horarioDia) {
-    horarioDia = { dia, tramos: [] };
-    this.configNegocio.horariosNormales.push(horarioDia);
+agregarTramo(diaId: number): void {
+  // Encuentra el día en la configuración
+  const diaIndex = this.configNegocio.horariosNormales.findIndex(d => d.dia === diaId);
+  
+  if (diaIndex === -1) {
+    // Si no existe el día, lo creamos
+    this.configNegocio.horariosNormales.push({
+      dia: diaId,
+      tramos: [{ horaInicio: '09:00', horaFin: '13:00' }]
+    });
+  } else {
+    // Si existe, añadimos un nuevo tramo por defecto
+    this.configNegocio.horariosNormales[diaIndex].tramos.push({
+      horaInicio: '09:00', 
+      horaFin: '13:00'
+    });
   }
-
-  // 2. Añadir el nuevo tramo horario
-  horarioDia.tramos.push({
-    horaInicio: '09:00',
-    horaFin: '13:00'
-  });
-
-  // 3. Actualizar en el backend
-  this.bookingService.updateConfig({
-    horariosNormales: [...this.configNegocio.horariosNormales] // Usamos spread operator para crear nueva referencia
-  }).subscribe({
-    next: () => {
-      this.notifications.showSuccess('Horario añadido correctamente');
-    },
-    error: (err) => {
-      console.error('Error al añadir horario:', err);
-      this.notifications.showError('Error al guardar horario: ' + err.message);
-      
-      // Revertir cambios locales si falla
-      const index = horarioDia.tramos.findIndex(t => 
-        t.horaInicio === '09:00' && t.horaFin === '13:00');
-      if (index !== -1) {
-        horarioDia.tramos.splice(index, 1);
-      }
-    }
-  });
 }
+
+
 
   private checkIconsLoaded() {
     const testIcon = document.createElement('i');
@@ -164,38 +151,44 @@ agregarTramo(dia: number): void {
     // Ejemplo: this.reservasDelDia = this.reservas.filter(r => r.fechaInicio.startsWith(fecha));
   }
 
-eliminarTramo(dia: number, index: number): void {
-  // 1. Encontrar el día específico con tipado explícito
-  const horarioDia = this.configNegocio.horariosNormales.find((h: HorarioNormal) => h.dia === dia);
+eliminarTramo(dia: number, index: number, event?: Event): void {
+  // Verificar y detener la propagación del evento si existe
+  if (event) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+
+  const confirmacion = confirm('¿Estás seguro de eliminar este tramo horario?');
+  if (!confirmacion) {
+    return;
+  }
+
+  // Copia profunda del estado actual
+  const nuevosHorarios = JSON.parse(JSON.stringify(this.configNegocio.horariosNormales));
   
-  if (horarioDia && horarioDia.tramos.length > index) {
-    // 2. Crear copia nueva del array con tipado adecuado
-    const nuevosHorarios: HorarioNormal[] = JSON.parse(JSON.stringify(this.configNegocio.horariosNormales));
-    
-    // 3. Encontrar el índice del día con tipado
-    const diaIndex = nuevosHorarios.findIndex((h: HorarioNormal) => h.dia === dia);
-    
-    // 4. Eliminar el tramo específico
-    nuevosHorarios[diaIndex].tramos.splice(index, 1);
-    
-    // 5. Eliminar día completo si no quedan tramos
-    if (nuevosHorarios[diaIndex].tramos.length === 0) {
-      nuevosHorarios.splice(diaIndex, 1);
-    }
-    
-    // 6. Actualizar backend y estado local
-    this.bookingService.updateConfig({
-      horariosNormales: nuevosHorarios
-    }).subscribe({
-      next: () => {
-        this.configNegocio.horariosNormales = nuevosHorarios;
-        this.notifications.showSuccess('Horario eliminado correctamente');
+  const diaIndex = nuevosHorarios.findIndex((h: HorarioNormal) => h.dia === dia);
+  if (diaIndex === -1) return;
+
+  nuevosHorarios[diaIndex].tramos.splice(index, 1);
+
+  if (nuevosHorarios[diaIndex].tramos.length === 0) {
+    nuevosHorarios.splice(diaIndex, 1);
+  }
+
+  // Actualizar solo los horarios normales
+  this.bookingService.updateConfig({ horariosNormales: nuevosHorarios })
+    .pipe(take(1))
+    .subscribe({
+      next: (updatedConfig) => {
+        this.configNegocio.horariosNormales = updatedConfig.horariosNormales;
+        this.notifications.showSuccess('Tramo horario eliminado correctamente');
+        this.refreshCalendar();
       },
-      error: (err: Error) => {
-        this.notifications.showError('Error al eliminar horario: ' + err.message);
+      error: (err) => {
+        console.error('Error al eliminar tramo:', err);
+        this.notifications.showError('No se pudo eliminar el tramo horario');
       }
     });
-  }
 }
 
   // Métodos para horarios especiales
@@ -285,15 +278,17 @@ saveConfiguration(): void {
     return;
   }
 
-  this.bookingService.updateConfig(this.configNegocio).subscribe({
-    next: () => {
-      this.notifications.showSuccess('Configuración guardada correctamente');
-      this.refreshCalendar();
-    },
-    error: (err) => {
-      this.notifications.showError('Error al guardar: ' + err.message);
-    }
-  });
+  this.bookingService.updateConfig(this.configNegocio)
+    .pipe(take(1))
+    .subscribe({
+      next: () => {
+        this.notifications.showSuccess('Configuración guardada correctamente');
+        this.refreshCalendar();
+      },
+      error: (err) => {
+        this.notifications.showError('Error al guardar: ' + err.message);
+      }
+    });
 }
 
   deleteReservation(id: string): void {

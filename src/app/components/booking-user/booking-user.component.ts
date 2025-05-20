@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { BookingConfigService, Reserva, Servicio, BusinessConfig } from '../../services/booking-config.service';
 import { registerLocaleData } from '@angular/common';
 import localeEs from '@angular/common/locales/es';
-import { Observable, combineLatest, map, take, of, catchError, forkJoin } from 'rxjs';
+import { Observable, combineLatest, map, take, of, catchError, forkJoin, switchMap, tap } from 'rxjs';
 import { NotPipe } from '../../pipes/not.pipe';
 import { NotificationsService } from '../../services/notifications.service';
 
@@ -51,44 +51,59 @@ export class BookingUserComponent implements OnInit {
     // );
   }
 
-  ngOnInit(): void {
-    this.reservas$ = this.bookingService.getReservas().pipe(
-      catchError(() => of([]))
-    );
-    this.loadInitialData();
-    this.initializeReservas();
-  }
+ngOnInit(): void {
+  this.loadInitialData();
+}
 
-  private initializeReservas(): void {
-    this.reservas$ = this.bookingService.getReservas().pipe(
-      map(reservas => reservas.sort((a, b) =>
-        new Date(b.fechaInicio).getTime() - new Date(a.fechaInicio).getTime()
-      )),
-      catchError(() => of([] as Reserva[]))
-    );
-  }
+private loadInitialData(): void {
+  this.bookingService.config$.pipe(
+    take(1),
+    tap(config => this.setInitialConfig(config)),
+    switchMap(() => this.loadServicesAndReservations())
+  ).subscribe({
+    next: ([servicios, reservas]) => this.handleLoadedData(servicios, reservas),
+    error: err => this.handleLoadingError(err)
+  });
+}
 
+private setInitialConfig(config: BusinessConfig): void {
+  this.config = config;
+  this.negocioNombre = config.nombre || 'Sistema de Reservas';
+}
+
+private loadServicesAndReservations(): Observable<[Servicio[], Reserva[]]> {
+  return forkJoin([
+    this.bookingService.getServicios().pipe(take(1)),
+    this.bookingService.getReservas().pipe(take(1))
+  ]);
+}
+
+private handleLoadedData(servicios: Servicio[], reservas: Reserva[]): void {
+  this.serviciosDisponibles$ = of(servicios);
   
-
-  private loadInitialData(): void {
-    forkJoin({
-      config: this.bookingService.config$.pipe(take(1)),
-      servicios: this.bookingService.getServicios().pipe(take(1)),
-      reservas: this.bookingService.getReservas().pipe(take(1))
-    }).subscribe(({ config, servicios, reservas }) => {
-      this.config = config;
-      this.negocioNombre = config.nombre || 'Sistema de Reservas';
-      this.serviciosDisponibles$ = of(servicios);
-
-      if (servicios.length > 0) {
-        this.selectedService = servicios[0].id;
-      }
-
-      this.reservas$ = of(reservas.sort((a, b) =>
-        new Date(b.fechaInicio).getTime() - new Date(a.fechaInicio).getTime()
-      ));
-    });
+  if (servicios.length > 0) {
+    this.selectedService = servicios[0].id;
   }
+
+  this.reservas$ = of(this.sortReservas(reservas));
+}
+
+private sortReservas(reservas: Reserva[]): Reserva[] {
+  return reservas.sort((a, b) => 
+    new Date(b.fechaInicio).getTime() - new Date(a.fechaInicio).getTime()
+  );
+}
+
+private handleLoadingError(err: any): void {
+  console.error('Error loading data:', err);
+  this.notifications.showError('Error al cargar datos');
+  
+  // Opcional: Asignar valores por defecto
+  this.serviciosDisponibles$ = of([]);
+  this.reservas$ = of([]);
+}
+
+
 
   onServiceChange(): void {
     this.selectedTime = '';

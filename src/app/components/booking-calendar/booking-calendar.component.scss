@@ -1,13 +1,71 @@
-.calendar-container {
-  width: 100%;
-  min-height: 500px;
-  margin-bottom: 20px;
-  
-  .fc {
-    max-width: 100%;
+:host {
+  .calendar-container {
+    padding: 1rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   }
-  
-  .fc-event {
-    cursor: pointer;
+
+  // Cabecera del calendario
+  .fc-header-toolbar {
+    margin-bottom: 1rem !important;
+    
+    .fc-toolbar-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #2d3748;
+    }
+
+    .fc-button {
+      background-color: #4a6baf;
+      border: none;
+      border-radius: 6px;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      
+      &:hover {
+        background-color: #3a5690;
+      }
+    }
   }
+
+  // Días de la semana
+  .fc-col-header-cell {
+    padding: 0.5rem 0;
+    
+    .fc-col-header-cell-cushion {
+      color: #4a5568;
+      font-weight: 500;
+      text-transform: capitalize;
+    }
+  }
+
+  // Celdas de días
+  .fc-daygrid-day {
+    border: 1px solid #edf2f7 !important;
+    
+    &.fc-day-today {
+      background-color: #ebf8ff !important;
+    }
+  }
+
+  // Eventos
+  .evento-reserva {
+    border-radius: 6px !important;
+    padding: 2px 4px !important;
+    font-size: 0.85rem !important;
+    margin: 2px 4px !important;
+    
+    .fc-event-title {
+      white-space: normal !important; // Permite múltiples líneas
+    }
+  }
+
+  /* Estilo para eventos pasados */
+.fc-event-pasado {
+  cursor: not-allowed;
+  &:hover {
+    opacity: 0.9;
+  }
+}
 }

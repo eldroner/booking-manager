@@ -1,36 +1,53 @@
-<div class="card p-4 shadow-sm">
-  <h2 class="mb-4">Administración</h2>
+ <form (ngSubmit)="saveConfiguration()" #configForm="ngForm">
+    <!-- Configuración básica - Ahora en fila -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-6">
+        <label class="form-label fw-bold">Nombre del negocio</label>
+        <input 
+          type="text" 
+          class="form-control" 
+          [(ngModel)]="configNegocio.nombre" 
+          name="nombre" 
+          required
+          placeholder="Ej: Mikelo Cuida de tu Pelo"
+        >
+      </div>
 
-  <form (ngSubmit)="saveConfiguration()" #configForm="ngForm">
-    <!-- Configuración básica -->
-    <div class="mb-3">
-      <label class="form-label">Nombre del negocio</label>
-      <input type="text" class="form-control" [(ngModel)]="configNegocio.nombre" name="nombre" required />
-    </div>
+      <div class="col-md-4">
+        <label class="form-label fw-bold">Tipo de negocio</label>
+        <select 
+          class="form-select" 
+          [(ngModel)]="configNegocio.tipoNegocio" 
+          name="tipoNegocio" 
+          required
+        >
+          <option *ngFor="let type of businessTypes" [value]="type.value">
+            {{type.label}}
+          </option>
+        </select>
+      </div>
 
-    <div class="mb-3">
-      <label class="form-label">Tipo de negocio</label>
-      <select class="form-control" [(ngModel)]="configNegocio.tipoNegocio" name="tipoNegocio" required>
-        <option *ngFor="let type of businessTypes" [value]="type.value">
-          {{type.label}}
-        </option>
-      </select>
-    </div>
-
-    <div class="mb-3">
-      <label class="form-label">Máximo de reservas por slot</label>
-    <input 
-      type="number" 
-      [(ngModel)]="configNegocio.maxReservasPorSlot"
-      name="maxReservasPorSlot"
-      min="1"
-      required
-    >
+      <div class="col-md-2">
+        <label class="form-label fw-bold">Reservas simultáneas</label>
+        <input 
+          type="number" 
+          class="form-control"
+          [(ngModel)]="configNegocio.maxReservasPorSlot"
+          name="maxReservasPorSlot"
+          min="1"
+          required
+        >
+        <div class="form-text">Máximo por franja horaria</div>
+      </div>
     </div>
 
     <app-booking-calendar *ngIf="calendarVisible"></app-booking-calendar>
 
-    <button class="btn btn-success mb-4" type="submit">Guardar configuración</button>
+    <div class="text-end mt-4 mb-3"> <!-- Botón alineado a la derecha -->
+      <button class="btn btn-success px-4" type="submit">
+        <i class="bi bi-check-circle me-2"></i>Guardar configuración
+      </button>
+    </div>
 
     <!-- Acordeón para Horarios Normales -->
     <div class="card mb-4">
@@ -211,4 +228,3 @@
       </ul>
     </div>
   </div>
-</div>

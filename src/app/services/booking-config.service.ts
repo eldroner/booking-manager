@@ -76,7 +76,8 @@ export interface BusinessConfig {
 
 @Injectable({ providedIn: 'root' })
 export class BookingConfigService {
-
+  private loadingSubject = new BehaviorSubject<boolean>(true);
+  loading$ = this.loadingSubject.asObservable();
   private defaultConfig: BusinessConfig = {
     nombre: '',
     tipoNegocio: BusinessType.GENERAL,
@@ -108,56 +109,60 @@ export class BookingConfigService {
     this.initializeData();
   }
 
-private initializeData(): void {
-  // Primero carga la configuración
-  this.loadBackendConfig().pipe(
-    catchError(() => of(this.defaultConfig)),
-    switchMap(config => {
-      this.configSubject.next(config);
-      
-      // Luego carga reservas y servicios en paralelo
-      return forkJoin({
-        reservas: this.loadBackendReservas().pipe(catchError(() => of([]))),
-        servicios: config.servicios?.length > 0 
-          ? of(config.servicios) 
-          : this.loadServiciosFromBackend()
-      });
-    })
-  ).subscribe({
-    next: ({ reservas, servicios }) => {
-      // Actualiza primero las reservas
-      this.reservasSubject.next(reservas);
-      
-      // Luego actualiza la configuración con los servicios si es necesario
-      if (servicios.length > 0) {
-        const currentConfig = this.configSubject.value;
-        this.configSubject.next({
-          ...currentConfig,
-          servicios
+  private initializeData(): void {
+    this.loadingSubject.next(true); // Indicar que está cargando
+
+    // Primero carga la configuración
+    this.loadBackendConfig().pipe(
+      catchError(() => of(this.defaultConfig)),
+      switchMap(config => {
+        this.configSubject.next(config);
+
+        // Luego carga reservas y servicios en paralelo
+        return forkJoin({
+          reservas: this.loadBackendReservas().pipe(catchError(() => of([]))),
+          servicios: config.servicios?.length > 0
+            ? of(config.servicios)
+            : this.loadServiciosFromBackend()
         });
+      })
+    ).subscribe({
+      next: ({ reservas, servicios }) => {
+        // Actualiza primero las reservas
+        this.reservasSubject.next(reservas);
+
+        // Luego actualiza la configuración con los servicios si es necesario
+        if (servicios.length > 0) {
+          const currentConfig = this.configSubject.value;
+          this.configSubject.next({
+            ...currentConfig,
+            servicios
+          });
+        }
+        this.loadingSubject.next(false); // Indicar que ha terminado de cargar
+      },
+      error: () => {
+        this.configSubject.next(this.defaultConfig);
+        this.reservasSubject.next([]);
+        this.loadingSubject.next(false); // Indicar que ha terminado (con error)
       }
-    },
-    error: () => {
-      this.configSubject.next(this.defaultConfig);
-      this.reservasSubject.next([]);
-    }
-  });
-}
+    });
+  }
 
-private loadServiciosFromBackend(): Observable<Servicio[]> {
-  // Si falla, usa datos por defecto
-  const serviciosPorDefecto: Servicio[] = [
-    { id: '1', nombre: 'Corte Básico', duracion: 30 },
-    { id: '2', nombre: 'Corte Premium', duracion: 45 }
-  ];
+  private loadServiciosFromBackend(): Observable<Servicio[]> {
+    // Si falla, usa datos por defecto
+    const serviciosPorDefecto: Servicio[] = [
+      { id: '1', nombre: 'Corte Básico', duracion: 30 },
+      { id: '2', nombre: 'Corte Premium', duracion: 45 }
+    ];
 
-  return this.http.get<Servicio[]>(`${environment.apiUrl}/api/servicios`).pipe(
-    catchError(() => {
-      console.warn('Usando servicios por defecto');
-      return of(serviciosPorDefecto);
-    })
-  );
-}
+    return this.http.get<Servicio[]>(`${environment.apiUrl}/api/servicios`).pipe(
+      catchError(() => {
+        console.warn('Usando servicios por defecto');
+        return of(serviciosPorDefecto);
+      })
+    );
+  }
 
   private loadBackendConfig(): Observable<BusinessConfig> {
     return this.http.get<BusinessConfig>(`${environment.apiUrl}/api/config`).pipe(
@@ -165,19 +170,19 @@ private loadServiciosFromBackend(): Observable<Servicio[]> {
     )
   }
 
-private loadBackendReservas(): Observable<Reserva[]> {
-  return this.http.get<Reserva[]>(`${environment.apiUrl}/api/reservas`).pipe(
-    map(reservas => reservas.map(reserva => ({
-      ...reserva,
-      fechaInicio: new Date(reserva.fechaInicio).toISOString()
-    }))),
-    catchError(error => {
-      console.error('Error cargando reservas:', error);
-      this.notifications.showError('Error al cargar reservas');
-      return of([]);
-    })
-  );
-}
+  private loadBackendReservas(): Observable<Reserva[]> {
+    return this.http.get<Reserva[]>(`${environment.apiUrl}/api/reservas`).pipe(
+      map(reservas => reservas.map(reserva => ({
+        ...reserva,
+        fechaInicio: new Date(reserva.fechaInicio).toISOString()
+      }))),
+      catchError(error => {
+        console.error('Error cargando reservas:', error);
+        this.notifications.showError('Error al cargar reservas');
+        return of([]);
+      })
+    );
+  }
 
   getConfig(): BusinessConfig {
     return { ...this.configSubject.value };
@@ -194,39 +199,39 @@ private loadBackendReservas(): Observable<Reserva[]> {
     this.configSubject.next({ ...this.configSubject.value }); // Forzar actualización reactiva
   }
 
-updateConfig(newConfig: Partial<BusinessConfig>): Observable<BusinessConfig> {
-  const currentConfig = this.configSubject.value;
-  const mergedConfig = {
-    ...currentConfig,
-    ...newConfig
-  };
+  updateConfig(newConfig: Partial<BusinessConfig>): Observable<BusinessConfig> {
+    const currentConfig = this.configSubject.value;
+    const mergedConfig = {
+      ...currentConfig,
+      ...newConfig
+    };
 
-  return this.http.put<BusinessConfig>(`${environment.apiUrl}/api/config`, mergedConfig).pipe(
-    tap(updatedConfig => {
-      this.configSubject.next(updatedConfig);
-      // Eliminamos la notificación aquí para evitar duplicados
-    }),
-    catchError(error => {
-      console.error('Error al guardar configuración:', error);
-      return throwError(() => error);
-    })
-  );
-}
+    return this.http.put<BusinessConfig>(`${environment.apiUrl}/api/config`, mergedConfig).pipe(
+      tap(updatedConfig => {
+        this.configSubject.next(updatedConfig);
+        // Eliminamos la notificación aquí para evitar duplicados
+      }),
+      catchError(error => {
+        console.error('Error al guardar configuración:', error);
+        return throwError(() => error);
+      })
+    );
+  }
 
   getReservas(): Observable<Reserva[]> {
     return this.reservas$;
   }
 
   getReservasPorSlot(fecha: string, hora: string): Observable<Reserva[]> {
-  return this.reservas$.pipe(
-    map(reservas => reservas.filter(r => {
-      const reservaDate = new Date(r.fechaInicio);
-      const reservaHora = reservaDate.getHours().toString().padStart(2, '0') + ':' + 
-                         reservaDate.getMinutes().toString().padStart(2, '0');
-      return reservaDate.toISOString().split('T')[0] === fecha && reservaHora === hora;
-    }))
-  );
-}
+    return this.reservas$.pipe(
+      map(reservas => reservas.filter(r => {
+        const reservaDate = new Date(r.fechaInicio);
+        const reservaHora = reservaDate.getHours().toString().padStart(2, '0') + ':' +
+          reservaDate.getMinutes().toString().padStart(2, '0');
+        return reservaDate.toISOString().split('T')[0] === fecha && reservaHora === hora;
+      }))
+    );
+  }
 
   private isValidEmail(email: string): boolean {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -282,23 +287,23 @@ updateConfig(newConfig: Partial<BusinessConfig>): Observable<BusinessConfig> {
     );
   }
 
-deleteReserva(id: string): Observable<void> {
-  // Asegurar que el ID no está undefined
-  if (!id) {
-    return throwError(() => new Error('ID de reserva inválido'));
+  deleteReserva(id: string): Observable<void> {
+    // Asegurar que el ID no está undefined
+    if (!id) {
+      return throwError(() => new Error('ID de reserva inválido'));
+    }
+
+    return this.http.delete<void>(`${environment.apiUrl}/api/reservas/${id}`).pipe(
+      tap(() => {
+        const reservas = this.reservasSubject.value.filter(r => r.id !== id);
+        this.reservasSubject.next(reservas);
+      }),
+      catchError(error => {
+        console.error('Error en deleteReserva:', error);
+        return throwError(() => error);
+      })
+    );
   }
-  
-  return this.http.delete<void>(`${environment.apiUrl}/api/reservas/${id}`).pipe(
-    tap(() => {
-      const reservas = this.reservasSubject.value.filter(r => r.id !== id);
-      this.reservasSubject.next(reservas);
-    }),
-    catchError(error => {
-      console.error('Error en deleteReserva:', error);
-      return throwError(() => error);
-    })
-  );
-}
 
   isHoraDisponible(fecha: string, hora: string): Observable<boolean> {
     return this.http.get<boolean>(`${environment.apiUrl}/api/disponibilidad`, {

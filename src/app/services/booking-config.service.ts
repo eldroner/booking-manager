@@ -42,6 +42,7 @@ export interface Servicio {
 export interface Reserva {
   id: string;
   usuario: UserData;
+  duracion: number;
   fechaInicio: string;
   fechaFin?: string;
   servicio: string;

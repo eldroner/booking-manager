@@ -13,20 +13,46 @@
         >
       </div>
 
-      <div class="col-md-4">
-        <label class="form-label fw-bold">Tipo de negocio</label>
-        <select 
-          class="form-select" 
-          [(ngModel)]="configNegocio.tipoNegocio" 
-          name="tipoNegocio" 
-          required
-        >
-          <option *ngFor="let type of businessTypes" [value]="type.value">
-            {{type.label}}
-          </option>
-        </select>
+<!-- Acordeón para Servicios -->
+<div *ngFor="let servicio of configNegocio.servicios" class="mb-3 p-3 border rounded">
+  <div class="row g-2 align-items-center">
+    <div class="col-md-5">
+      <input 
+        type="text" 
+        class="form-control" 
+        [(ngModel)]="servicio.nombre" 
+        [ngModelOptions]="{standalone: true}"
+        placeholder="Nombre del servicio"
+      >
+    </div>
+    <div class="col-md-3">
+      <input 
+        type="number" 
+        class="form-control" 
+        [(ngModel)]="servicio.duracion" 
+        [ngModelOptions]="{standalone: true}"
+        min="5" 
+        placeholder="Duración (min)"
+      >
+    </div>
+    <div class="col-md-4">
+          <button (click)="updateService(servicio)" class="btn btn-sm btn-success me-2">
+            <i class="bi bi-check-circle"></i> Guardar
+          </button>
+          <button (click)="deleteService(servicio.id)" class="btn btn-sm btn-danger">
+            <i class="bi bi-trash"></i> Eliminar
+          </button>
+        </div>
       </div>
-
+    </div>
+    <div>
+    <!-- Botón para añadir nuevo servicio -->
+    <button (click)="addService()" class="btn btn-primary mt-2">
+      <i class="bi bi-plus-circle"></i> Añadir Servicio
+    </button>
+  </div>
+</div>
+  <div>
       <div class="col-md-2">
         <label class="form-label fw-bold">Reservas simultáneas</label>
         <input 

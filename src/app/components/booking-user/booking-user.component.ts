@@ -1,11 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { BookingConfigService, Reserva, Servicio, BusinessConfig } from '../../services/booking-config.service';
+import { BookingConfigService, Reserva, Servicio, BusinessConfig, UserData, BookingStatus } from '../../services/booking-config.service';
 import { registerLocaleData } from '@angular/common';
 import localeEs from '@angular/common/locales/es';
-import { Observable, combineLatest, map, take, of, catchError, forkJoin, switchMap, tap } from 'rxjs';
-import { NotPipe } from '../../pipes/not.pipe';
+import { take, catchError, of } from 'rxjs';
 import { NotificationsService } from '../../services/notifications.service';
 
 registerLocaleData(localeEs);
@@ -13,148 +12,126 @@ registerLocaleData(localeEs);
 @Component({
   selector: 'app-booking-user',
   standalone: true,
-  imports: [CommonModule, FormsModule, NotPipe],
+  imports: [CommonModule, FormsModule],
   templateUrl: './booking-user.component.html',
   styleUrls: ['./booking-user.component.scss']
 })
 export class BookingUserComponent implements OnInit {
   private readonly EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-
-  emailError: string | null = null;
-  emailTouched = false;
-  serviciosDisponibles$!: Observable<Servicio[]>;
-  selectedService: string = '';
-  selectedDate: string = '';
-  selectedTime: string = '';
-  availableTimes: string[] = [];
-  negocioNombre: string = "Sistema de Reservas";
-  reservas$: Observable<Reserva[]> = of([]);
-  config: BusinessConfig;
-
-  userData = {
-    nombre: '',
-    email: '',
-    telefono: ''
+  
+  reservaData = {
+    servicio: '',
+    duracion: 0,
+    fechaInicio: '',
+    usuario: {
+      nombre: '',
+      email: '',
+      telefono: ''
+    } as UserData
   };
 
+  serviciosDisponibles: Servicio[] = [];
+  emailError: string | null = null;
+  emailTouched = false;
+  selectedTime: string = '';
+  horaFinReserva: string = '';
+  availableTimes: string[] = [];
+  negocioNombre: string = "Sistema de Reservas";
   today: string = new Date().toISOString().split('T')[0];
   maxDate: string = new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0];
+  config!: BusinessConfig;
 
   constructor(
-    private bookingService: BookingConfigService, 
+    private bookingService: BookingConfigService,
     private notifications: NotificationsService
-  ) {
-    this.config = this.bookingService.getConfig();
-    
-    // this.reservas$ = this.bookingService.getReservas().pipe(
-    //   catchError(() => of([]))
-    // );
+  ) {}
+
+  ngOnInit(): void {
+    this.loadInitialData();
   }
 
-ngOnInit(): void {
-  this.loadInitialData();
-}
+  private loadInitialData(): void {
+    this.bookingService.config$.pipe(
+      take(1)
+    ).subscribe({
+      next: (config) => {
+        this.config = config;
+        this.negocioNombre = config.nombre || 'Sistema de Reservas';
+        this.loadServicios();
+      },
+      error: (err) => {
+        console.error('Error loading config:', err);
+        this.notifications.showError('Error al cargar configuración');
+      }
+    });
+  }
 
-private loadInitialData(): void {
-  this.bookingService.config$.pipe(
-    take(1),
-    tap(config => this.setInitialConfig(config)),
-    switchMap(() => this.loadServicesAndReservations())
-  ).subscribe({
-    next: ([servicios, reservas]) => this.handleLoadedData(servicios, reservas),
-    error: err => this.handleLoadingError(err)
-  });
-}
+  private loadServicios(): void {
+    this.bookingService.getServicios().pipe(
+      take(1),
+      catchError(err => {
+        console.error('Error loading services:', err);
+        this.notifications.showError('Error al cargar servicios');
+        return of([]);
+      })
+    ).subscribe(servicios => {
+      this.serviciosDisponibles = servicios;
+      if (servicios.length > 0) {
+        this.reservaData.servicio = servicios[0].id;
+      }
+    });
+  }
 
-private setInitialConfig(config: BusinessConfig): void {
-  this.config = config;
-  this.negocioNombre = config.nombre || 'Sistema de Reservas';
-}
+onServiceChange(): void {
+  // Eliminamos la validación de fecha aquí, ya que no es necesaria
+  const servicioSeleccionado = this.serviciosDisponibles.find(s => s.id === this.reservaData.servicio);
+  if (!servicioSeleccionado) {
+    console.warn('Servicio no encontrado');
+    return;
+  }
 
-private loadServicesAndReservations(): Observable<[Servicio[], Reserva[]]> {
-  return forkJoin([
-    this.bookingService.getServicios().pipe(take(1)),
-    this.bookingService.getReservas().pipe(take(1))
-  ]);
-}
-
-private handleLoadedData(servicios: Servicio[], reservas: Reserva[]): void {
-  this.serviciosDisponibles$ = of(servicios);
+  this.reservaData.duracion = servicioSeleccionado.duracion;
   
-  if (servicios.length > 0) {
-    this.selectedService = servicios[0].id;
+  // Solo actualizamos hora fin si ya hay fecha seleccionada
+  if (this.reservaData.fechaInicio) {
+    this.updateHoraFin();
+  }
+}
+
+  private updateHoraFin(): void {
+    if (!this.reservaData.fechaInicio) return;
+
+    const fechaInicio = new Date(this.reservaData.fechaInicio);
+    const fechaFin = new Date(fechaInicio.getTime() + this.reservaData.duracion * 60000);
+    this.horaFinReserva = fechaFin.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
   }
 
-  this.reservas$ = of(this.sortReservas(reservas));
-}
-
-private sortReservas(reservas: Reserva[]): Reserva[] {
-  return reservas.sort((a, b) => 
-    new Date(b.fechaInicio).getTime() - new Date(a.fechaInicio).getTime()
-  );
-}
-
-private handleLoadingError(err: any): void {
-  console.error('Error loading data:', err);
-  this.notifications.showError('Error al cargar datos');
+onDateChange(selectedDate: string): void {
+  this.reservaData.fechaInicio = selectedDate;
+  this.selectedTime = '';
   
-  // Opcional: Asignar valores por defecto
-  this.serviciosDisponibles$ = of([]);
-  this.reservas$ = of([]);
-}
-
-
-
-  onServiceChange(): void {
-    this.selectedTime = '';
-    this.updateAvailableTimes();
-  }
-
-  onDateChange(): void {
-    const dateObj = new Date(this.selectedDate);
-    const offset = dateObj.getTimezoneOffset() * 60000;
-    this.selectedDate = new Date(dateObj.getTime() - offset).toISOString().split('T')[0];
-    this.selectedTime = '';
-    this.updateAvailableTimes();
-  }
-
-private generateSlotsFromRange(start: string, end: string): string[] {
-  const slots: string[] = [];
-  const [startHour, startMin] = start.split(':').map(Number);
-  const [endHour, endMin] = end.split(':').map(Number);
-
-  const servicio = this.config.servicios?.find(s => s.id === this.selectedService);
-  const duracion = servicio?.duracion || this.config.duracionBase;
-
-  let currentHour = startHour;
-  let currentMin = startMin;
-
-  while (currentHour < endHour || (currentHour === endHour && currentMin < endMin)) {
-    const hora = currentHour.toString().padStart(2, '0');
-    const minuto = currentMin.toString().padStart(2, '0');
-    slots.push(`${hora}:${minuto}`);
-
-    currentMin += duracion;
-    if (currentMin >= 60) {
-      currentHour++;
-      currentMin = currentMin % 60;
+  // Validamos que haya un servicio seleccionado
+  if (this.reservaData.servicio) {
+    const servicio = this.serviciosDisponibles.find(s => s.id === this.reservaData.servicio);
+    if (servicio) {
+      this.reservaData.duracion = servicio.duracion;
     }
   }
-
-  return slots;
+  
+  this.updateAvailableTimes();
 }
 
   private updateAvailableTimes(): void {
-    if (!this.selectedDate) {
+    if (!this.reservaData.fechaInicio) {
       this.availableTimes = [];
       return;
     }
 
-    const dateObj = new Date(this.selectedDate);
+    const dateObj = new Date(this.reservaData.fechaInicio);
     const dayOfWeek = dateObj.getDay();
     const dateStr = dateObj.toISOString().split('T')[0];
 
-    const specialSchedule = this.config.horariosEspeciales.find(h =>
+    const specialSchedule = this.config.horariosEspeciales.find(h => 
       h.fecha === dateStr && h.activo
     );
 
@@ -176,200 +153,107 @@ private generateSlotsFromRange(start: string, end: string): string[] {
     }
   }
 
-isTimeAvailable(time: string): Observable<boolean> {
-  if (!this.selectedDate || !this.selectedService) return of(false);
+private generateSlotsFromRange(start: string, end: string): string[] {
+  const slots: string[] = [];
+  
+  // Validación de entrada
+  if (!start || !end || !this.reservaData.duracion) {
+    return slots;
+  }
 
-  return combineLatest([
-    this.bookingService.getReservasPorSlot(this.selectedDate, time),
-    this.bookingService.config$,
-    this.serviciosDisponibles$
-  ]).pipe(
-    map(([reservasEnSlot, config, servicios]) => {
-      const servicio = servicios.find(s => s.id === this.selectedService);
-      if (!servicio) return false;
+  const [startHour, startMin] = start.split(':').map(Number);
+  const [endHour, endMin] = end.split(':').map(Number);
 
-      // Verificar solapamientos primero
-      const startTime = new Date(`${this.selectedDate}T${time}:00Z`);
-      const endTime = new Date(startTime.getTime() + servicio.duracion * 60000);
+  // Validación de horarios
+  if (isNaN(startHour)) return slots;
+  if (isNaN(startMin)) return slots;
+  if (isNaN(endHour)) return slots;
+  if (isNaN(endMin)) return slots;
 
-      const tieneSolapamientos = reservasEnSlot.some(reserva => {
-        const reservaStart = new Date(reserva.fechaInicio);
-        const reservaService = servicios.find(s => s.id === reserva.servicio);
-        const reservaEnd = new Date(
-          reservaStart.getTime() + (reservaService?.duracion || config.duracionBase) * 60000
-        );
+  let currentHour = startHour;
+  let currentMin = startMin;
 
-        return startTime < reservaEnd && endTime > reservaStart;
-      });
+  while (currentHour < endHour || (currentHour === endHour && currentMin < endMin)) {
+    const hora = currentHour.toString().padStart(2, '0');
+    const minuto = currentMin.toString().padStart(2, '0');
+    slots.push(`${hora}:${minuto}`);
 
-      // Verificar límite de reservas por slot
-      const alcanzoLimite = reservasEnSlot.length >= config.maxReservasPorSlot;
+    currentMin += this.reservaData.duracion;
+    if (currentMin >= 60) {
+      currentHour++;
+      currentMin = currentMin % 60;
+    }
+  }
 
-      return !tieneSolapamientos && !alcanzoLimite;
-    }),
-    catchError(() => of(false))
-  );
+  return slots;
 }
 
-  getSelectedService(): Observable<Servicio | undefined> {
-    return this.serviciosDisponibles$.pipe(
-      map(servicios => servicios.find(s => s.id === this.selectedService)),
-      catchError(() => of(undefined))
-    );
-  }
+isFormValid(): boolean {
+  const emailValidation = this.isEmailValid(this.reservaData.usuario.email);
+  this.emailError = emailValidation.error;
+  
+  return !!this.reservaData.usuario.nombre?.trim() &&
+         !!this.reservaData.fechaInicio &&
+         !!this.selectedTime &&
+         !!this.reservaData.servicio &&
+         emailValidation.isValid;
+}
 
-  getHoraFinalizacion(): Observable<string> {
-    return this.getSelectedService().pipe(
-      map(servicio => {
-        if (!servicio || !this.selectedTime) return '';
-        const [hours, mins] = this.selectedTime.split(':').map(Number);
-        const endTime = new Date();
-        endTime.setHours(hours, mins + servicio.duracion, 0, 0);
-        return endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      }),
-      catchError(() => of(''))
-    );
-  }
-
-  isFormValid(): boolean {
-    return !!this.userData.nombre?.trim() &&
-      !!this.selectedDate &&
-      !!this.selectedTime &&
-      !!this.selectedService &&
-      (!this.emailTouched || this.isEmailValid(this.userData.email));
-  }
-
-  private isEmailValid(email: string): boolean {
-    if (!this.EMAIL_REGEX.test(email)) {
-      this.emailError = 'Ingrese un email válido';
-      return false;
-    }
-    this.emailError = null;
-    return true;
-  }
-
-  onEmailBlur(): void {
-    this.emailTouched = true;
-  }
+  private isEmailValid(email: string): { isValid: boolean, error: string | null } {
+  if (!email) return { isValid: true, error: null };
+  const isValid = this.EMAIL_REGEX.test(email);
+  return { isValid, error: isValid ? null : 'Email inválido' };
+}
 
 confirmarReserva(): void {
   if (!this.isFormValid()) {
-    this.notifications.showError('Por favor complete todos los campos correctamente');
+    this.notifications.showError('Complete todos los campos correctamente');
     return;
   }
 
-  // Preparar los datos de la reserva
-  const fechaInicio = new Date(`${this.selectedDate}T${this.selectedTime}:00`);
-  const servicio = this.config.servicios.find(s => s.id === this.selectedService);
-  
+  const fechaInicio = new Date(`${this.reservaData.fechaInicio.split('T')[0]}T${this.selectedTime}:00`);
+  const servicio = this.serviciosDisponibles.find(s => s.id === this.reservaData.servicio);
+
   if (!servicio) {
     this.notifications.showError('Servicio no encontrado');
     return;
   }
 
-  const fechaFin = new Date(fechaInicio.getTime() + servicio.duracion * 60000);
-
-  const reservaData = {
-    usuario: { 
-      nombre: this.userData.nombre.trim(),
-      email: this.userData.email.trim(),
-      telefono: this.userData.telefono?.trim() || ''
-    },
+  const reservaCompleta: Reserva = {
+    id: 'temp-' + Date.now(),
+    usuario: this.reservaData.usuario,
     fechaInicio: fechaInicio.toISOString(),
-    servicio: this.selectedService,
-    // Agregar fechaFin si es necesario
-    fechaFin: fechaFin.toISOString()
+    servicio: this.reservaData.servicio,
+    estado: BookingStatus.PENDIENTE,
+    duracion: servicio.duracion // Ahora compatible con la interfaz
   };
 
-  console.log('Datos enviados al backend:', reservaData); // Para depuración
-
-  this.bookingService.addReserva(reservaData).subscribe({
-    next: (reservaCreada) => {
-      this.notifications.showSuccess('Reserva confirmada correctamente');
+  this.bookingService.addReserva(reservaCompleta).subscribe({
+    next: () => {
+      this.notifications.showSuccess('Reserva confirmada');
       this.resetForm();
-      this.loadReservas();
     },
     error: (err) => {
-      console.error('Error detallado:', err);
-      const errorMsg = err.error?.message || 
-                      err.error?.error?.detalles || 
-                      'Error al crear la reserva';
-      this.notifications.showError(errorMsg);
+      console.error('Error:', err);
+      this.notifications.showError(err.error?.message || 'Error al reservar');
     }
   });
 }
 
-private loadReservas(): void {
-  this.reservas$ = this.bookingService.getReservas().pipe(
-    map(reservas => {
-      if (!reservas || !Array.isArray(reservas)) {
-        throw new Error('Formato de reservas inválido');
-      }
-      return reservas.sort((a, b) => 
-        new Date(b.fechaInicio).getTime() - new Date(a.fechaInicio).getTime()
-      );
-    }),
-    catchError(error => {
-      console.error('Error cargando reservas:', error);
-      this.notifications.showError('Error al cargar reservas');
-      return of([]);
-    })
-  );
-}
-
-  calcularHoraFinReserva(reserva: Reserva): Observable<string> {
-    return this.serviciosDisponibles$.pipe(
-      map(servicios => {
-        const fechaInicio = new Date(reserva.fechaInicio);
-        const servicio = servicios.find(s => s.id === reserva.servicio);
-        if (!servicio) return '';
-        const fechaFin = new Date(fechaInicio);
-        fechaFin.setMinutes(fechaInicio.getMinutes() + servicio.duracion);
-        return fechaFin.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-      }),
-      catchError(() => of(''))
-    );
-  }
-
-  getServiceName(servicioId: string): Observable<string> {
-    return this.serviciosDisponibles$.pipe(
-      map(servicios => {
-        const servicio = servicios.find(s => s.id === servicioId);
-        return servicio ? servicio.nombre : 'Servicio no encontrado';
-      }),
-      catchError(() => of('Servicio no disponible'))
-    );
-  }
-
-cancelarReserva(id: string): void {
-  if (!id) {
-    this.notifications.showError('ID de reserva inválido');
-    return;
-  }
-
-  if (confirm('¿Estás seguro de cancelar esta reserva?')) {
-    this.bookingService.deleteReserva(id).subscribe({
-      next: () => {
-        this.notifications.showSuccess('Reserva cancelada correctamente');
-        this.loadReservas();
-      },
-      error: (err) => {
-        console.error('Error cancelando reserva:', err);
-        this.notifications.showError(`Error al cancelar: ${err.error?.message || err.message}`);
-      }
-    });
-  }
-}
-
   private resetForm(): void {
-    this.userData = { nombre: '', email: '', telefono: '' };
-    this.selectedDate = '';
+    this.reservaData = {
+      servicio: this.serviciosDisponibles.length > 0 ? this.serviciosDisponibles[0].id : '',
+      duracion: 0,
+      fechaInicio: '',
+      usuario: {
+        nombre: '',
+        email: '',
+        telefono: ''
+      }
+    };
     this.selectedTime = '';
-    this.serviciosDisponibles$.pipe(take(1)).subscribe(servicios => {
-      this.selectedService = servicios.length > 0 ? servicios[0].id : '';
-    });
+    this.availableTimes = [];
     this.emailError = null;
     this.emailTouched = false;
-    this.availableTimes = [];
   }
 }

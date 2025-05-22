@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { BookingConfigService, BusinessConfig, Reserva, BusinessType, HorarioEspecial } from '../../services/booking-config.service';
+import { BookingConfigService, BusinessConfig, Reserva, BusinessType, HorarioEspecial, Servicio } from '../../services/booking-config.service';
 import { FullCalendarModule } from '@fullcalendar/angular';
 import { BookingCalendarComponent } from '../booking-calendar/booking-calendar.component';
 import { Subscription, take } from 'rxjs';
@@ -67,6 +67,7 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
   showNormalSchedules = false;
   showSpecialSchedules = false;
   iconosCargados: boolean = false;
+  showServicesEditor = false;
 
   calendarVisible = true;
   reservas: Reserva[] = [];
@@ -111,26 +112,26 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     return horarioDia ? horarioDia.tramos : [];
   }
 
-// En el componente booking-admin.ts (que no has compartido pero puedo inferir)
+  // En el componente booking-admin.ts (que no has compartido pero puedo inferir)
 
-agregarTramo(diaId: number): void {
-  // Encuentra el día en la configuración
-  const diaIndex = this.configNegocio.horariosNormales.findIndex(d => d.dia === diaId);
-  
-  if (diaIndex === -1) {
-    // Si no existe el día, lo creamos
-    this.configNegocio.horariosNormales.push({
-      dia: diaId,
-      tramos: [{ horaInicio: '09:00', horaFin: '13:00' }]
-    });
-  } else {
-    // Si existe, añadimos un nuevo tramo por defecto
-    this.configNegocio.horariosNormales[diaIndex].tramos.push({
-      horaInicio: '09:00', 
-      horaFin: '13:00'
-    });
+  agregarTramo(diaId: number): void {
+    // Encuentra el día en la configuración
+    const diaIndex = this.configNegocio.horariosNormales.findIndex(d => d.dia === diaId);
+
+    if (diaIndex === -1) {
+      // Si no existe el día, lo creamos
+      this.configNegocio.horariosNormales.push({
+        dia: diaId,
+        tramos: [{ horaInicio: '09:00', horaFin: '13:00' }]
+      });
+    } else {
+      // Si existe, añadimos un nuevo tramo por defecto
+      this.configNegocio.horariosNormales[diaIndex].tramos.push({
+        horaInicio: '09:00',
+        horaFin: '13:00'
+      });
+    }
   }
-}
 
 
 
@@ -151,45 +152,45 @@ agregarTramo(diaId: number): void {
     // Ejemplo: this.reservasDelDia = this.reservas.filter(r => r.fechaInicio.startsWith(fecha));
   }
 
-eliminarTramo(dia: number, index: number, event?: Event): void {
-  // Verificar y detener la propagación del evento si existe
-  if (event) {
-    event.stopPropagation();
-    event.preventDefault();
+  eliminarTramo(dia: number, index: number, event?: Event): void {
+    // Verificar y detener la propagación del evento si existe
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+
+    const confirmacion = confirm('¿Estás seguro de eliminar este tramo horario?');
+    if (!confirmacion) {
+      return;
+    }
+
+    // Copia profunda del estado actual
+    const nuevosHorarios = JSON.parse(JSON.stringify(this.configNegocio.horariosNormales));
+
+    const diaIndex = nuevosHorarios.findIndex((h: HorarioNormal) => h.dia === dia);
+    if (diaIndex === -1) return;
+
+    nuevosHorarios[diaIndex].tramos.splice(index, 1);
+
+    if (nuevosHorarios[diaIndex].tramos.length === 0) {
+      nuevosHorarios.splice(diaIndex, 1);
+    }
+
+    // Actualizar solo los horarios normales
+    this.bookingService.updateConfig({ horariosNormales: nuevosHorarios })
+      .pipe(take(1))
+      .subscribe({
+        next: (updatedConfig) => {
+          this.configNegocio.horariosNormales = updatedConfig.horariosNormales;
+          this.notifications.showSuccess('Tramo horario eliminado correctamente');
+          this.refreshCalendar();
+        },
+        error: (err) => {
+          console.error('Error al eliminar tramo:', err);
+          this.notifications.showError('No se pudo eliminar el tramo horario');
+        }
+      });
   }
-
-  const confirmacion = confirm('¿Estás seguro de eliminar este tramo horario?');
-  if (!confirmacion) {
-    return;
-  }
-
-  // Copia profunda del estado actual
-  const nuevosHorarios = JSON.parse(JSON.stringify(this.configNegocio.horariosNormales));
-  
-  const diaIndex = nuevosHorarios.findIndex((h: HorarioNormal) => h.dia === dia);
-  if (diaIndex === -1) return;
-
-  nuevosHorarios[diaIndex].tramos.splice(index, 1);
-
-  if (nuevosHorarios[diaIndex].tramos.length === 0) {
-    nuevosHorarios.splice(diaIndex, 1);
-  }
-
-  // Actualizar solo los horarios normales
-  this.bookingService.updateConfig({ horariosNormales: nuevosHorarios })
-    .pipe(take(1))
-    .subscribe({
-      next: (updatedConfig) => {
-        this.configNegocio.horariosNormales = updatedConfig.horariosNormales;
-        this.notifications.showSuccess('Tramo horario eliminado correctamente');
-        this.refreshCalendar();
-      },
-      error: (err) => {
-        console.error('Error al eliminar tramo:', err);
-        this.notifications.showError('No se pudo eliminar el tramo horario');
-      }
-    });
-}
 
   // Métodos para horarios especiales
   agregarHorarioEspecial(): void {
@@ -227,6 +228,54 @@ eliminarTramo(dia: number, index: number, event?: Event): void {
 
     this.resetNuevoHorarioEspecial();
   }
+
+
+  addService(): void {
+    const newId = Date.now().toString();
+    this.configNegocio.servicios.push({
+      id: newId,
+      nombre: 'Nuevo Servicio', // Nombre por defecto (no vacío)
+      duracion: 30,             // Duración por defecto (mínimo 5)
+      precio: 0                 // Campo opcional si lo usas
+    });
+
+    // Guarda automáticamente
+    //this.updateServices();
+  }
+
+  private updateServices(): void {
+    // Filtra servicios inválidos
+    const serviciosValidos = this.configNegocio.servicios.filter(
+      s => s.nombre?.trim() && s.duracion >= 5
+    );
+
+    this.bookingService.updateConfig({ servicios: serviciosValidos })
+      .pipe(take(1))
+      .subscribe({
+        next: () => this.notifications.showSuccess('Servicios actualizados'),
+        error: (err) => {
+          console.error('Error detallado:', err);
+          this.notifications.showError('Error al guardar servicios: ' + err.error?.details || err.message);
+        }
+      });
+  }
+
+  updateService(servicio: Servicio): void {
+    if (!servicio.nombre?.trim() || servicio.duracion < 5) {
+      this.notifications.showError('Nombre y duración (mín. 5 min) son obligatorios');
+      return;
+    }
+    this.updateServices(); // Reemplaza el código antiguo
+  }
+
+  deleteService(id: string): void {
+    if (confirm('¿Eliminar este servicio?')) {
+      this.configNegocio.servicios = this.configNegocio.servicios.filter(s => s.id !== id);
+      this.updateServices(); // Reemplaza el código antiguo
+    }
+  }
+
+
 
   eliminarHorarioEspecial(index: number): void {
     if (confirm('¿Eliminar este horario especial?')) {
@@ -272,24 +321,24 @@ eliminarTramo(dia: number, index: number, event?: Event): void {
     );
   }
 
-saveConfiguration(): void {
-  if (!this.isFormValid()) {
-    this.notifications.showError('Por favor complete todos los campos requeridos');
-    return;
-  }
+  saveConfiguration(): void {
+    if (!this.isFormValid()) {
+      this.notifications.showError('Por favor complete todos los campos requeridos');
+      return;
+    }
 
-  this.bookingService.updateConfig(this.configNegocio)
-    .pipe(take(1))
-    .subscribe({
-      next: () => {
-        this.notifications.showSuccess('Configuración guardada correctamente');
-        this.refreshCalendar();
-      },
-      error: (err) => {
-        this.notifications.showError('Error al guardar: ' + err.message);
-      }
-    });
-}
+    this.bookingService.updateConfig(this.configNegocio)
+      .pipe(take(1))
+      .subscribe({
+        next: () => {
+          this.notifications.showSuccess('Configuración guardada correctamente');
+          this.refreshCalendar();
+        },
+        error: (err) => {
+          this.notifications.showError('Error al guardar: ' + err.message);
+        }
+      });
+  }
 
   deleteReservation(id: string): void {
     if (confirm('¿Está seguro que desea eliminar esta reserva?')) {

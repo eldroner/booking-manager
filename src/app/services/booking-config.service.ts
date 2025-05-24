@@ -274,18 +274,21 @@ export class BookingConfigService {
       ...(reservaData.metadata && { metadata: reservaData.metadata })
     };
 
-    return this.http.post<Reserva>(`${environment.apiUrl}/api/reservas`, payload).pipe(
-      tap(reserva => {
-        const reservas = [...this.reservasSubject.value, reserva];
-        this.reservasSubject.next(reservas);
-        this.notifications.showSuccess('Reserva creada exitosamente');
-      }),
-      catchError((error: ApiError) => {
-        const errorMessage = error.message || 'Error al crear la reserva';
-        this.notifications.showError(errorMessage);
-        return throwError(() => error);
-      })
-    );
+  return this.http.post<Reserva>(`${environment.apiUrl}/api/reservas`, payload).pipe(
+    tap(reserva => {
+      const reservas = [...this.reservasSubject.value, reserva];
+      this.reservasSubject.next(reservas);
+      this.notifications.showSuccess('Reserva creada exitosamente');
+      
+      // Disparar el envío de email aquí si es necesario
+      // O hacerlo desde el componente que llama a este método
+    }),
+    catchError((error: ApiError) => {
+      const errorMessage = error.message || 'Error al crear la reserva';
+      this.notifications.showError(errorMessage);
+      return throwError(() => error);
+    })
+  );
   }
 
   deleteReserva(id: string): Observable<void> {

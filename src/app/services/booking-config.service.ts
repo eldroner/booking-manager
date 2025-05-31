@@ -47,6 +47,7 @@ export interface Reserva {
   fechaFin?: string;
   servicio: string;
   estado: BookingStatus;
+  confirmacionToken: string;
   metadata?: any;
 }
 
@@ -110,45 +111,42 @@ export class BookingConfigService {
     this.initializeData();
   }
 
-  private initializeData(): void {
-    this.loadingSubject.next(true); // Indicar que está cargando
+private initializeData(): void {
+  this.loadingSubject.next(true);
 
-    // Primero carga la configuración
-    this.loadBackendConfig().pipe(
-      catchError(() => of(this.defaultConfig)),
-      switchMap(config => {
-        this.configSubject.next(config);
-
-        // Luego carga reservas y servicios en paralelo
-        return forkJoin({
-          reservas: this.loadBackendReservas().pipe(catchError(() => of([]))),
-          servicios: config.servicios?.length > 0
-            ? of(config.servicios)
-            : this.loadServiciosFromBackend()
-        });
-      })
-    ).subscribe({
-      next: ({ reservas, servicios }) => {
-        // Actualiza primero las reservas
-        this.reservasSubject.next(reservas);
-
-        // Luego actualiza la configuración con los servicios si es necesario
-        if (servicios.length > 0) {
-          const currentConfig = this.configSubject.value;
-          this.configSubject.next({
-            ...currentConfig,
-            servicios
-          });
-        }
-        this.loadingSubject.next(false); // Indicar que ha terminado de cargar
-      },
-      error: () => {
-        this.configSubject.next(this.defaultConfig);
-        this.reservasSubject.next([]);
-        this.loadingSubject.next(false); // Indicar que ha terminado (con error)
+  // Modifica el flujo para manejar errores correctamente
+  this.loadBackendConfig().pipe(
+    switchMap(config => {
+      this.configSubject.next(config);
+      return forkJoin({
+        reservas: this.loadBackendReservas().pipe(
+          catchError(() => of([])) // Siempre retorna un array vacío en caso de error
+        ),
+        servicios: config.servicios?.length > 0 
+          ? of(config.servicios)
+          : this.loadServiciosFromBackend().pipe(
+              catchError(() => of([])) // Fallback a array vacío
+            )
+      });
+    }),
+    catchError(error => {
+      console.error('Error inicializando datos:', error);
+      return of({ reservas: [], servicios: [] }); // Asegura que el forkJoin siempre complete
+    })
+  ).subscribe({
+    next: ({ reservas, servicios }) => {
+      this.reservasSubject.next(reservas);
+      if (servicios.length > 0) {
+        const currentConfig = this.configSubject.value;
+        this.configSubject.next({ ...currentConfig, servicios });
       }
-    });
-  }
+      this.loadingSubject.next(false); // Asegura que el loading se desactive
+    },
+    error: () => {
+      this.loadingSubject.next(false); // Importante: desactiva loading incluso en error
+    }
+  });
+}
 
   private loadServiciosFromBackend(): Observable<Servicio[]> {
     // Si falla, usa datos por defecto
@@ -164,6 +162,15 @@ export class BookingConfigService {
       })
     );
   }
+
+confirmarReserva(token: string): Observable<Reserva> {  // Asegúrate de devolver el tipo Reserva
+  return this.http.get<Reserva>(`${environment.apiUrl}/api/reservas/confirmar/${token}`).pipe(
+    catchError(error => {
+      const errorMsg = error.error?.message || 'Error al confirmar reserva';
+      return throwError(() => new Error(errorMsg));
+    })
+  );
+}
 
   private loadBackendConfig(): Observable<BusinessConfig> {
     return this.http.get<BusinessConfig>(`${environment.apiUrl}/api/config`).pipe(
@@ -239,7 +246,7 @@ export class BookingConfigService {
     return re.test(email);
   }
 
-  addReserva(reservaData: Omit<Reserva, 'id' | 'estado'>): Observable<Reserva> {
+addReserva(reservaData: Omit<Reserva, 'id' | 'estado'>): Observable<Reserva> {
     // Validación mejorada
     if (!reservaData.usuario?.nombre?.trim()) {
       return throwError(() => ({ message: 'El nombre del usuario es requerido', code: 400 }));
@@ -261,6 +268,14 @@ export class BookingConfigService {
       return throwError(() => ({ message: 'La fecha de fin es inválida', code: 400 }));
     }
 
+    // Validación de duración
+    if (!reservaData.duracion || reservaData.duracion < 5) {
+      return throwError(() => ({ 
+        message: 'La duración debe ser de al menos 5 minutos', 
+        code: 400 
+      }));
+    }
+
     const payload = {
       usuario: {
         nombre: reservaData.usuario.nombre.trim(),
@@ -270,26 +285,24 @@ export class BookingConfigService {
       },
       fechaInicio: reservaData.fechaInicio,
       servicio: reservaData.servicio,
+      duracion: reservaData.duracion, // Asegurar que se envía la duración
       ...(reservaData.fechaFin && { fechaFin: reservaData.fechaFin }),
       ...(reservaData.metadata && { metadata: reservaData.metadata })
     };
 
-  return this.http.post<Reserva>(`${environment.apiUrl}/api/reservas`, payload).pipe(
-    tap(reserva => {
-      const reservas = [...this.reservasSubject.value, reserva];
-      this.reservasSubject.next(reservas);
-      this.notifications.showSuccess('Reserva creada exitosamente');
-      
-      // Disparar el envío de email aquí si es necesario
-      // O hacerlo desde el componente que llama a este método
-    }),
-    catchError((error: ApiError) => {
-      const errorMessage = error.message || 'Error al crear la reserva';
-      this.notifications.showError(errorMessage);
-      return throwError(() => error);
-    })
-  );
-  }
+    return this.http.post<Reserva>(`${environment.apiUrl}/api/reservas`, payload).pipe(
+      tap(reserva => {
+        const reservas = [...this.reservasSubject.value, reserva];
+        this.reservasSubject.next(reservas);
+        this.notifications.showSuccess('Reserva creada exitosamente');
+      }),
+      catchError((error: ApiError) => {
+        const errorMessage = error.message || 'Error al crear la reserva';
+        this.notifications.showError(errorMessage);
+        return throwError(() => error);
+      })
+    );
+}
 
   deleteReserva(id: string): Observable<void> {
     // Asegurar que el ID no está undefined
@@ -309,11 +322,25 @@ export class BookingConfigService {
     );
   }
 
-  isHoraDisponible(fecha: string, hora: string): Observable<boolean> {
-    return this.http.get<boolean>(`${environment.apiUrl}/api/disponibilidad`, {
-      params: { fecha, hora }
-    });
-  }
+  getReservasPorFecha(fecha: string): Observable<Reserva[]> {
+  return this.http.get<Reserva[]>(`${environment.apiUrl}/api/reservas`, {
+    params: { fecha }
+  }).pipe(
+    catchError(() => of([]))
+  );
+}
+
+isHoraDisponible(fecha: string, hora: string, duracion: number): Observable<boolean> {
+  return this.http.get<boolean>(`${environment.apiUrl}/api/disponibilidad`, {
+    params: { 
+      fecha, 
+      hora,
+      duracion: duracion.toString() 
+    }
+  }).pipe(
+    catchError(() => of(false)) // Si falla, asumir no disponible
+  );
+}
 
   validateHorarioEspecial(horario: Partial<HorarioEspecial>): boolean {
     if (!horario?.fecha || !horario.horaInicio || !horario.horaFin) return false;

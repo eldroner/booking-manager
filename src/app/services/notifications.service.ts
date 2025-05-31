@@ -10,4 +10,10 @@ export class NotificationsService {
   showError(message: string): void {
     alert(`❌ ${message}`);
   }
+
+  // En tu notifications.service.ts añade:
+showWarning(message: string) {
+  console.warn(message);
+  alert(`❌ ${message}`);
+}
 }

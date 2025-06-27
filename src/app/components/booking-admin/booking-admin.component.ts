@@ -7,6 +7,7 @@ import { BookingCalendarComponent } from '../booking-calendar/booking-calendar.c
 import { Subscription, take } from 'rxjs';
 import { NotificationsService } from '../../services/notifications.service';
 import { HorarioNormal } from '../../services/booking-config.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-booking-admin',
@@ -76,7 +77,8 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
 
   constructor(
     public bookingService: BookingConfigService,
-    private notifications: NotificationsService
+    private notifications: NotificationsService,
+    private router: Router
   ) {
     this.configNegocio = this.getDefaultConfig();
   }
@@ -86,6 +88,10 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     this.loadReservas();
     this.checkIconsLoaded();
   }
+
+  goToUser() {
+  this.router.navigate(['/']);
+}
 
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();

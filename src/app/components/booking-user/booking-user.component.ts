@@ -8,6 +8,7 @@ import { take, catchError, of, finalize } from 'rxjs';
 import { NotificationsService } from '../../services/notifications.service';
 import { HoraFinPipe } from "../../pipes/hora-fin.pipe";
 import { EmailService } from '../../services/email.service';
+import { Router } from '@angular/router';
 
 registerLocaleData(localeEs);
 
@@ -46,7 +47,8 @@ export class BookingUserComponent implements OnInit {
   constructor(
     private bookingService: BookingConfigService,
     private notifications: NotificationsService,
-    private emailService: EmailService 
+    private emailService: EmailService,
+    private router: Router
   ) { }
 
   ngOnInit(): void {
@@ -98,6 +100,10 @@ export class BookingUserComponent implements OnInit {
       }
     });
   }
+
+  goToAdmin() {
+  this.router.navigate(['/admin']);  // Navega a la ruta '/admin'
+}
 
   onServiceChange(): void {
     const servicioSeleccionado = this.serviciosDisponibles.find(s => s.id === this.reservaData.servicio);

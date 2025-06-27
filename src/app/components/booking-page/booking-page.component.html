@@ -3,11 +3,12 @@
   
     <div *ngIf="!isLoading">
       <div class="mb-4 text-end">
-        <button class="btn btn-outline-secondary" (click)="isAdmin = !isAdmin">
+        <button class="btn btn-outline-secondary" (click)="toggleView()">
           Cambiar a vista {{ isAdmin ? 'Usuario' : 'Admin' }}
         </button>
       </div>
     
+      <!-- Mostrar solo el componente según la ruta -->
       <app-booking-admin *ngIf="isAdmin"></app-booking-admin>
       <app-booking-user *ngIf="!isAdmin"></app-booking-user>
     </div>
@@ -19,4 +20,3 @@
       <p class="mt-2">Cargando datos del sistema...</p>
     </div>
 </div>
-  

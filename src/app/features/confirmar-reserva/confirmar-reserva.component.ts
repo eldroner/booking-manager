@@ -3,7 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { BookingConfigService, Reserva } from '../../services/booking-config.service';
 import { CommonModule } from '@angular/common';
 import { NotificationsService } from '../../services/notifications.service';
-import { EmailService } from '../../services/email.service'; // Añadido
+//import { EmailService } from '../../services/email.service'; // Añadido
 
 @Component({
   selector: 'app-confirmar-reserva',
@@ -22,7 +22,7 @@ export class ConfirmarReservaComponent implements OnInit {
     private bookingService: BookingConfigService,
     private notifications: NotificationsService,
     private router: Router,
-    private emailService: EmailService // Añadido
+    //private emailService: EmailService // Añadido
   ) { }
 
   ngOnInit(): void {
@@ -38,30 +38,45 @@ export class ConfirmarReservaComponent implements OnInit {
   }
 
 private confirmarReserva(token: string): void {
+  this.loading = true;
+  
   this.bookingService.confirmarReserva(token).subscribe({
-    next: (reservaConfirmada: Reserva) => {  // Especifica el tipo aquí
+    next: (reservaConfirmada: Reserva) => {
       this.confirmacionExitosa = true;
-      this.notifications.showSuccess('Reserva confirmada correctamente');
+      this.loading = false;
       
-      // Ahora TypeScript sabe que reservaConfirmada tiene estas propiedades
-      this.emailService.sendBookingConfirmation(
-        reservaConfirmada.usuario.email,
-        reservaConfirmada.usuario.nombre,
-        {
-          fecha: new Date(reservaConfirmada.fechaInicio).toLocaleString('es-ES'),
-          servicio: reservaConfirmada.servicio,
-          token: token
-        }
-      ).catch(() => {
-        console.warn('Email de confirmación no enviado');
-      });
+      // Mostrar notificación
+      this.notifications.showSuccess(`
+        ¡Reserva confirmada! 
+        Se ha enviado un email de confirmación a ${reservaConfirmada.usuario.email}
+      `);
 
-      setTimeout(() => this.router.navigate(['/']), 3000);
+      // Redirigir después de 3 segundos
+      setTimeout(() => {
+        this.router.navigate(['/'], {
+          state: { reservaRecienConfirmada: true }
+        });
+      }, 3000);
     },
     error: (err) => {
-      this.error = err.message; // Usa err.message directamente
-      this.notifications.showError(this.error);
       this.loading = false;
+      this.error = err.error?.message || 'Error al confirmar la reserva';
+      
+      // Notificación de error detallada
+      this.notifications.showError(`
+        ${this.error} 
+        Por favor, intenta nuevamente o contacta al administrador.
+      `);
+
+      // Opcional: Redirigir a página de error
+      setTimeout(() => {
+        this.router.navigate(['/error-confirmacion'], {
+          queryParams: { 
+            token,
+            error: this.error
+          }
+        });
+      }, 3000);
     }
   });
 }

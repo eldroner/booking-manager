@@ -287,36 +287,39 @@ confirmarReserva(): void {
     confirmacionToken: 'temp-token'
   };
 
-  this.bookingService.addReserva(reservaCompleta).subscribe({
-    next: (reservaConfirmada) => {
-      // Verifica que reservaConfirmada tiene confirmacionToken
-      if (!reservaConfirmada.confirmacionToken) {
-        console.error('No se recibió token de confirmación');
-        return;
-      }
-console.log('Email a enviar:', this.reservaData.usuario.email);
-      // ENVÍO DEL EMAIL (Aquí usas el servicio)
-      this.emailService.sendBookingConfirmation(
-        this.reservaData.usuario.email,
-        this.reservaData.usuario.nombre,
-        {
-          fecha: fechaInicio.toLocaleString('es-ES'),
-          servicio: servicio.nombre,
-          token: reservaConfirmada.confirmacionToken
-        }
-      ).then(() => {
-        this.notifications.showSuccess('Reserva creada. Revisa tu email para confirmar.');
-      }).catch(error => {
-        console.error('Error enviando email:', error);
-        this.notifications.showError('Reserva creada, pero falló el envío del email de confirmación');
-      });
-
-      this.resetForm();
-    },
-    error: (err) => {
-      this.notifications.showError(err.error?.message || 'Error al reservar');
+this.bookingService.addReserva(reservaCompleta).subscribe({
+  next: (response: { token: string }) => { // Cambia el tipo aquí
+    // Verifica que response tiene token
+    if (!response.token) {
+      console.error('No se recibió token de confirmación');
+      this.notifications.showError('Error en la confirmación de la reserva');
+      return;
     }
-  });
+
+    console.log('Email a enviar:', reservaCompleta.usuario.email);
+    
+    // ENVÍO DEL EMAIL (usando response.token)
+    this.emailService.sendBookingConfirmation(
+      reservaCompleta.usuario.email,
+      reservaCompleta.usuario.nombre,
+      {
+        fecha: reservaCompleta.fechaInicio, // Usa directamente la fecha del objeto
+        servicio: reservaCompleta.servicio, // Usa el nombre del servicio directamente si es string
+        token: response.token // ¡Cambio clave aquí!
+      }
+    ).then(() => {
+      this.notifications.showSuccess('Reserva creada. Revisa tu email para confirmar.');
+    }).catch(error => {
+      console.error('Error enviando email:', error);
+      this.notifications.showError('Reserva creada, pero falló el envío del email de confirmación');
+    });
+
+    this.resetForm();
+  },
+  error: (err) => {
+    this.notifications.showError(err.error?.message || 'Error al reservar');
+  }
+});
 }
 
   private resetForm(): void {

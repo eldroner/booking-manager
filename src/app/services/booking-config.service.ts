@@ -163,8 +163,10 @@ private initializeData(): void {
     );
   }
 
-confirmarReserva(token: string): Observable<Reserva> {  // Asegúrate de devolver el tipo Reserva
-  return this.http.get<Reserva>(`${environment.apiUrl}/api/reservas/confirmar/${token}`).pipe(
+confirmarReserva(token: string): Observable<Reserva> {
+  return this.http.get<Reserva>(
+    `${environment.apiUrl}/api/reservas/confirmar/${encodeURIComponent(token)}`
+  ).pipe(
     catchError(error => {
       const errorMsg = error.error?.message || 'Error al confirmar reserva';
       return throwError(() => new Error(errorMsg));
@@ -246,8 +248,20 @@ confirmarReserva(token: string): Observable<Reserva> {  // Asegúrate de devolve
     return re.test(email);
   }
 
-addReserva(reservaData: Omit<Reserva, 'id' | 'estado'>): Observable<Reserva> {
-    // Validación mejorada
+  confirmReservaDefinitiva(token: string): Observable<Reserva> {
+  return this.http.post<Reserva>(
+    `${environment.apiUrl}/api/reservas/confirmar-definitiva/${token}`,
+    {}
+  ).pipe(
+    catchError(error => {
+      const errorMsg = error.error?.message || 'Error al confirmar reserva';
+      return throwError(() => new Error(errorMsg));
+    })
+  );
+}
+
+addReserva(reservaData: Omit<Reserva, 'id' | 'estado'>): Observable<{ token: string }> {
+    // Validación mejorada (se mantiene igual)
     if (!reservaData.usuario?.nombre?.trim()) {
       return throwError(() => ({ message: 'El nombre del usuario es requerido', code: 400 }));
     }
@@ -268,7 +282,6 @@ addReserva(reservaData: Omit<Reserva, 'id' | 'estado'>): Observable<Reserva> {
       return throwError(() => ({ message: 'La fecha de fin es inválida', code: 400 }));
     }
 
-    // Validación de duración
     if (!reservaData.duracion || reservaData.duracion < 5) {
       return throwError(() => ({ 
         message: 'La duración debe ser de al menos 5 minutos', 
@@ -285,16 +298,20 @@ addReserva(reservaData: Omit<Reserva, 'id' | 'estado'>): Observable<Reserva> {
       },
       fechaInicio: reservaData.fechaInicio,
       servicio: reservaData.servicio,
-      duracion: reservaData.duracion, // Asegurar que se envía la duración
+      duracion: reservaData.duracion,
       ...(reservaData.fechaFin && { fechaFin: reservaData.fechaFin }),
       ...(reservaData.metadata && { metadata: reservaData.metadata })
     };
 
-    return this.http.post<Reserva>(`${environment.apiUrl}/api/reservas`, payload).pipe(
-      tap(reserva => {
-        const reservas = [...this.reservasSubject.value, reserva];
-        this.reservasSubject.next(reservas);
-        this.notifications.showSuccess('Reserva creada exitosamente');
+    // Cambios clave:
+    // 1. Tipo de retorno: Observable<{ token: string }>
+    // 2. Eliminamos el tap que añadía la reserva al estado local
+    return this.http.post<{ token: string }>(`${environment.apiUrl}/api/reservas`, payload).pipe(
+      tap((response) => {
+        this.notifications.showSuccess(
+          'Revisa tu email para confirmar la reserva. ' +
+          'Tienes 48 horas para completar el proceso.'
+        );
       }),
       catchError((error: ApiError) => {
         const errorMessage = error.message || 'Error al crear la reserva';

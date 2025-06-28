@@ -47,7 +47,7 @@ private setupCalendar(): void {
     const esPasado = fechaEvento < ahora;
 
     return {
-      title: `Reserva - ${reserva.usuario.nombre} (${this.formatHora(reserva.fechaInicio)})`,
+      title: `${reserva.usuario.nombre} (${this.formatHora(reserva.fechaInicio)})`,
       start: reserva.fechaInicio,
       end: reserva.fechaFin,
       backgroundColor: esPasado ? '#f0f4f8' : '#4a6baf',

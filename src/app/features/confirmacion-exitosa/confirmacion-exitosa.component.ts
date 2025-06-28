@@ -1,25 +1,35 @@
 import { Component } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { interval } from 'rxjs';
+import { take } from 'rxjs/operators';
 
 @Component({
   selector: 'app-confirmacion-exitosa',
-  template: `
-    <div class="container text-center mt-5">
-      <div class="alert alert-success">
-        <h2><i class="bi bi-check-circle-fill"></i> ¡Reserva confirmada!</h2>
-        <p *ngIf="reservaId">ID de reserva: {{ reservaId }}</p>
-        <a routerLink="/" class="btn btn-primary mt-3">Volver al inicio</a>
-      </div>
-    </div>
-  `,
-  styles: [`
-    .container { max-width: 600px; }
-  `]
+  templateUrl: './confirmacion-exitosa.component.html',
+  styleUrls: ['./confirmacion-exitosa.component.scss']
 })
 export class ConfirmacionExitosaComponent {
   reservaId: string | null;
+  tiempoRedireccion = 5; // segundos
 
-  constructor(private route: ActivatedRoute) {
-    this.reservaId = this.route.snapshot.queryParamMap.get('reservaId');
+  ngOnInit() {
+  interval(1000).pipe(
+    take(this.tiempoRedireccion)
+  ).subscribe({
+    next: () => this.tiempoRedireccion--,
+    complete: () => this.router.navigate(['/'])
+  });
+}
+
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router
+  ) {
+    this.reservaId = this.route.snapshot.paramMap.get('token') || 
+                   this.route.snapshot.queryParamMap.get('reservaId');
+  }
+
+  volverAInicio() {
+    this.router.navigate(['/']);
   }
 }

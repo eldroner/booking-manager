@@ -21,3 +21,143 @@ Actualización 24/05/2025:
 He quitado todos los datos que salían de la vista del usuario, es decir, que el usuario, al hacer la reserva no se le pone en la lista de su vista de usuario. Después de pensarlo bien, he decidido que el user no tiene por qué tener tanta información. Simplemente tiene que coger una cita, se le envía un correo para confirmar y listo.
 
 Esto ya funciona, y el siguiente paso, es hacer que la reserva no se genere automáticamente, sino una vez el usuario hace click en el enlace que se le envía al correo, pero esto ya será la siguiente tarea. La vista del administrador, sigue igual y funciona más o menos bien, aunque al guardar las reservas, en el desplegable del usuario para reservar citas no se reflejan bien del todo. Es decir, si hay un límite de 3 reservas como máximo simultáneas y se reservan 3 citas, sigue dejando reservar. Esto hay que arreglarlo y ponerlo en la lista de prioridades.
+
+
+Actualización 28/06/2025:
+
+Booking Manager App - Estado Actual
+📌 Funcionalidades Implementadas
+1. Sistema de Reservas con Confirmación por Email
+Flujo completo:
+
+Usuario crea reserva → Estado pendiente_email
+
+Email con enlace de confirmación (usando EmailJS)
+
+Click en enlace → Cambia a estado confirmada
+
+Componentes clave:
+
+booking-user: Vista de creación de reservas
+
+confirmar-reserva: Procesa la confirmación vía token JWT
+
+2. Vistas Duales (Admin/User)
+Rutas:
+
+/: Vista usuario normal
+
+/admin: Panel de administración
+
+Interruptor mediante ruta (sin botón de cambio manual)
+
+3. Backend Node.js/Express
+Endpoints principales:
+
+text
+POST /api/reservas           → Crea reserva temporal
+GET  /api/reservas/confirmar/:token → Confirma reserva
+GET  /api/reservas           → Lista reservas (admin)
+Validaciones:
+
+Campos obligatorios
+
+Formato de email/fechas
+
+Token JWT con expiración (48h)
+
+4. Seguridad
+Estados de reserva:
+
+pendiente_email: Requiere confirmación
+
+confirmada: Reserva activa
+
+cancelada: Reserva anulada
+
+⚙️ Tecnologías Usadas
+Área	Tecnologías principales
+Frontend	Angular 16, Bootstrap 5, FullCalendar
+Backend	Node.js, Express, Mongoose
+Base de Datos	MongoDB Atlas
+Email	EmailJS
+Autenticación	JWT
+🔧 Configuración Requerida
+Variables de Entorno (.env)
+ini
+# Backend
+JWT_SECRET=tu_clave_secreta
+MONGODB_URI=mongodb+srv://...
+FRONTEND_URL=http://localhost:4200
+
+# EmailJS (Frontend)
+EMAILJS_USER_ID=user_xxx
+EMAILJS_SERVICE_ID=service_xxx
+EMAILJS_TEMPLATE_ID=template_xxx
+🚀 Próximos Pasos
+Mejoras Pendientes
+Autenticación de Admin:
+
+Login con protección de rutas
+
+Dashboard Avanzado:
+
+Gráficos de reservas por fecha/servicio
+
+Sistema de Pagos:
+
+Integración con Stripe/PayPal
+
+Despliegue:
+
+Backend: Render/Vercel
+
+Frontend: Netlify/Vercel
+
+Base de datos: MongoDB Atlas
+
+Distribución
+Modelo SaaS: Suscripción mensual para negocios
+
+Precio sugerido: $19.99/mes por establecimiento
+
+Target: Peluquerías, clínicas médicas, spas
+
+📦 Estructura de Archivos Clave
+text
+frontend/
+├─ src/
+│  ├─ app/
+│  │  ├─ components/
+│  │  │  ├─ booking-user/
+│  │  │  ├─ booking-admin/
+│  │  ├─ features/
+│  │  │  ├─ confirmar-reserva/
+│  │  ├─ services/
+│  │  │  ├─ booking-config.service.ts
+│  │  │  ├─ email.service.ts
+
+backend/
+├─ src/
+│  ├─ controllers/
+│  │  ├─ reservas.controller.ts
+│  ├─ models/
+│  │  ├─ reserva.model.ts
+│  ├─ routes/
+│  │  ├─ api.routes.ts
+⚠️ Notas Importantes
+Pruebas:
+
+Todos los endpoints deben probarse con:
+
+Datos válidos/inválidos
+
+Tokens expirados
+
+Backup:
+
+Configurar respaldo automático de MongoDB
+
+Licencia:
+
+Definir si será código abierto o comercial

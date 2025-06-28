@@ -21,7 +21,7 @@ export class ConfirmarReservaComponent implements OnInit {
     private route: ActivatedRoute,
     private bookingService: BookingConfigService,
     private notifications: NotificationsService,
-    private router: Router,
+    private router: Router
     //private emailService: EmailService // Añadido
   ) { }
 

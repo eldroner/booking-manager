@@ -95,3 +95,30 @@
     margin-left: 8px;
   }
 }
+
+.table-responsive {
+  transition: opacity 0.3s ease;
+}
+
+.alert {
+  transition: all 0.3s ease;
+}
+
+.accordion-button {
+  transition: all 0.3s ease;
+  
+  &.bg-primary-light {
+    background-color: rgba(13, 110, 253, 0.1);
+    color: #0d6efd;
+  }
+}
+
+.accordion-body {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* Estilo para nuevos servicios */
+.bg-light {
+  background-color: rgba(25, 135, 84, 0.05) !important;
+}

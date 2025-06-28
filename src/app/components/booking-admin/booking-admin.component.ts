@@ -8,6 +8,7 @@ import { Subscription, take } from 'rxjs';
 import { NotificationsService } from '../../services/notifications.service';
 import { HorarioNormal } from '../../services/booking-config.service';
 import { Router } from '@angular/router';
+import { saveAs } from 'file-saver';
 
 @Component({
   selector: 'app-booking-admin',
@@ -17,6 +18,13 @@ import { Router } from '@angular/router';
   styleUrls: ['./booking-admin.component.scss']
 })
 export class BookingAdminComponent implements OnInit, OnDestroy {
+  searchText = '';
+  statusFilter = 'all';
+  dateFilter = '';
+  filteredReservas: any[] = [];
+  isServiciosOpen = false;
+  selectedReserva: any = null;
+  today = new Date();
   configNegocio: BusinessConfig = {
     nombre: '',
     tipoNegocio: BusinessType.PELUQUERIA,
@@ -90,8 +98,8 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
   }
 
   goToUser() {
-  this.router.navigate(['/']);
-}
+    this.router.navigate(['/']);
+  }
 
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
@@ -102,6 +110,75 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
       key,
       value: this.reservasPorDia[key]
     }));
+  }
+
+
+
+  filterReservations() {
+    this.filteredReservas = this.reservas.filter(r => {
+      const matchesSearch = this.searchText === '' ||
+        r.usuario.nombre.toLowerCase().includes(this.searchText.toLowerCase()) ||
+        r.usuario.email.toLowerCase().includes(this.searchText.toLowerCase()) ||
+        (r.usuario.telefono && r.usuario.telefono.includes(this.searchText));
+
+      const matchesStatus = this.statusFilter === 'all' ||
+        r.estado === this.statusFilter;
+
+      const matchesDate = !this.dateFilter ||
+        new Date(r.fechaInicio).toDateString() === new Date(this.dateFilter).toDateString();
+
+      return matchesSearch && matchesStatus && matchesDate;
+    });
+  }
+
+  resetFilters(): void {
+    this.searchText = '';
+    this.statusFilter = 'all';
+    this.dateFilter = '';
+    this.applyFilters();
+  }
+
+
+  exportToCSV(): void {
+    // 1. Preparar cabeceras
+    const headers = [
+      'Cliente',
+      'Email',
+      'Teléfono',
+      'Servicio',
+      'Fecha Inicio',
+      'Fecha Fin',
+      'Estado'
+    ];
+
+    // 2. Mapear datos
+    const csvRows = this.filteredReservas.map(reserva => {
+      return [
+        reserva.usuario?.nombre || 'Sin nombre',
+        reserva.usuario?.email || '',
+        reserva.usuario?.telefono || '',
+        reserva.servicio,
+        this.formatDateForExport(reserva.fechaInicio),
+        reserva.fechaFin ? this.formatDateForExport(reserva.fechaFin) : '',
+        reserva.estado
+      ].map(field => `"${field}"`); // Escapar comillas
+    });
+
+    // 3. Crear contenido CSV
+    const csvContent = [
+      headers.join(','),
+      ...csvRows.map(row => row.join(','))
+    ].join('\n');
+
+    // 4. Descargar archivo
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    saveAs(blob, `reservas_${new Date().toISOString().slice(0, 10)}.csv`);
+  }
+
+  private formatDateForExport(date: any): string {
+    if (!date) return '';
+    const d = new Date(date);
+    return isNaN(d.getTime()) ? '' : d.toISOString().replace('T', ' ').slice(0, 16);
   }
 
   get reservasPorDiaArray(): { key: string, value: number }[] {
@@ -235,18 +312,20 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     this.resetNuevoHorarioEspecial();
   }
 
+  toggleServicios() {
+  this.isServiciosOpen = !this.isServiciosOpen;
+}
+
 
   addService(): void {
     const newId = Date.now().toString();
     this.configNegocio.servicios.push({
       id: newId,
-      nombre: 'Nuevo Servicio', // Nombre por defecto (no vacío)
-      duracion: 30,             // Duración por defecto (mínimo 5)
-      precio: 0                 // Campo opcional si lo usas
+      nombre: 'Nombre del servicio',
+      duracion: 30,
+      precio: 0              
     });
-
-    // Guarda automáticamente
-    //this.updateServices();
+    //this.isServiciosOpen = true;
   }
 
   private updateServices(): void {
@@ -316,16 +395,59 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
           this.reservas = reservas.sort((a, b) =>
             new Date(b.fechaInicio).getTime() - new Date(a.fechaInicio).getTime()
           );
+          this.filteredReservas = [...this.reservas]; // Inicializa filtradas
           this.updateSummary();
+          this.applyFilters(); // Aplica filtros si existen
         },
         error: (err) => {
           console.error('Error cargando reservas', err);
           this.reservas = [];
+          this.filteredReservas = [];
           this.reservasPorDia = {};
         }
       })
     );
   }
+
+  applyFilters(): void {
+    console.log('Aplicando filtros...', {
+      searchText: this.searchText,
+      statusFilter: this.statusFilter,
+      dateFilter: this.dateFilter
+    });
+
+    this.filteredReservas = this.reservas.filter(r => {
+      if (!r || !r.usuario) {
+        console.warn('Reserva inválida:', r);
+        return false;
+      }
+
+      const matchesSearch = this.searchText === '' ||
+        (r.usuario.nombre && r.usuario.nombre.toLowerCase().includes(this.searchText.toLowerCase())) ||
+        (r.usuario.email && r.usuario.email.toLowerCase().includes(this.searchText.toLowerCase())) ||
+        (r.usuario.telefono && r.usuario.telefono.includes(this.searchText));
+
+      const matchesStatus = this.statusFilter === 'all' ||
+        r.estado === this.statusFilter;
+
+      let matchesDate = true;
+      if (this.dateFilter) {
+        try {
+          matchesDate = new Date(r.fechaInicio).toDateString() === new Date(this.dateFilter).toDateString();
+        } catch (e) {
+          console.error('Error procesando fecha:', r.fechaInicio, e);
+          matchesDate = false;
+        }
+      }
+
+      return matchesSearch && matchesStatus && matchesDate;
+    });
+
+    console.log('Reservas filtradas:', this.filteredReservas);
+    this.updateSummary();
+  }
+
+
 
   saveConfiguration(): void {
     if (!this.isFormValid()) {
@@ -337,7 +459,7 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
       .pipe(take(1))
       .subscribe({
         next: () => {
-          this.notifications.showSuccess('Configuración guardada correctamente');
+          this.notifications.showSuccess('Guardado ok');
           this.refreshCalendar();
         },
         error: (err) => {
@@ -402,7 +524,9 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
 
   private updateSummary(): void {
     this.reservasPorDia = {};
-    this.reservas.forEach(reserva => {
+
+    // Cambiamos this.reservas por this.filteredReservas
+    this.filteredReservas.forEach(reserva => {
       try {
         const fecha = new Date(reserva.fechaInicio).toISOString().split('T')[0];
         if (fecha) {
@@ -412,6 +536,9 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
         console.error('Fecha inválida:', reserva.fechaInicio);
       }
     });
+
+    // Si necesitas también el total sin filtrar para algún otro uso
+    //this.totalReservasSinFiltrar = this.reservas.length; 
   }
 
   refreshCalendar(): void {

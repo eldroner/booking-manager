@@ -9,11 +9,12 @@ import { NotificationsService } from '../../services/notifications.service';
 import { HorarioNormal } from '../../services/booking-config.service';
 import { Router } from '@angular/router';
 import { saveAs } from 'file-saver';
+import { BookingUserComponent } from "../booking-user/booking-user.component";
 
 @Component({
   selector: 'app-booking-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, FullCalendarModule, BookingCalendarComponent],
+  imports: [CommonModule, FormsModule, FullCalendarModule, BookingCalendarComponent, BookingUserComponent],
   templateUrl: './booking-admin.component.html',
   styleUrls: ['./booking-admin.component.scss']
 })
@@ -25,6 +26,7 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
   isServiciosOpen = false;
   selectedReserva: any = null;
   today = new Date();
+  showReservaManual = false;
   configNegocio: BusinessConfig = {
     nombre: '',
     tipoNegocio: BusinessType.PELUQUERIA,
@@ -112,6 +114,22 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     }));
   }
 
+  scrollAndExpandReserva(): void {
+  // 1. Abre el acordeón
+  const accordionButton = document.querySelector('[data-bs-target="#panel-reservas"]') as HTMLElement;
+  if (accordionButton?.classList.contains('collapsed')) {
+    accordionButton.click();
+  }
+
+  // 2. Scroll suave hasta el formulario
+  setTimeout(() => {
+    const reservaSection = document.getElementById('panel-reservas');
+    reservaSection?.scrollIntoView({ 
+      behavior: 'smooth',
+      block: 'nearest'
+    });
+  }, 300); // Pequeño delay para esperar la animación del acordeón
+}
 
 
   filterReservations() {

@@ -1,10 +1,10 @@
 <form (ngSubmit)="saveConfiguration()" #configForm="ngForm">
-  <!-- Configuración básica - Ahora en fila -->
+
    
-<div class="row g-3 align-items-end mb-4">  <!-- Contenedor principal -->
+<div class="row g-3 mb-4">
   
-  <!-- Input Nombre del negocio -->
-  <div class="col-md-6 col-lg-5">
+  <!-- Nombre del negocio -->
+  <div class="col-12 col-lg-6">
     <label class="form-label fw-bold">Nombre del negocio</label>
     <input type="text" class="form-control" 
            [(ngModel)]="configNegocio.nombre" 
@@ -13,34 +13,47 @@
            placeholder="Ej: Mi Negocio">
   </div>
 
-  <!-- Reservas simultáneas (columna intermedia) -->
-  <div class="col-md-3 col-lg-2">
-    <label class="form-label fw-bold">Reservas/slot</label>
-    <input type="number" class="form-control" 
-           [(ngModel)]="configNegocio.maxReservasPorSlot" 
-           name="maxReservasPorSlot"
-           min="1" 
-           required>
-  </div>
+  <!-- Grupo derecho - Contenedor flexible -->
+  <div class="col-12 col-lg-6">
+    <div class="d-flex flex-wrap align-items-end justify-content-end gap-2">
+      
+      <!-- Reservas/slot -->
+      <div class="flex-shrink-0" style="width: 120px;">
+        <label class="form-label fw-bold">Reservas/slot</label>
+        <input type="number" class="form-control" 
+               [(ngModel)]="configNegocio.maxReservasPorSlot" 
+               name="maxReservasPorSlot"
+               min="1" 
+               required>
+      </div>
 
-  <!-- Botón Guardar (columna estrecha) -->
-  <div class="col-md-3 col-lg-1 d-flex align-items-end justify-content-end">
-    <i class="bi bi-cloud-arrow-up fs-2 text-primary cursor-pointer icono" 
-       title="Guardar configuración"
-       (click)="saveConfiguration()"></i>
-  </div>
+      <!-- Botón Guardar -->
+      <div class="flex-shrink-0">
+        <i class="bi bi-cloud-arrow-up fs-4 text-primary cursor-pointer icono" 
+           title="Guardar configuración"
+           (click)="saveConfiguration()"></i>
+      </div>
 
+      <!-- Botón crear reserva -->
+      <div class="flex-shrink-0">
+        <i class="bi bi-plus-circle fs-4 text-primary cursor-pointer icono"
+           title="Crear reserva nueva"
+           (click)="scrollAndExpandReserva()"></i>
+      </div>
+
+    </div>
+  </div>
 </div>
     <!-- Acordeón para Servicios -->
 <div class="accordion mb-4">
-  <div class="accordion-item">
+  <div class="accordion-item p-2">
     <h2 class="accordion-header">
       <button class="accordion-button" 
               type="button"
               [ngClass]="{'collapsed': !isServiciosOpen}"
               (click)="toggleServicios()">
         <i class="bi bi-list-check me-2"></i>
-        Gestión de Servicios
+        Gestionar Servicios
         <span class="badge bg-secondary ms-2">{{ configNegocio.servicios.length }}</span>
       </button>
     </h2>
@@ -86,9 +99,10 @@
         </div>
 
         <!-- Botón para añadir -->
-        <button (click)="addService()" class="btn btn-sm btn-primary mt-2 w-100">
-          <i class="bi bi-plus-circle"></i> Nuevo Servicio
-        </button>
+<button (click)="addService()" class="btn btn-sm btn-primary mt-2 w-100 d-flex align-items-center justify-content-center gap-2">
+  <i class="bi bi-plus-circle fs-6"></i>
+  <span>Nuevo Servicio</span>
+</button>
       </div>
     </div>
   </div>
@@ -307,13 +321,29 @@
             <button class="btn btn-sm btn-outline-danger me-1" (click)="deleteReservation(r.id)">
               <i class="bi bi-trash"></i>
             </button>
-            <!-- <button class="btn btn-sm btn-outline-primary" (click)="editReservation(r)">
-              <i class="bi bi-pencil"></i>
-            </button> -->
           </td>
         </tr>
       </tbody>
     </table>
   </div>
 </div>
+</div>
+
+
+<div class="accordion mt-3"> <!-- Cambiado mt-4 por mt-3 para mejor espaciado -->
+  <div class="accordion-item border-0"> <!-- Elimina el borde del item -->
+    <h5 class="accordion-header mb-0"> <!-- Usamos h5 como en tu cabecera -->
+      <button class="accordion-button collapsed px-0 bg-transparent shadow-none" 
+              type="button" 
+              data-bs-toggle="collapse" 
+              data-bs-target="#panel-reservas">
+        <i class="bi bi-plus-circle me-2"></i>Crear reserva nueva
+      </button>
+    </h5>
+    <div id="panel-reservas" class="accordion-collapse collapse">
+      <div class="accordion-body px-0 pt-3"> <!-- Ajuste de padding -->
+        <app-booking-user></app-booking-user>
+      </div>
+    </div>
+  </div>
 </div>

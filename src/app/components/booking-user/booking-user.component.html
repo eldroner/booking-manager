@@ -70,10 +70,21 @@
           }
         </div>
 
-        <div class="mb-3">
-          <label class="form-label">Teléfono (opcional):</label>
-          <input type="tel" class="form-control" [(ngModel)]="reservaData.usuario.telefono">
-        </div>
+<div class="mb-3">
+  <label class="form-label">Teléfono*:</label>
+  <input type="tel" 
+         class="form-control"
+         [(ngModel)]="reservaData.usuario.telefono"
+         (input)="soloNumeros($event)"
+         (blur)="phoneTouched = true; isFormValid()"
+         [class.is-invalid]="phoneTouched && phoneError"
+         name="telefono"
+         placeholder="Ej: 612345678">
+  
+  <div *ngIf="phoneTouched && phoneError" class="invalid-feedback">
+    {{ phoneError }}
+  </div>
+</div>
 
         <!-- Botón de confirmación -->
         <button class="btn btn-primary w-100 py-2 fw-bold" (click)="confirmarReserva()" [disabled]="!isFormValid()">

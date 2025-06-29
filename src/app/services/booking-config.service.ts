@@ -22,7 +22,7 @@ export enum BookingStatus {
 export interface UserData {
   nombre: string;
   email: string;
-  telefono?: string;
+  telefono: string;
   notas?: string;
 }
 
@@ -345,6 +345,52 @@ addReserva(reservaData: Omit<Reserva, 'id' | 'estado'>): Observable<{ token: str
   }).pipe(
     catchError(() => of([]))
   );
+}
+
+addReservaAdmin(reservaData: Omit<Reserva, 'id'>): Observable<Reserva> {
+    // Validaciones básicas (sin validación de email)
+    if (!reservaData.usuario?.nombre?.trim()) {
+      return throwError(() => ({ message: 'El nombre del usuario es requerido', code: 400 }));
+    }
+
+    if (!reservaData.fechaInicio || isNaN(new Date(reservaData.fechaInicio).getTime())) {
+      return throwError(() => ({ message: 'La fecha de inicio es inválida', code: 400 }));
+    }
+
+    if (reservaData.fechaFin && isNaN(new Date(reservaData.fechaFin).getTime())) {
+      return throwError(() => ({ message: 'La fecha de fin es inválida', code: 400 }));
+    }
+
+    if (!reservaData.duracion || reservaData.duracion < 5) {
+      return throwError(() => ({ 
+        message: 'La duración debe ser de al menos 5 minutos', 
+        code: 400 
+      }));
+    }
+
+    const payload = {
+      ...reservaData,
+      usuario: {
+        nombre: reservaData.usuario.nombre.trim(),
+        email: reservaData.usuario.email?.trim() || '', // Email opcional
+        telefono: reservaData.usuario.telefono?.trim() || '',
+        ...(reservaData.usuario.notas && { notas: reservaData.usuario.notas })
+      },
+      estado: 'confirmada', // Confirmación inmediata
+      fechaConfirmacion: new Date().toISOString(),
+      origen: 'admin' // Para trazabilidad
+    };
+
+    return this.http.post<Reserva>(`${environment.apiUrl}/api/reservas/admin`, payload).pipe(
+      tap((reservaCreada) => {
+        this.notifications.showSuccess(`Reserva confirmada para ${reservaCreada.usuario.nombre}`);
+      }),
+      catchError((error: ApiError) => {
+        const errorMessage = error.message || 'Error al crear la reserva';
+        this.notifications.showError(errorMessage);
+        return throwError(() => error);
+      })
+    );
 }
 
 isHoraDisponible(fecha: string, hora: string, duracion: number): Observable<boolean> {

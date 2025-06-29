@@ -122,3 +122,114 @@
 .bg-light {
   background-color: rgba(25, 135, 84, 0.05) !important;
 }
+
+.accordion-button {
+  padding: 0.5rem 0;
+  color: inherit;
+  &:focus {
+    box-shadow: none;
+    border-color: transparent;
+  }
+  &:not(.collapsed) {
+    color: inherit;
+    background-color: transparent;
+    box-shadow: none;
+  }
+  &::after {
+    margin-left: 0.5rem; /* Espacio para el icono de flecha */
+  }
+}
+
+/* Estilo para igualar la cabecera */
+.accordion-header h5 {
+  font-size: 1.125rem;
+  font-weight: 500;
+}
+
+/* booking-admin.component.scss */
+.icono {
+  transition: transform 0.2s;
+  &:hover {
+    transform: scale(1.1);
+  }
+  margin-bottom: 0.5rem; // Iguala la alineación vertical
+}
+
+/* booking-admin.component.scss */
+.accordion {
+  transition: max-height 0.3s ease;
+  
+  &.expanded {
+    max-height: none !important; /* Elimina límite cuando está expandido */
+  }
+}
+
+app-booking-user {
+  display: block;
+  min-height: 400px; /* Altura mínima del formulario */
+}
+
+/* Alineación perfecta de iconos */
+.icono {
+  transition: all 0.2s ease;
+  line-height: 1;
+  margin-bottom: 0.35rem; /* Ajuste fino de alineación vertical */
+  
+  &:hover {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+/* Ajustes específicos para pantallas grandes */
+@media (min-width: 992px) {
+  /* Espaciado entre reservas/slot y botones */
+  .justify-content-lg-end {
+    gap: 2rem;
+  }
+  
+  /* Tamaño consistente de iconos */
+  .bi-plus-circle {
+    font-size: 1.75rem !important; /* Tamaño intermedio */
+  }
+}
+
+.icono {
+  transition: all 0.2s ease;
+  line-height: 1;
+  padding: 0.25rem;
+  margin-bottom: 0.35rem;
+  
+  &:hover {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+/* Responsive para pantallas medianas */
+@media (max-width: 991.98px) {
+  .d-flex.flex-wrap {
+    gap: 1rem !important; /* Espacio consistente */
+    justify-content: flex-start !important; /* Alineación izquierda */
+  }
+  
+  /* Input reservas/slot ocupa ancho completo */
+  [style="width: 120px;"] {
+    width: 100% !important;
+  }
+}
+
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+  
+  i {
+    font-size: 0.9em; /* Ajuste fino del icono */
+    margin-top: -1px; /* Micro-ajuste de alineación vertical */
+  }
+  
+  span {
+    font-size: 0.875rem;
+  }
+}
+
+

@@ -21,6 +21,9 @@ registerLocaleData(localeEs);
 })
 export class BookingUserComponent implements OnInit {
   private readonly EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  private readonly PHONE_REGEX = /^[0-9]{9,15}$/;
+  phoneError: string | null = null;
+  phoneTouched = false;
 
   reservaData = {
     servicio: '',
@@ -256,22 +259,51 @@ export class BookingUserComponent implements OnInit {
   }
 
 
-  isFormValid(): boolean {
+isFormValid(): boolean {
     const emailValidation = this.isEmailValid(this.reservaData.usuario.email);
+    const phoneValidation = this.isPhoneValid(this.reservaData.usuario.telefono);
+    
     this.emailError = emailValidation.error;
+    this.phoneError = phoneValidation.error;
 
     return !!this.reservaData.usuario.nombre?.trim() &&
       !!this.reservaData.fechaInicio &&
       !!this.selectedTime &&
       !!this.reservaData.servicio &&
-      emailValidation.isValid;
-  }
+      emailValidation.isValid &&
+      phoneValidation.isValid;
+}
 
-  private isEmailValid(email: string): { isValid: boolean, error: string | null } {
-    if (!email) return { isValid: true, error: null };
+private isEmailValid(email: string): { isValid: boolean, error: string | null } {
+    if (!email) return { isValid: false, error: 'Email es requerido' }; // Cambiado a requerido
     const isValid = this.EMAIL_REGEX.test(email);
     return { isValid, error: isValid ? null : 'Email inválido' };
+}
+
+// Nuevo método para validar teléfono
+private isPhoneValid(phone: string | undefined): { isValid: boolean, error: string | null } {
+    if (!phone || phone.trim() === '') {
+      return { isValid: false, error: 'Teléfono es requerido' };
+    }
+    
+    const isValid = this.PHONE_REGEX.test(phone);
+    return { 
+        isValid, 
+        error: isValid ? null : 'Teléfono debe tener 9-15 dígitos' 
+    };
+}
+
+
+soloNumeros(event: Event): void {
+  const input = event.target as HTMLInputElement;
+  input.value = input.value.replace(/[^0-9]/g, '');
+  this.reservaData.usuario.telefono = input.value;
+  
+  // Solo validar después del primer touch
+  if (this.phoneTouched) {
+    this.phoneError = this.isPhoneValid(input.value).error;
   }
+}
 
 confirmarReserva(): void {
   const fechaInicio = new Date(`${this.reservaData.fechaInicio.split('T')[0]}T${this.selectedTime}:00`);

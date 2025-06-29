@@ -1,112 +1,95 @@
 <form (ngSubmit)="saveConfiguration()" #configForm="ngForm">
 
-   
-<div class="row g-3 mb-4">
-  
-  <!-- Nombre del negocio -->
-  <div class="col-12 col-lg-6">
-    <label class="form-label fw-bold">Nombre del negocio</label>
-    <input type="text" class="form-control" 
-           [(ngModel)]="configNegocio.nombre" 
-           name="nombre" 
-           required
-           placeholder="Ej: Mi Negocio">
-  </div>
 
-  <!-- Grupo derecho - Contenedor flexible -->
-  <div class="col-12 col-lg-6">
-    <div class="d-flex flex-wrap align-items-end justify-content-end gap-2">
-      
-      <!-- Reservas/slot -->
-      <div class="flex-shrink-0" style="width: 120px;">
-        <label class="form-label fw-bold">Reservas/slot</label>
-        <input type="number" class="form-control" 
-               [(ngModel)]="configNegocio.maxReservasPorSlot" 
-               name="maxReservasPorSlot"
-               min="1" 
-               required>
+  <div class="row g-3 mb-4">
+
+    <!-- Nombre del negocio -->
+    <div class="col-12 col-lg-6">
+      <label class="form-label fw-bold">Nombre del negocio</label>
+      <input type="text" class="form-control" [(ngModel)]="configNegocio.nombre" name="nombre" required
+        placeholder="Ej: Mi Negocio">
+    </div>
+
+    <!-- Grupo derecho - Contenedor flexible -->
+    <div class="col-12 col-lg-6">
+      <div class="d-flex flex-wrap align-items-end justify-content-end gap-2">
+
+        <!-- Reservas/slot -->
+        <div class="flex-shrink-0" style="width: 120px;">
+          <label class="form-label fw-bold">Reservas/slot</label>
+          <input type="number" class="form-control" [(ngModel)]="configNegocio.maxReservasPorSlot"
+            name="maxReservasPorSlot" min="1" required>
+        </div>
+
+        <!-- Botón Guardar -->
+        <div class="flex-shrink-0">
+          <i class="bi bi-cloud-arrow-up fs-4 text-primary cursor-pointer icono" title="Guardar configuración"
+            (click)="saveConfiguration()"></i>
+        </div>
+
+        <!-- Botón crear reserva -->
+        <div class="flex-shrink-0">
+          <i class="bi bi-plus-circle fs-4 text-primary cursor-pointer icono" title="Crear reserva nueva"
+            (click)="scrollAndExpandReserva()"></i>
+        </div>
+
       </div>
-
-      <!-- Botón Guardar -->
-      <div class="flex-shrink-0">
-        <i class="bi bi-cloud-arrow-up fs-4 text-primary cursor-pointer icono" 
-           title="Guardar configuración"
-           (click)="saveConfiguration()"></i>
-      </div>
-
-      <!-- Botón crear reserva -->
-      <div class="flex-shrink-0">
-        <i class="bi bi-plus-circle fs-4 text-primary cursor-pointer icono"
-           title="Crear reserva nueva"
-           (click)="scrollAndExpandReserva()"></i>
-      </div>
-
     </div>
   </div>
-</div>
-    <!-- Acordeón para Servicios -->
-<div class="accordion mb-4">
-  <div class="accordion-item p-2">
-    <h2 class="accordion-header">
-      <button class="accordion-button" 
-              type="button"
-              [ngClass]="{'collapsed': !isServiciosOpen}"
-              (click)="toggleServicios()">
-        <i class="bi bi-list-check me-2"></i>
-        Gestionar Servicios
-        <span class="badge bg-secondary ms-2">{{ configNegocio.servicios.length }}</span>
-      </button>
-    </h2>
-    <div class="accordion-collapse" 
-         [class.show]="isServiciosOpen"
-         [style.display]="isServiciosOpen ? 'block' : 'none'">
-      <div class="accordion-body p-2">
-        
-        <!-- Lista de servicios -->
-        <div *ngFor="let servicio of configNegocio.servicios; let i = index" class="mb-2 p-2 border rounded bg-light">
-          <div class="row g-2 align-items-center">
-            <div class="col-md-5">
-              <input type="text" class="form-control form-control-sm" 
-                     [(ngModel)]="servicio.nombre"
-                     [name]="'nombreServicio_' + i"
-                     placeholder="Ej: Corte de pelo">
-            </div>
-            <div class="col-md-3">
-              <div class="input-group input-group-sm">
-                <input type="number" class="form-control" 
-                       [(ngModel)]="servicio.duracion"
-                       [name]="'duracionServicio_' + i"
-                       min="5" step="5"
-                       placeholder="Minutos">
-                <span class="input-group-text">min</span>
+  <!-- Acordeón para Servicios -->
+  <div class="accordion mb-4">
+    <div class="accordion-item p-2">
+      <h2 class="accordion-header">
+        <button class="accordion-button" type="button" [ngClass]="{'collapsed': !isServiciosOpen}"
+          (click)="toggleServicios()">
+          <i class="bi bi-list-check me-2"></i>
+          Gestionar Servicios
+          <span class="badge bg-secondary ms-2">{{ configNegocio.servicios.length }}</span>
+        </button>
+      </h2>
+      <div class="accordion-collapse" [class.show]="isServiciosOpen"
+        [style.display]="isServiciosOpen ? 'block' : 'none'">
+        <div class="accordion-body p-2">
+
+          <!-- Lista de servicios -->
+          <div *ngFor="let servicio of configNegocio.servicios; let i = index" class="mb-2 p-2 border rounded bg-light">
+            <div class="row g-2 align-items-center">
+              <div class="col-md-5">
+                <input type="text" class="form-control form-control-sm" [(ngModel)]="servicio.nombre"
+                  [name]="'nombreServicio_' + i" placeholder="Ej: Corte de pelo">
               </div>
-            </div>
-            <div class="col-md-4">
-              <div class="d-flex justify-content-end">
-                <button (click)="updateService(servicio)" 
-                        class="btn btn-sm btn-outline-success me-2"
-                        title="Guardar cambios">
-                  <i class="bi bi-check-lg"></i>
-                </button>
-                <button (click)="deleteService(servicio.id)" 
-                        class="btn btn-sm btn-outline-danger"
-                        title="Eliminar servicio">
-                  <i class="bi bi-trash"></i>
-                </button>
+              <div class="col-md-3">
+                <div class="input-group input-group-sm">
+                  <input type="number" class="form-control" [(ngModel)]="servicio.duracion"
+                    [name]="'duracionServicio_' + i" min="5" step="5" placeholder="Minutos">
+                  <span class="input-group-text">min</span>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="d-flex justify-content-end">
+                  <button (click)="updateService(servicio)" class="btn btn-sm btn-outline-success me-2"
+                    title="Guardar cambios">
+                    <i class="bi bi-check-lg"></i>
+                  </button>
+                  <button (click)="deleteService(servicio.id)" class="btn btn-sm btn-outline-danger"
+                    title="Eliminar servicio">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Botón para añadir -->
-<button (click)="addService()" class="btn btn-sm btn-primary mt-2 w-100 d-flex align-items-center justify-content-center gap-2">
-  <i class="bi bi-plus-circle fs-6"></i>
-  <span>Nuevo Servicio</span>
-</button>
+          <!-- Botón para añadir -->
+          <button (click)="addService()"
+            class="btn btn-sm btn-primary mt-2 w-100 d-flex align-items-center justify-content-center gap-2">
+            <i class="bi bi-plus-circle fs-6"></i>
+            <span>Nuevo Servicio</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
 
   <app-booking-calendar *ngIf="calendarVisible"></app-booking-calendar>
@@ -205,10 +188,14 @@
                   </label>
                 </div>
               </td>
-              <td>
-                <button class="btn btn-sm btn-outline-danger" (click)="eliminarHorarioEspecial(i)">
-                  <i class="bi bi-trash"></i> Eliminar
-                </button>
+
+              <td style="text-align: right; padding-right: 0;">
+                <div style="display: inline-flex; align-items: center;">
+                  <button class="btn btn-sm btn-outline-danger" style="white-space: nowrap;"
+                    (click)="eliminarHorarioEspecial(i)">
+                    <i class="bi bi-trash"></i> Eliminar
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -217,8 +204,6 @@
     </div>
   </div>
 </form>
-
-
 
 <!-- Acordeón para Reservas Actuales -->
 <div class="card mb-4">
@@ -236,19 +221,17 @@
   <!-- Sección de Filtros -->
   <div class="card-body border-bottom">
     <h6 class="mb-3"><i class="bi bi-funnel me-1"></i>Filtros</h6>
-    
+
     <div class="row g-2 align-items-end">
       <div class="col-md-4">
         <label class="form-label small mb-1">Búsqueda</label>
         <div class="input-group">
           <span class="input-group-text"><i class="bi bi-search"></i></span>
-          <input type="text" class="form-control" 
-                 [(ngModel)]="searchText" 
-                 (input)="applyFilters()"
-                 placeholder="Nombre, email o teléfono">
+          <input type="text" class="form-control" [(ngModel)]="searchText" (input)="applyFilters()"
+            placeholder="Nombre, email o teléfono">
         </div>
       </div>
-      
+
       <div class="col-md-3">
         <label class="form-label small mb-1">Estado</label>
         <select class="form-select" [(ngModel)]="statusFilter" (change)="applyFilters()">
@@ -258,12 +241,12 @@
           <option value="cancelada">Canceladas</option>
         </select>
       </div>
-      
+
       <div class="col-md-3">
         <label class="form-label small mb-1">Fecha</label>
         <input type="date" class="form-control" [(ngModel)]="dateFilter" (change)="applyFilters()">
       </div>
-      
+
       <div class="col-md-2">
         <button class="btn btn-outline-secondary w-100" (click)="resetFilters()">
           <i class="bi bi-arrow-counterclockwise me-1"></i>Limpiar
@@ -273,70 +256,68 @@
   </div>
 
 
-<!-- Listado de Reservas -->
-<div class="card-body p-0">
-  <!-- Mensaje cuando no hay resultados -->
-  <div *ngIf="filteredReservas.length === 0" class="alert alert-warning m-4">
-    <i class="bi bi-exclamation-circle me-2"></i>No se encontraron reservas con los filtros actuales
-  </div>
+  <!-- Listado de Reservas -->
+  <div class="card-body p-0">
+    <!-- Mensaje cuando no hay resultados -->
+    <div *ngIf="filteredReservas.length === 0" class="alert alert-warning m-4">
+      <i class="bi bi-exclamation-circle me-2"></i>No se encontraron reservas con los filtros actuales
+    </div>
 
-  <!-- Tabla (solo visible cuando hay resultados) -->
-  <div class="table-responsive" *ngIf="filteredReservas.length > 0">
-    <table class="table table-hover mb-0">
-      <thead class="table-light">
-        <tr>
-          <th width="20%">Cliente</th>
-          <th width="20%">Contacto</th>
-          <th width="25%">Servicio y Fecha</th>
-          <th width="15%">Estado</th>
-          <th width="20%">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let r of filteredReservas">
-          <td>
-            <strong>{{ r.usuario?.nombre || 'Sin nombre' }}</strong>
-          </td>
-          <td>
-            <div>{{ r.usuario?.email }}</div>
-            <small class="text-muted" *ngIf="r.usuario?.telefono">{{ r.usuario.telefono }}</small>
-          </td>
-          <td>
-            <div class="fw-bold">{{ getServiceName(r.servicio) }}</div>
-            <div class="text-muted small">
-              {{ r.fechaInicio | date:'dd/MM/yyyy HH:mm' }}
-              <span *ngIf="r.fechaFin"> - {{ r.fechaFin | date:'HH:mm' }}</span>
-            </div>
-          </td>
-          <td>
-            <span class="badge rounded-pill" [ngClass]="{
+    <!-- Tabla (solo visible cuando hay resultados) -->
+    <div class="table-responsive" *ngIf="filteredReservas.length > 0">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th width="20%">Cliente</th>
+            <th width="20%">Contacto</th>
+            <th width="25%">Servicio y Fecha</th>
+            <th width="15%">Estado</th>
+            <th width="10%">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of filteredReservas">
+            <td>
+              <strong>{{ r.usuario?.nombre || 'Sin nombre' }}</strong>
+            </td>
+            <td>
+              <div>{{ r.usuario?.email }}</div>
+              <small class="text-muted" *ngIf="r.usuario?.telefono">{{ r.usuario.telefono }}</small>
+            </td>
+            <td>
+              <div class="fw-bold">{{ getServiceName(r.servicio) }}</div>
+              <div class="text-muted small">
+                {{ r.fechaInicio | date:'dd/MM/yyyy HH:mm' }}
+                <span *ngIf="r.fechaFin"> - {{ r.fechaFin | date:'HH:mm' }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="badge rounded-pill" [ngClass]="{
               'bg-success': r.estado === 'confirmada',
               'bg-warning text-dark': r.estado === 'pendiente_email',
               'bg-danger': r.estado === 'cancelada'
             }">
-              {{ r.estado | titlecase }}
-            </span>
-          </td>
-          <td>
-            <button class="btn btn-sm btn-outline-danger me-1" (click)="deleteReservation(r.id)">
-              <i class="bi bi-trash"></i>
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+                {{ r.estado | titlecase }}
+              </span>
+            </td>
+            <td class="text-center"><span class="text-danger"></span>
+              <button class="btn btn-sm btn-outline-danger me-1" (click)="deleteReservation(r.id)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
-</div>
 </div>
 
 
 <div class="accordion mt-3"> <!-- Cambiado mt-4 por mt-3 para mejor espaciado -->
   <div class="accordion-item border-0"> <!-- Elimina el borde del item -->
     <h5 class="accordion-header mb-0"> <!-- Usamos h5 como en tu cabecera -->
-      <button class="accordion-button collapsed px-0 bg-transparent shadow-none" 
-              type="button" 
-              data-bs-toggle="collapse" 
-              data-bs-target="#panel-reservas">
+      <button class="accordion-button collapsed px-0 bg-transparent shadow-none" type="button" data-bs-toggle="collapse"
+        data-bs-target="#panel-reservas">
         <i class="bi bi-plus-circle me-2"></i>Crear reserva nueva
       </button>
     </h5>

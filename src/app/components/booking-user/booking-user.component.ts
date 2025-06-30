@@ -1,7 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { BookingConfigService, Servicio, BusinessConfig, BusinessType, UserData } from '../../services/booking-config.service';
+import { BookingConfigService, Servicio, BusinessConfig, BusinessType, UserData, BookingStatus } from '../../services/booking-config.service';
 import { registerLocaleData } from '@angular/common';
 import localeEs from '@angular/common/locales/es';
 import { take, catchError, of, finalize } from 'rxjs';
@@ -20,6 +20,7 @@ registerLocaleData(localeEs);
   styleUrls: ['./booking-user.component.scss']
 })
 export class BookingUserComponent implements OnInit {
+  @Input() isAdmin: boolean = false;
   private readonly EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   private readonly PHONE_REGEX = /^[0-9]{9,15}$/;
   phoneError: string | null = null;
@@ -319,39 +320,58 @@ confirmarReserva(): void {
     confirmacionToken: 'temp-token'
   };
 
-this.bookingService.addReserva(reservaCompleta).subscribe({
-  next: (response: { token: string }) => { // Cambia el tipo aquí
-    // Verifica que response tiene token
-    if (!response.token) {
-      console.error('No se recibió token de confirmación');
-      this.notifications.showError('Error en la confirmación de la reserva');
-      return;
-    }
+if (this.isAdmin) {
+    // Lógica para el administrador: guardar directamente sin email de confirmación
+    const reservaAdmin = {
+      ...reservaCompleta,
+      estado: BookingStatus.CONFIRMADA, // Marcar como confirmada directamente
+      confirmacionToken: 'admin-confirmed' // Token ficticio para indicar que fue confirmada por admin
+    };
 
-    console.log('Email a enviar:', reservaCompleta.usuario.email);
-    
-    // ENVÍO DEL EMAIL (usando response.token)
-    this.emailService.sendBookingConfirmation(
-      reservaCompleta.usuario.email,
-      reservaCompleta.usuario.nombre,
-      {
-        fecha: reservaCompleta.fechaInicio, // Usa directamente la fecha del objeto
-        servicio: reservaCompleta.servicio, // Usa el nombre del servicio directamente si es string
-        token: response.token // ¡Cambio clave aquí!
+    this.bookingService.addReservaAdmin(reservaAdmin).subscribe({
+      next: (reserva) => {
+        this.notifications.showSuccess(`Reserva para ${reserva.usuario.nombre} creada y confirmada.`);
+        this.resetForm();
+      },
+      error: (err) => {
+        this.notifications.showError(err.error?.message || 'Error al crear la reserva como administrador');
       }
-    ).then(() => {
-      this.notifications.showSuccess('Reserva creada. Revisa tu email para confirmar.');
-    }).catch(error => {
-      console.error('Error enviando email:', error);
-      this.notifications.showError('Reserva creada, pero falló el envío del email de confirmación');
     });
 
-    this.resetForm();
-  },
-  error: (err) => {
-    this.notifications.showError(err.error?.message || 'Error al reservar');
+  } else {
+    // Lógica normal para el usuario: enviar email de confirmación
+    this.bookingService.addReserva(reservaCompleta).subscribe({
+      next: (response: { token: string }) => {
+        if (!response.token) {
+          console.error('No se recibió token de confirmación');
+          this.notifications.showError('Error en la confirmación de la reserva');
+          return;
+        }
+
+        console.log('Email a enviar:', reservaCompleta.usuario.email);
+
+        this.emailService.sendBookingConfirmation(
+          reservaCompleta.usuario.email,
+          reservaCompleta.usuario.nombre,
+          {
+            fecha: reservaCompleta.fechaInicio,
+            servicio: reservaCompleta.servicio,
+            token: response.token
+          }
+        ).then(() => {
+          this.notifications.showSuccess('Reserva creada. Revisa tu email para confirmar.');
+        }).catch(error => {
+          console.error('Error enviando email:', error);
+          this.notifications.showError('Reserva creada, pero falló el envío del email de confirmación');
+        });
+
+        this.resetForm();
+      },
+      error: (err) => {
+        this.notifications.showError(err.error?.message || 'Error al reservar');
+      }
+    });
   }
-});
 }
 
   private resetForm(): void {

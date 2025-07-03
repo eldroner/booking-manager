@@ -17,6 +17,7 @@ import { Router } from '@angular/router';
 export class BookingPageComponent implements OnInit {
   isAdmin: boolean = false;
   isLoading: boolean = true;
+  fechasBloqueadas: string[] = [];
 
   constructor(
     private bookingService: BookingConfigService,
@@ -32,6 +33,8 @@ export class BookingPageComponent implements OnInit {
     this.bookingService.loading$.subscribe(loading => {
       this.isLoading = loading;
     });
+
+    this.loadFechasBloqueadas();
   }
 
   // Nuevo método para cambiar de vista
@@ -42,5 +45,11 @@ export class BookingPageComponent implements OnInit {
     } else {
       this.router.navigate(['/']); // Navega a home (usuario)
     }
+  }
+
+  loadFechasBloqueadas(): void {
+    this.bookingService.getFechasBloqueadas().subscribe(fechas => {
+      this.fechasBloqueadas = fechas;
+    });
   }
 }

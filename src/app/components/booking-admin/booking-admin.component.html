@@ -92,7 +92,7 @@
   </div>
 
 
-  <app-booking-calendar *ngIf="calendarVisible"></app-booking-calendar>
+  <app-booking-calendar *ngIf="calendarVisible" [fechasBloqueadas]="fechasBloqueadas"></app-booking-calendar>
 
   <!-- Acordeón para Horarios Normales -->
   <div class="card mb-4">
@@ -201,6 +201,42 @@
           </tbody>
         </table>
       </div>
+    </div>
+  </div>
+
+  <!-- Acordeón para Bloquear Fechas -->
+  <div class="card mb-4">
+    <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center"
+      (click)="showBlockedDates = !showBlockedDates" style="cursor: pointer">
+      <h5 class="mb-0">Bloquear Fechas (Vacaciones, etc.)</h5>
+      <i class="bi" [class.bi-chevron-down]="!showBlockedDates" [class.bi-chevron-up]="showBlockedDates"
+        style="font-size: 1.2rem;"></i>
+    </div>
+    <div class="card-body" *ngIf="showBlockedDates">
+      <div class="row g-3 mb-3">
+        <div class="col-md-4">
+          <label class="form-label fw-bold">Seleccionar fecha a bloquear</label>
+          <input type="date" class="form-control" [(ngModel)]="nuevaFechaBloqueada" name="nuevaFechaBloqueada">
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <button class="btn btn-danger w-100" (click)="addFechaBloqueada()" [disabled]="!nuevaFechaBloqueada">
+            <i class="bi bi-lock-fill me-1"></i> Bloquear
+          </button>
+        </div>
+      </div>
+
+      <h6>Fechas ya bloqueadas:</h6>
+      <ul class="list-group">
+        <li *ngFor="let fecha of fechasBloqueadas" class="list-group-item d-flex justify-content-between align-items-center">
+          {{ fecha | date:'fullDate':'':'es' }}
+          <button class="btn btn-sm btn-outline-success" (click)="deleteFechaBloqueada(fecha)">
+            <i class="bi bi-unlock-fill me-1"></i> Desbloquear
+          </button>
+        </li>
+        <li *ngIf="fechasBloqueadas.length === 0" class="list-group-item text-muted">
+          No hay fechas bloqueadas.
+        </li>
+      </ul>
     </div>
   </div>
 </form>

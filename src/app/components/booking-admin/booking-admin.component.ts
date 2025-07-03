@@ -77,12 +77,15 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
   loadingReservas = false;
   showNormalSchedules = false;
   showSpecialSchedules = false;
+  showBlockedDates = false; // Nueva propiedad para el acordeón de fechas bloqueadas
   iconosCargados: boolean = false;
   showServicesEditor = false;
 
   calendarVisible = true;
   reservas: Reserva[] = [];
   reservasPorDia: { [fecha: string]: number } = {};
+  fechasBloqueadas: string[] = [];
+  nuevaFechaBloqueada: string = '';
   private subscriptions: Subscription = new Subscription();
 
   constructor(
@@ -96,6 +99,7 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadData();
     this.loadReservas();
+    this.loadFechasBloqueadas();
     this.checkIconsLoaded();
   }
 
@@ -586,5 +590,33 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
   getServiceName(serviceId: string): string {
     const config = this.bookingService.getConfig();
     return config.servicios?.find(s => s.id === serviceId)?.nombre || serviceId;
+  }
+
+  // Métodos para fechas bloqueadas
+  loadFechasBloqueadas(): void {
+    this.bookingService.getFechasBloqueadas().subscribe(fechas => {
+      this.fechasBloqueadas = fechas;
+    });
+  }
+
+  addFechaBloqueada(): void {
+    if (this.nuevaFechaBloqueada) {
+      this.bookingService.addFechaBloqueada(this.nuevaFechaBloqueada).subscribe(() => {
+        this.loadFechasBloqueadas();
+        this.nuevaFechaBloqueada = '';
+        this.notifications.showSuccess('Fecha bloqueada correctamente');
+        this.refreshCalendar();
+      });
+    }
+  }
+
+  deleteFechaBloqueada(fecha: string): void {
+    if (confirm('¿Desbloquear esta fecha?')) {
+      this.bookingService.deleteFechaBloqueada(fecha).subscribe(() => {
+        this.loadFechasBloqueadas();
+        this.notifications.showSuccess('Fecha desbloqueada correctamente');
+        this.refreshCalendar();
+      });
+    }
   }
 }

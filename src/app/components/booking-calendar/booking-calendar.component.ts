@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
 import { BookingConfigService } from '../../services/booking-config.service';
 import { CommonModule } from '@angular/common';
 import { FullCalendarModule } from '@fullcalendar/angular';
@@ -7,7 +7,7 @@ import { Reserva } from '../../services/booking-config.service';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import esLocale from '@fullcalendar/core/locales/es';
-import { EventContentArg } from '@fullcalendar/core';
+import { EventContentArg, DateSelectArg, DayCellMountArg } from '@fullcalendar/core';
 
 @Component({
   selector: 'app-booking-calendar',
@@ -17,6 +17,7 @@ import { EventContentArg } from '@fullcalendar/core';
   styleUrls: ['./booking-calendar.component.scss']
 })
 export class BookingCalendarComponent implements OnInit {
+  @Input() fechasBloqueadas: string[] = [];
   calendarOptions: any = {};
   reservas: Reserva[] = [];
   private reservasSubscription: Subscription = new Subscription();
@@ -103,9 +104,23 @@ private setupCalendar(): void {
     },
     eventClassNames: 'evento-calendario',
     dayCellClassNames: 'dia-calendario',
-    events: eventos
+    events: eventos,
+    selectAllow: (selectInfo: DateSelectArg) => {
+      const selectedDate = selectInfo.startStr.split('T')[0];
+      return !this.fechasBloqueadas.includes(selectedDate);
+    },
+    dayCellDidMount: (arg: DayCellMountArg) => {
+      const dateStr = arg.date.toISOString().split('T')[0];
+      if (this.fechasBloqueadas.includes(dateStr)) {
+        arg.el.classList.add('fecha-bloqueada');
+      }
+    }
   };
 }
+
+private handleDateClick(date: string): void {
+    console.log('Fecha seleccionada:', date);
+  }
 
 private createEventDiv(title: string, bgColor: string, textColor: string): HTMLElement {
   const div = document.createElement('div');
@@ -127,7 +142,5 @@ private createEventDiv(title: string, bgColor: string, textColor: string): HTMLE
   });
 }
 
-  private handleDateClick(date: string): void {
-    console.log('Fecha seleccionada:', date);
-  }
+  
 }

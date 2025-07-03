@@ -450,4 +450,17 @@ isHoraDisponible(fecha: string, hora: string, duracion: number): Observable<bool
   private isValidDate(date: string): boolean {
     return !isNaN(Date.parse(date));
   }
+
+  // Métodos para fechas bloqueadas
+  getFechasBloqueadas(): Observable<string[]> {
+    return this.http.get<string[]>(`${environment.apiUrl}/api/bloqueo`);
+  }
+
+  addFechaBloqueada(fecha: string): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/api/bloqueo`, { fecha });
+  }
+
+  deleteFechaBloqueada(fecha: string): Observable<any> {
+    return this.http.delete(`${environment.apiUrl}/api/bloqueo/${fecha}`);
+  }
 }

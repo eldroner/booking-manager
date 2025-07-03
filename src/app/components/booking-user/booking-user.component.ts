@@ -21,6 +21,7 @@ registerLocaleData(localeEs);
 })
 export class BookingUserComponent implements OnInit {
   @Input() isAdmin: boolean = false;
+  @Input() fechasBloqueadas: string[] = [];
   private readonly EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   private readonly PHONE_REGEX = /^[0-9]{9,15}$/;
   phoneError: string | null = null;
@@ -124,6 +125,13 @@ export class BookingUserComponent implements OnInit {
 
 
   onDateChange(selectedDate: string): void {
+    if (this.fechasBloqueadas.includes(selectedDate)) {
+      this.notifications.showError('Esta fecha no está disponible. Por favor, elija otra.');
+      this.reservaData.fechaInicio = ''; // Limpiar la fecha inválida
+      this.availableTimes = [];
+      return;
+    }
+
     this.reservaData.fechaInicio = selectedDate;
     this.selectedTime = '';
 

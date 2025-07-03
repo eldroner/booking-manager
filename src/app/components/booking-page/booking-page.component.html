@@ -10,7 +10,7 @@
     
       <!-- Mostrar solo el componente según la ruta -->
       <app-booking-admin *ngIf="isAdmin"></app-booking-admin>
-      <app-booking-user *ngIf="!isAdmin"></app-booking-user>
+      <app-booking-user *ngIf="!isAdmin" [fechasBloqueadas]="fechasBloqueadas"></app-booking-user>
     </div>
 
     <div *ngIf="isLoading" class="text-center py-5">

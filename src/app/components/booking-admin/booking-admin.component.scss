@@ -232,4 +232,16 @@ app-booking-user {
   }
 }
 
+    // Estilos mejorados para las etiquetas de estado de las reservas
+    .table .badge {
+    padding: 0.4em 0.8em;          // Aumenta el espacio interior para que no se vea apretado.
+    font-size: 0.8rem;             // Reduce ligeramente el tamaño de la fuente para un look más fino.
+    font-weight: 600;              // Hace la fuente un poco más gruesa (semi-bold) para mejor legibilidad.
+    border-radius: 50px;           // Redondea completamente los bordes para un efecto "píldora".
+    letter-spacing: 0.5px;         // Añade un sutil espacio entre letras.
+    text-transform: uppercase;     // Pone el texto en mayúsculas para un estilo más limpio y uniforme.
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); // Añade una sombra suave para dar profundidad.
+   border: 1px solid rgba(0,0,0,0.05); // Un borde muy sutil para definir mejor la etiqueta.
+   }
+
 

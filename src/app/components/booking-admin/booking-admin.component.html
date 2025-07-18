@@ -92,7 +92,7 @@
   </div>
 
 
-  <app-booking-calendar *ngIf="calendarVisible" [fechasBloqueadas]="fechasBloqueadas"></app-booking-calendar>
+  
 
   <!-- Acordeón para Horarios Normales -->
   <div class="card mb-4">
@@ -241,6 +241,8 @@
   </div>
 </form>
 
+<app-booking-calendar *ngIf="calendarVisible" [fechasBloqueadas]="fechasBloqueadas"></app-booking-calendar>
+
 <!-- Acordeón para Reservas Actuales -->
 <div class="card mb-4">
   <!-- Cabecera con título y contador -->
@@ -333,7 +335,7 @@
               'bg-warning text-dark': r.estado === 'pendiente_email',
               'bg-danger': r.estado === 'cancelada'
             }">
-                {{ r.estado | titlecase }}
+                {{ r.estado === 'pendiente_email' ? 'Pendiente' : (r.estado | titlecase) }}
               </span>
             </td>
             <td class="text-center"><span class="text-danger"></span>

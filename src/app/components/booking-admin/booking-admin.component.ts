@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { BookingConfigService, BusinessConfig, Reserva, BusinessType, HorarioEspecial, Servicio } from '../../services/booking-config.service';
+import { BookingConfigService, BusinessConfig, Reserva, BusinessType, HorarioEspecial, Servicio, BookingStatus } from '../../services/booking-config.service';
 import { FullCalendarModule } from '@fullcalendar/angular';
 import { BookingCalendarComponent } from '../booking-calendar/booking-calendar.component';
 import { Subscription, take } from 'rxjs';
@@ -412,20 +412,21 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
 
   private loadReservas(): void {
     this.subscriptions.add(
-      this.bookingService.getReservas().subscribe({
+      this.bookingService.getReservas(this.statusFilter === 'all' ? undefined : this.statusFilter as BookingStatus).subscribe({
         next: (reservas) => {
           this.reservas = reservas.sort((a, b) =>
             new Date(b.fechaInicio).getTime() - new Date(a.fechaInicio).getTime()
           );
           this.filteredReservas = [...this.reservas]; // Inicializa filtradas
           this.updateSummary();
-          this.applyFilters(); // Aplica filtros si existen
+          this.refreshCalendar(); // Asegura que el calendario se actualice
         },
         error: (err) => {
           console.error('Error cargando reservas', err);
           this.reservas = [];
           this.filteredReservas = [];
           this.reservasPorDia = {};
+          this.refreshCalendar(); // Asegura que el calendario se actualice incluso en caso de error
         }
       })
     );
@@ -498,6 +499,8 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
             this.reservas = this.reservas.filter(r => r.id !== id);
             this.updateSummary(); // <-- Asegurar que se actualice
             this.showSuccessToast('Reserva eliminada');
+            this.reservas = this.reservas.filter(r => r.id !== id);
+            this.filteredReservas = this.filteredReservas.filter(r => r.id !== id);
           },
           error: (err) => this.showErrorToast('Error al eliminar reserva: ' + err.message)
         })
@@ -564,8 +567,7 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
   }
 
   refreshCalendar(): void {
-    this.calendarVisible = false;
-    setTimeout(() => this.calendarVisible = true, 100);
+    this.calendarVisible = true;
   }
 
   private isFormValid(): boolean {

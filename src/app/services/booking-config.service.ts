@@ -180,8 +180,12 @@ confirmarReserva(token: string): Observable<Reserva> {
     )
   }
 
-  private loadBackendReservas(): Observable<Reserva[]> {
-    return this.http.get<Reserva[]>(`${environment.apiUrl}/api/reservas`).pipe(
+  private loadBackendReservas(status?: BookingStatus): Observable<Reserva[]> {
+    const params: { [key: string]: string } = {};
+    if (status) {
+      params['estado'] = status;
+    }
+    return this.http.get<Reserva[]>(`${environment.apiUrl}/api/reservas`, { params }).pipe(
       map(reservas => reservas.map(reserva => ({
         ...reserva,
         fechaInicio: new Date(reserva.fechaInicio).toISOString()
@@ -228,8 +232,10 @@ confirmarReserva(token: string): Observable<Reserva> {
     );
   }
 
-  getReservas(): Observable<Reserva[]> {
-    return this.reservas$;
+  getReservas(status?: BookingStatus): Observable<Reserva[]> {
+    return this.loadBackendReservas(status).pipe(
+      tap(reservas => this.reservasSubject.next(reservas))
+    );
   }
 
   getReservasPorSlot(fecha: string, hora: string): Observable<Reserva[]> {

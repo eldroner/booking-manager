@@ -1,67 +1,24 @@
-import { Component, OnInit, Input } from '@angular/core';
-import { BookingConfigService } from '../../services/booking-config.service';
+import { Component, OnInit, Input, OnDestroy } from '@angular/core';
+import { BookingConfigService, BookingStatus, Reserva } from '../../services/booking-config.service';
 import { CommonModule } from '@angular/common';
 import { FullCalendarModule } from '@fullcalendar/angular';
 import { Subscription } from 'rxjs';
-import { Reserva } from '../../services/booking-config.service';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import esLocale from '@fullcalendar/core/locales/es';
-import { EventContentArg, DateSelectArg, DayCellMountArg } from '@fullcalendar/core';
+import { CalendarOptions, EventContentArg, DayCellMountArg } from '@fullcalendar/core';
 
 @Component({
   selector: 'app-booking-calendar',
-  standalone: true, // <-- Añadir esto
+  standalone: true,
   imports: [CommonModule, FullCalendarModule],
   templateUrl: './booking-calendar.component.html',
   styleUrls: ['./booking-calendar.component.scss']
 })
-export class BookingCalendarComponent implements OnInit {
+export class BookingCalendarComponent implements OnInit, OnDestroy {
   @Input() fechasBloqueadas: string[] = [];
-  calendarOptions: any = {};
-  reservas: Reserva[] = [];
-  private reservasSubscription: Subscription = new Subscription();
-
-  constructor(private bookingService: BookingConfigService) { }
-
-  ngOnInit(): void {
-    this.reservasSubscription = this.bookingService.getReservas().subscribe((reservas) => {
-      this.reservas = reservas;
-      this.setupCalendar();
-    });
-  }
-
-  ngOnDestroy(): void {
-    if (this.reservasSubscription) {
-      this.reservasSubscription.unsubscribe();
-    }
-  }
-
-  eliminarReserva(id: string): void {
-    this.bookingService.deleteReserva(id).subscribe();
-  }
-
-private setupCalendar(): void {
-  const eventos = this.reservas.map((reserva) => {
-    const ahora = new Date();
-    const fechaEvento = new Date(reserva.fechaInicio);
-    const esPasado = fechaEvento < ahora;
-
-    return {
-      title: `${reserva.usuario.nombre} (${this.formatHora(reserva.fechaInicio)})`,
-      start: reserva.fechaInicio,
-      end: reserva.fechaFin,
-      backgroundColor: esPasado ? '#f0f4f8' : '#4a6baf',
-      borderColor: esPasado ? '#d1d9e6' : '#3a5690',
-      textColor: esPasado ? '#64748b' : '#ffffff',
-      extendedProps: {
-        ...reserva,
-        esPasado
-      }
-    };
-  });
-
-  this.calendarOptions = {
+  
+  calendarOptions: CalendarOptions = {
     plugins: [dayGridPlugin, interactionPlugin],
     initialView: 'dayGridMonth',
     firstDay: 1,
@@ -104,8 +61,7 @@ private setupCalendar(): void {
     },
     eventClassNames: 'evento-calendario',
     dayCellClassNames: 'dia-calendario',
-    events: eventos,
-    selectAllow: (selectInfo: DateSelectArg) => {
+    selectAllow: (selectInfo: any) => {
       const selectedDate = selectInfo.startStr.split('T')[0];
       return !this.fechasBloqueadas.includes(selectedDate);
     },
@@ -114,33 +70,77 @@ private setupCalendar(): void {
       if (this.fechasBloqueadas.includes(dateStr)) {
         arg.el.classList.add('fecha-bloqueada');
       }
-    }
+    },
+    events: [] 
   };
-}
 
-private handleDateClick(date: string): void {
-    console.log('Fecha seleccionada:', date);
+  private reservasSubscription: Subscription = new Subscription();
+
+  constructor(private bookingService: BookingConfigService) { }
+
+  ngOnInit(): void {
+    this.loadConfirmedReservas();
   }
 
-private createEventDiv(title: string, bgColor: string, textColor: string): HTMLElement {
-  const div = document.createElement('div');
-  div.className = 'fc-event-main';
-  div.style.backgroundColor = bgColor;
-  div.style.color = textColor;
-  div.style.padding = '2px 5px';
-  div.style.borderRadius = '4px';
-  div.textContent = title;
-  return div;
-}
+  ngOnDestroy(): void {
+    if (this.reservasSubscription) {
+      this.reservasSubscription.unsubscribe();
+    }
+  }
+
+  private loadConfirmedReservas(): void {
+    this.reservasSubscription = this.bookingService.getReservas(BookingStatus.CONFIRMADA).subscribe((reservas) => {
+      this.updateCalendarEvents(reservas);
+    });
+  }
+
+  private updateCalendarEvents(reservas: Reserva[]): void {
+    const eventos = reservas.map((reserva) => {
+      const ahora = new Date();
+      const fechaEvento = new Date(reserva.fechaInicio);
+      const esPasado = fechaEvento < ahora;
+
+      return {
+        title: `${reserva.usuario.nombre} (${this.formatHora(reserva.fechaInicio)})`,
+        start: reserva.fechaInicio,
+        end: reserva.fechaFin,
+        backgroundColor: esPasado ? '#f0f4f8' : '#4a6baf',
+        borderColor: esPasado ? '#d1d9e6' : '#3a5690',
+        textColor: esPasado ? '#64748b' : '#ffffff',
+        extendedProps: {
+          ...reserva,
+          esPasado
+        }
+      };
+    });
+
+    this.calendarOptions = {
+      ...this.calendarOptions,
+      events: eventos
+    };
+  }
+
+  private handleDateClick(date: string): void {
+    // Lógica para manejar el clic en una fecha
+  }
+
+  private createEventDiv(title: string, bgColor: string, textColor: string): HTMLElement {
+    const div = document.createElement('div');
+    div.className = 'fc-event-main';
+    div.style.backgroundColor = bgColor;
+    div.style.color = textColor;
+    div.style.padding = '2px 5px';
+    div.style.borderRadius = '4px';
+    div.textContent = title;
+    return div;
+  }
 
   private formatHora(fechaString: string): string {
-  const fecha = new Date(fechaString);
-  return fecha.toLocaleTimeString('es-ES', { 
-    hour: '2-digit', 
-    minute: '2-digit',
-    hour12: false 
-  });
-}
-
-  
+    const fecha = new Date(fechaString);
+    return fecha.toLocaleTimeString('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  }
 }

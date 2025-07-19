@@ -35,12 +35,12 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     servicios: [],
     horariosNormales: [
       {
-        dia: 1, // Lunes
-        tramos: [{ horaInicio: '09:00', horaFin: '13:00' }, { horaInicio: '15:00', horaFin: '19:00' }]
+        diaSemana: 1, // Lunes
+        aperturas: [{ horaInicio: '09:00', horaFin: '13:00' }, { horaInicio: '15:00', horaFin: '19:00' }]
       },
       {
-        dia: 2, // Martes
-        tramos: [{ horaInicio: '09:00', horaFin: '13:00' }, { horaInicio: '15:00', horaFin: '19:00' }]
+        diaSemana: 2, // Martes
+        aperturas: [{ horaInicio: '09:00', horaFin: '13:00' }, { horaInicio: '15:00', horaFin: '19:00' }]
       },
     ],
     horariosEspeciales: []
@@ -68,8 +68,10 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
 
   nuevoHorarioEspecial: Partial<HorarioEspecial> = {
     fecha: '',
-    horaInicio: '09:00',
-    horaFin: '14:00',
+    aperturas: [{
+      horaInicio: '09:00',
+      horaFin: '14:00'
+    }],
     activo: true
   };
 
@@ -213,25 +215,25 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
 
   // Métodos para horarios normales
   getTramosDia(dia: number): { horaInicio: string; horaFin: string }[] {
-    const horarioDia = this.configNegocio.horariosNormales.find(h => h.dia === dia);
-    return horarioDia ? horarioDia.tramos : [];
+    const horarioDia = this.configNegocio.horariosNormales.find(h => h.diaSemana === dia);
+    return horarioDia ? horarioDia.aperturas : [];
   }
 
   // En el componente booking-admin.ts (que no has compartido pero puedo inferir)
 
   agregarTramo(diaId: number): void {
     // Encuentra el día en la configuración
-    const diaIndex = this.configNegocio.horariosNormales.findIndex(d => d.dia === diaId);
+    const diaIndex = this.configNegocio.horariosNormales.findIndex(d => d.diaSemana === diaId);
 
     if (diaIndex === -1) {
       // Si no existe el día, lo creamos
       this.configNegocio.horariosNormales.push({
-        dia: diaId,
-        tramos: [{ horaInicio: '09:00', horaFin: '13:00' }]
+        diaSemana: diaId,
+        aperturas: [{ horaInicio: '09:00', horaFin: '13:00' }]
       });
     } else {
       // Si existe, añadimos un nuevo tramo por defecto
-      this.configNegocio.horariosNormales[diaIndex].tramos.push({
+      this.configNegocio.horariosNormales[diaIndex].aperturas.push({
         horaInicio: '09:00',
         horaFin: '13:00'
       });
@@ -272,12 +274,12 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     // Copia profunda del estado actual
     const nuevosHorarios = JSON.parse(JSON.stringify(this.configNegocio.horariosNormales));
 
-    const diaIndex = nuevosHorarios.findIndex((h: HorarioNormal) => h.dia === dia);
+    const diaIndex = nuevosHorarios.findIndex((h: HorarioNormal) => h.diaSemana === dia);
     if (diaIndex === -1) return;
 
-    nuevosHorarios[diaIndex].tramos.splice(index, 1);
+    nuevosHorarios[diaIndex].aperturas.splice(index, 1);
 
-    if (nuevosHorarios[diaIndex].tramos.length === 0) {
+    if (nuevosHorarios[diaIndex].aperturas.length === 0) {
       nuevosHorarios.splice(diaIndex, 1);
     }
 
@@ -301,9 +303,11 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
   agregarHorarioEspecial(): void {
 
     const nuevoHorario: HorarioEspecial = {
-      fecha: this.nuevoHorarioEspecial.fecha!,
-      horaInicio: this.nuevoHorarioEspecial.horaInicio!,
-      horaFin: this.nuevoHorarioEspecial.horaFin!,
+      fecha: new Date(this.nuevoHorarioEspecial.fecha! as string).toISOString(),
+      aperturas: [{
+        horaInicio: this.nuevoHorarioEspecial.aperturas![0].horaInicio,
+        horaFin: this.nuevoHorarioEspecial.aperturas![0].horaFin
+      }],
       activo: this.nuevoHorarioEspecial.activo !== false
     };
 
@@ -527,8 +531,8 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
       maxReservasPorSlot: 1,
       servicios: [],
       horariosNormales: this.diasSemana.map(dia => ({
-        dia: dia.id,
-        tramos: dia.id >= 1 && dia.id <= 5 ? // Lunes a Viernes
+        diaSemana: dia.id,
+        aperturas: dia.id >= 1 && dia.id <= 5 ? // Lunes a Viernes
           [{ horaInicio: '09:00', horaFin: '13:00' }, { horaInicio: '15:00', horaFin: '19:00' }] :
           dia.id === 6 ? // Sábado
             [{ horaInicio: '10:00', horaFin: '14:00' }] :
@@ -541,8 +545,10 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
   private resetNuevoHorarioEspecial(): void {
     this.nuevoHorarioEspecial = {
       fecha: '',
-      horaInicio: '09:00',
-      horaFin: '14:00',
+      aperturas: [{
+        horaInicio: '09:00',
+        horaFin: '14:00'
+      }],
       activo: true
     };
   }

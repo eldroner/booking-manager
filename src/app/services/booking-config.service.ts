@@ -52,8 +52,8 @@ export interface Reserva {
 }
 
 export interface HorarioNormal {
-  dia: number;
-  tramos: {
+  diaSemana: number;
+  aperturas: {
     horaInicio: string;
     horaFin: string;
   }[];
@@ -61,8 +61,10 @@ export interface HorarioNormal {
 
 export interface HorarioEspecial {
   fecha: string;
-  horaInicio: string;
-  horaFin: string;
+  aperturas: {
+    horaInicio: string;
+    horaFin: string;
+  }[];
   activo: boolean;
 }
 
@@ -87,12 +89,12 @@ export class BookingConfigService {
     maxReservasPorSlot: 1,
     servicios: [],
     horariosNormales: [
-      { dia: 1, tramos: [{ horaInicio: '09:00', horaFin: '13:00' }, { horaInicio: '15:00', horaFin: '19:00' }] },
-      { dia: 2, tramos: [{ horaInicio: '09:00', horaFin: '13:00' }, { horaInicio: '15:00', horaFin: '19:00' }] },
-      { dia: 3, tramos: [{ horaInicio: '09:00', horaFin: '13:00' }, { horaInicio: '15:00', horaFin: '19:00' }] },
-      { dia: 4, tramos: [{ horaInicio: '09:00', horaFin: '13:00' }, { horaInicio: '15:00', horaFin: '19:00' }] },
-      { dia: 5, tramos: [{ horaInicio: '09:00', horaFin: '13:00' }, { horaInicio: '15:00', horaFin: '19:00' }] },
-      { dia: 6, tramos: [{ horaInicio: '10:00', horaFin: '14:00' }] }
+      { diaSemana: 1, aperturas: [{ horaInicio: '09:00', horaFin: '13:00' }, { horaInicio: '15:00', horaFin: '19:00' }] },
+      { diaSemana: 2, aperturas: [{ horaInicio: '09:00', horaFin: '13:00' }, { horaInicio: '15:00', horaFin: '19:00' }] },
+      { diaSemana: 3, aperturas: [{ horaInicio: '09:00', horaFin: '13:00' }, { horaInicio: '15:00', horaFin: '19:00' }] },
+      { diaSemana: 4, aperturas: [{ horaInicio: '09:00', horaFin: '13:00' }, { horaInicio: '15:00', horaFin: '19:00' }] },
+      { diaSemana: 5, aperturas: [{ horaInicio: '09:00', horaFin: '13:00' }, { horaInicio: '15:00', horaFin: '19:00' }] },
+      { diaSemana: 6, aperturas: [{ horaInicio: '10:00', horaFin: '14:00' }] }
     ],
     horariosEspeciales: []
   };
@@ -412,21 +414,26 @@ isHoraDisponible(fecha: string, hora: string, duracion: number): Observable<bool
 }
 
   validateHorarioEspecial(horario: Partial<HorarioEspecial>): boolean {
-    if (!horario?.fecha || !horario.horaInicio || !horario.horaFin) return false;
+    if (!horario?.fecha || !horario.aperturas || horario.aperturas.length === 0) return false;
+
+    const apertura = horario.aperturas[0];
+    if (!apertura.horaInicio || !apertura.horaFin) return false;
 
     return this.isValidDate(horario.fecha) &&
-      this.isValidTime(horario.horaInicio) &&
-      this.isValidTime(horario.horaFin) &&
-      this.compareTimes(horario.horaInicio, horario.horaFin) < 0;
+      this.isValidTime(apertura.horaInicio) &&
+      this.isValidTime(apertura.horaFin) &&
+      this.compareTimes(apertura.horaInicio, apertura.horaFin) < 0;
   }
 
   checkSolapamientoHorarios(nuevoHorario: HorarioEspecial): boolean {
-    return this.getHorariosEspeciales().some(h =>
-      h.activo &&
-      h.fecha === nuevoHorario.fecha &&
-      !(this.compareTimes(nuevoHorario.horaFin, h.horaInicio) <= 0 ||
-        this.compareTimes(nuevoHorario.horaInicio, h.horaFin) >= 0)
-    );
+    const nuevaApertura = nuevoHorario.aperturas[0];
+    return this.getHorariosEspeciales().some(h => {
+      const aperturaExistente = h.aperturas[0];
+      return h.activo &&
+        h.fecha === nuevoHorario.fecha &&
+        !(this.compareTimes(nuevaApertura.horaFin, aperturaExistente.horaInicio) <= 0 ||
+          this.compareTimes(nuevaApertura.horaInicio, aperturaExistente.horaFin) >= 0);
+    });
   }
 
   getHorariosNormales(): HorarioNormal[] {

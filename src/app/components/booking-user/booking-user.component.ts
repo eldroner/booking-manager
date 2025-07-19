@@ -210,16 +210,16 @@ export class BookingUserComponent implements OnInit {
 
     if (specialSchedule) {
       return this.generateValidSlots(
-        specialSchedule.horaInicio,
-        specialSchedule.horaFin,
+        specialSchedule.aperturas[0].horaInicio,
+        specialSchedule.aperturas[0].horaFin,
         duracionServicio
       );
     }
 
     // 3. Horario normal
-    const normalSchedule = this.config.horariosNormales.find(h => h.dia === dayOfWeek);
-    if (normalSchedule?.tramos?.length) {
-      return normalSchedule.tramos.flatMap(tramo =>
+    const normalSchedule = this.config.horariosNormales.find(h => h.diaSemana === dayOfWeek);
+    if (normalSchedule?.aperturas?.length) {
+      return normalSchedule.aperturas.flatMap((tramo: { horaInicio: string; horaFin: string }) =>
         this.generateValidSlots(
           tramo.horaInicio,
           tramo.horaFin,

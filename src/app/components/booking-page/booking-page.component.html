@@ -1,12 +1,13 @@
-<div class="container my-5">
-    <h1 class="text-center mb-4">BOOKING MANAGER</h1>
+<div class="container mt-4">
+    <img src="assets/pixelnova-logo-gris-rojo-sin-fondo.png" alt="Pixelnova Logo" class="d-block mx-auto mb-4" style="max-width: 200px;">
+
   
     <div *ngIf="!isLoading">
-      <div class="mb-4 text-end">
+      <!-- <div class="mb-4 text-end">
         <button class="btn btn-outline-secondary" (click)="toggleView()">
           Cambiar a vista {{ isAdmin ? 'Usuario' : 'Admin' }}
         </button>
-      </div>
+      </div> -->
     
       <!-- Mostrar solo el componente según la ruta -->
       <app-booking-admin *ngIf="isAdmin"></app-booking-admin>

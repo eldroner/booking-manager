@@ -17,3 +17,35 @@ select option:disabled {
   .alert-info {
     transition: all 0.3s ease;
   }
+
+  .pixelnova-alert {
+  font-family: 'Montserrat', sans-serif;
+  background-color: rgb(53, 53, 53);
+  color: white;
+  border: none;
+}
+
+.pixelnova-alert strong {
+  color: white;
+  font-weight: 700;
+}
+
+.pixelnova-btn {
+  font-family: 'Montserrat', sans-serif;
+  background-color: #d90429;  /* rojo Pixelnova */
+  color: white;
+  border: none;
+}
+
+.pixelnova-btn:hover {
+  background-color: rgb(53, 53, 53); /* gris oscuro al pasar el ratón */
+  color: white;
+}
+
+.pixelnova-btn:disabled {
+  background-color: #aaa; /* gris claro para indicar desactivado */
+  color: white;
+  border: none;
+  opacity: 0.7;
+}
+

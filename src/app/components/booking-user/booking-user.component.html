@@ -1,13 +1,13 @@
 <div class="container mb-4">
   <div class="card p-4 shadow-sm">
     <!-- Encabezado con nombre del negocio -->
-    <div class="alert alert-info mb-3 d-flex align-items-center">
-      <i class="bi bi-info-circle me-2"></i>
+    <div class="alert mb-3 d-flex align-items-center pixelnova-alert">
+      <i class="bi bi-info-circle me-2 text-danger"></i>
       <div>
         <strong>{{ negocioNombre }}</strong>
-        <span class="badge bg-primary text-uppercase ms-2">CITA</span>
       </div>
     </div>
+
 
     <!-- Selector de Servicio -->
     <div class="mb-3">
@@ -61,8 +61,7 @@
           <label for="userEmail" class="form-label fw-bold">Correo electrónico:</label>
           <input type="email" id="userEmail" class="form-control {{emailTouched && emailError ? 'is-invalid' : ''}}"
             [(ngModel)]="reservaData.usuario.email" name="email" required placeholder="Ej: ejemplo@correo.com"
-            (change)="debugEmail()" 
-            (blur)="emailTouched = true; isFormValid()"> <!-- Actualizamos aquí -->
+            (change)="debugEmail()" (blur)="emailTouched = true; isFormValid()"> <!-- Actualizamos aquí -->
           @if (emailTouched && emailError) {
           <div class="invalid-feedback">
             {{emailError}}
@@ -70,24 +69,19 @@
           }
         </div>
 
-<div class="mb-3">
-  <label class="form-label">Teléfono*:</label>
-  <input type="tel" 
-         class="form-control"
-         [(ngModel)]="reservaData.usuario.telefono"
-         (input)="soloNumeros($event)"
-         (blur)="phoneTouched = true; isFormValid()"
-         [class.is-invalid]="phoneTouched && phoneError"
-         name="telefono"
-         placeholder="Ej: 612345678">
-  
-  <div *ngIf="phoneTouched && phoneError" class="invalid-feedback">
-    {{ phoneError }}
-  </div>
-</div>
+        <div class="mb-3">
+          <label class="form-label">Teléfono*:</label>
+          <input type="tel" class="form-control" [(ngModel)]="reservaData.usuario.telefono"
+            (input)="soloNumeros($event)" (blur)="phoneTouched = true; isFormValid()"
+            [class.is-invalid]="phoneTouched && phoneError" name="telefono" placeholder="Ej: 612345678">
+
+          <div *ngIf="phoneTouched && phoneError" class="invalid-feedback">
+            {{ phoneError }}
+          </div>
+        </div>
 
         <!-- Botón de confirmación -->
-        <button class="btn btn-primary w-100 py-2 fw-bold" (click)="confirmarReserva()" [disabled]="!isFormValid()">
+        <button class="btn pixelnova-btn w-100 py-2 fw-bold" (click)="confirmarReserva()" [disabled]="!isFormValid()">
           <i class="bi bi-check-circle me-2"></i>
           Confirmar reserva
         </button>

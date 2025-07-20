@@ -367,7 +367,7 @@ if (this.isAdmin) {
             token: response.token
           }
         ).then(() => {
-          this.notifications.showSuccess('Reserva creada. Revisa tu email para confirmar.');
+          this.notifications.showSuccess('Reserva solicitada. Revisa tu email para validarla. Tienes 48 horas para hacerlo.');
         }).catch(error => {
           console.error('Error enviando email:', error);
           this.notifications.showError('Reserva creada, pero falló el envío del email de confirmación');
@@ -397,5 +397,7 @@ if (this.isAdmin) {
     this.availableTimes = [];
     this.emailError = null;
     this.emailTouched = false;
+    this.phoneError = null;
+    this.phoneTouched = false;
   }
 }

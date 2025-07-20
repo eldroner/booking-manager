@@ -313,12 +313,6 @@ addReserva(reservaData: Omit<Reserva, 'id' | 'estado'>): Observable<{ token: str
     // 1. Tipo de retorno: Observable<{ token: string }>
     // 2. Eliminamos el tap que añadía la reserva al estado local
     return this.http.post<{ token: string }>(`${environment.apiUrl}/api/reservas`, payload).pipe(
-      tap((response) => {
-        this.notifications.showSuccess(
-          'Revisa tu email para confirmar la reserva. ' +
-          'Tienes 48 horas para completar el proceso.'
-        );
-      }),
       catchError((error: ApiError) => {
         const errorMessage = error.message || 'Error al crear la reserva';
         this.notifications.showError(errorMessage);

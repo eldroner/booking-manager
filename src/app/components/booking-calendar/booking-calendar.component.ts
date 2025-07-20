@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, OnDestroy } from '@angular/core';
+import { Component, OnInit, Input, OnDestroy, HostListener } from '@angular/core';
 import { BookingConfigService, BookingStatus, Reserva } from '../../services/booking-config.service';
 import { CommonModule } from '@angular/common';
 import { FullCalendarModule } from '@fullcalendar/angular';
@@ -17,7 +17,7 @@ import { CalendarOptions, EventContentArg, DayCellMountArg } from '@fullcalendar
 })
 export class BookingCalendarComponent implements OnInit, OnDestroy {
   @Input() fechasBloqueadas: string[] = [];
-  
+
   calendarOptions: CalendarOptions = {
     plugins: [dayGridPlugin, interactionPlugin],
     initialView: 'dayGridMonth',
@@ -27,7 +27,7 @@ export class BookingCalendarComponent implements OnInit, OnDestroy {
     headerToolbar: {
       left: 'prev,next',
       center: 'title',
-      right: 'today dayGridMonth,dayGridWeek'
+      right: 'dayGridMonth,dayGridWeek'
     },
     buttonText: {
       today: 'Hoy',
@@ -71,7 +71,7 @@ export class BookingCalendarComponent implements OnInit, OnDestroy {
         arg.el.classList.add('fecha-bloqueada');
       }
     },
-    events: [] 
+    events: []
   };
 
   private reservasSubscription: Subscription = new Subscription();
@@ -80,11 +80,25 @@ export class BookingCalendarComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadConfirmedReservas();
+    this.updateTitleFormat(); // Establecer el formato inicial
   }
 
   ngOnDestroy(): void {
     if (this.reservasSubscription) {
       this.reservasSubscription.unsubscribe();
+    }
+  }
+
+  @HostListener('window:resize', ['$event'])
+  onResize(event: any) {
+    this.updateTitleFormat();
+  }
+
+  private updateTitleFormat(): void {
+    if (window.innerWidth < 768) { // Considera 768px como el breakpoint para móvil
+      this.calendarOptions.titleFormat = { month: 'long' }; // Solo mes
+    } else {
+      this.calendarOptions.titleFormat = { year: 'numeric', month: 'long' }; // Mes y año
     }
   }
 

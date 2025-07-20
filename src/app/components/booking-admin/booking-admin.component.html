@@ -1,41 +1,35 @@
 <form (ngSubmit)="saveConfiguration()" #configForm="ngForm">
-
-
   <div class="row g-3 mb-4">
-
     <!-- Nombre del negocio -->
-    <div class="col-12 col-lg-6">
+    <div class="col-6">
       <label class="form-label fw-bold">Nombre del negocio</label>
       <input type="text" class="form-control" [(ngModel)]="configNegocio.nombre" name="nombre" required
         placeholder="Ej: Mi Negocio">
     </div>
 
-    <!-- Grupo derecho - Contenedor flexible -->
-    <div class="col-12 col-lg-6">
-      <div class="d-flex flex-wrap align-items-end justify-content-end gap-2">
+    <!-- Reservas/slot -->
+    <div class="col-3">
+      <label class="form-label fw-bold">Reservas/slot</label>
+      <input type="number" class="form-control" [(ngModel)]="configNegocio.maxReservasPorSlot"
+        name="maxReservasPorSlot" min="1" required>
+    </div>
 
-        <!-- Reservas/slot -->
-        <div class="flex-shrink-0" style="width: 120px;">
-          <label class="form-label fw-bold">Reservas/slot</label>
-          <input type="number" class="form-control" [(ngModel)]="configNegocio.maxReservasPorSlot"
-            name="maxReservasPorSlot" min="1" required>
-        </div>
+    <!-- Botones de acción -->
+    <div class="col-3 d-flex align-items-end justify-content-end gap-2">
+      <!-- Botón Guardar -->
+      <div>
+        <i class="bi bi-cloud-arrow-up fs-4 text-primary cursor-pointer icono" title="Guardar configuración"
+          (click)="saveConfiguration()"></i>
+      </div>
 
-        <!-- Botón Guardar -->
-        <div class="flex-shrink-0">
-          <i class="bi bi-cloud-arrow-up fs-4 text-primary cursor-pointer icono" title="Guardar configuración"
-            (click)="saveConfiguration()"></i>
-        </div>
-
-        <!-- Botón crear reserva -->
-        <div class="flex-shrink-0">
-          <i class="bi bi-plus fs-4 text-primary cursor-pointer" title="Crear reserva nueva"
-            (click)="scrollAndExpandReserva()"></i>
-        </div>
-
+      <!-- Botón crear reserva -->
+      <div>
+        <i class="bi bi-plus fs-4 text-primary cursor-pointer" title="Crear reserva nueva"
+          (click)="scrollAndExpandReserva()"></i>
       </div>
     </div>
   </div>
+
   <!-- Acordeón para Servicios -->
   <div class="accordion mb-4">
     <div class="accordion-item p-2">
@@ -50,7 +44,6 @@
       <div class="accordion-collapse" [class.show]="isServiciosOpen"
         [style.display]="isServiciosOpen ? 'block' : 'none'">
         <div class="accordion-body p-2">
-
           <!-- Lista de servicios -->
           <div *ngFor="let servicio of configNegocio.servicios; let i = index" class="mb-2 p-2 border rounded bg-light">
             <div class="row g-2 align-items-center">
@@ -91,152 +84,167 @@
     </div>
   </div>
 
-
-  
-
   <!-- Acordeón para Horarios Normales -->
-  <div class="card mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center"
-      (click)="showNormalSchedules = !showNormalSchedules" style="cursor: pointer">
-      <h5 class="mb-0">Editar horario</h5>
-      <i class="bi" [class.bi-chevron-down]="!showNormalSchedules" [class.bi-chevron-up]="showNormalSchedules"
-        style="font-size: 1.2rem;"></i>
-    </div>
-    <div class="card-body" *ngIf="showNormalSchedules">
-      <div *ngFor="let dia of diasSemana" class="mb-3 p-3 border rounded">
-        <h6>{{dia.nombre}}</h6>
-        <div *ngFor="let tramo of getTramosDia(dia.id); let i = index" class="row g-2 mb-2 align-items-center">
-          <div class="col-md-4">
-            <input type="time" class="form-control" [(ngModel)]="tramo.horaInicio"
-              [ngModelOptions]="{standalone: true}">
-          </div>
-          <div class="col-md-4">
-            <input type="time" class="form-control" [(ngModel)]="tramo.horaFin" [ngModelOptions]="{standalone: true}">
-          </div>
-          <div class="col-md-4">
-            <button (click)="eliminarTramo(dia.id, i, $event)" class="btn btn-sm btn-danger">
-              <i class="bi bi-trash"></i> Eliminar
+  <div class="accordion mb-4">
+    <div class="accordion-item p-2">
+      <h2 class="accordion-header">
+        <button class="accordion-button" type="button" [ngClass]="{'collapsed': !showNormalSchedules}"
+          (click)="showNormalSchedules = !showNormalSchedules">
+          <i class="bi bi-clock me-2"></i>
+          Editar horario
+        </button>
+      </h2>
+      <div class="accordion-collapse" [class.show]="showNormalSchedules"
+        [style.display]="showNormalSchedules ? 'block' : 'none'">
+        <div class="accordion-body p-2">
+          <div *ngFor="let dia of diasSemana" class="mb-3 p-3 border rounded">
+            <h6>{{dia.nombre}}</h6>
+            <div *ngFor="let tramo of getTramosDia(dia.id); let i = index" class="row g-2 mb-2 align-items-center">
+              <div class="col-md-4">
+                <input type="time" class="form-control" [(ngModel)]="tramo.horaInicio"
+                  [ngModelOptions]="{standalone: true}">
+              </div>
+              <div class="col-md-4">
+                <input type="time" class="form-control" [(ngModel)]="tramo.horaFin" [ngModelOptions]="{standalone: true}">
+              </div>
+              <div class="col-md-4">
+                <button (click)="eliminarTramo(dia.id, i, $event)" class="btn btn-sm btn-danger">
+                  <i class="bi bi-trash"></i> Eliminar
+                </button>
+              </div>
+            </div>
+            <button type="button" (click)="agregarTramo(dia.id)" class="btn btn-sm btn-success mt-2 btn-icon-only" title="Añadir horario">
+              <i class="bi bi-plus-circle"></i>
             </button>
           </div>
         </div>
-        <button type="button" (click)="agregarTramo(dia.id)" class="btn btn-sm btn-success mt-2 btn-icon-only" title="Añadir horario">
-          <i class="bi bi-plus-circle"></i>
-        </button>
       </div>
     </div>
   </div>
 
   <!-- Acordeón para Horarios Especiales -->
-  <div class="card mb-4">
-    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center"
-      (click)="showSpecialSchedules = !showSpecialSchedules" style="cursor: pointer">
-      <h5 class="mb-0">Añadir horario especial</h5>
-      <i class="bi" [class.bi-chevron-down]="!showSpecialSchedules" [class.bi-chevron-up]="showSpecialSchedules"
-        style="font-size: 1.2rem;"></i>
-    </div>
-    <div class="card-body" *ngIf="showSpecialSchedules">
-      <!-- Formulario para nuevo horario especial -->
-      <div class="row g-3 mb-4 p-3 bg-light rounded">
-        <div class="col-md-4">
-          <label class="form-label fw-bold">Fecha</label>
-          <input type="date" class="form-control" [(ngModel)]="nuevoHorarioEspecial.fecha"
-            [ngModelOptions]="{standalone: true}">
+  <div class="accordion mb-4">
+    <div class="accordion-item p-2">
+      <h2 class="accordion-header">
+        <button class="accordion-button" type="button" [ngClass]="{'collapsed': !showSpecialSchedules}"
+          (click)="showSpecialSchedules = !showSpecialSchedules">
+          <i class="bi bi-calendar-event me-2"></i>
+          Añadir horario especial
+        </button>
+      </h2>
+      <div class="accordion-collapse" [class.show]="showSpecialSchedules"
+        [style.display]="showSpecialSchedules ? 'block' : 'none'">
+        <div class="accordion-body p-2">
+          <!-- Formulario para nuevo horario especial -->
+          <div class="row g-3 mb-4 p-3 bg-light rounded">
+            <div class="col-md-4">
+              <label class="form-label fw-bold">Fecha</label>
+              <input type="date" class="form-control" [(ngModel)]="nuevoHorarioEspecial.fecha"
+                [ngModelOptions]="{standalone: true}">
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label fw-bold">Hora inicio</label>
+              <input type="time" class="form-control" [(ngModel)]="nuevoHorarioEspecial.horaInicio"
+                [ngModelOptions]="{standalone: true}">
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label fw-bold">Hora fin</label>
+              <input type="time" class="form-control" [(ngModel)]="nuevoHorarioEspecial.horaFin"
+                [ngModelOptions]="{standalone: true}">
+            </div>
+
+            <div class="col-md-2 d-flex align-items-end">
+              <button class="btn btn-success w-100" (click)="agregarHorarioEspecial()"
+                [disabled]="!nuevoHorarioEspecial.fecha">
+                <i class="bi bi-plus-circle me-1"></i> Añadir
+              </button>
+            </div>
+          </div>
+
+          <!-- Listado de horarios especiales -->
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead class="table-light">
+                <tr>
+                  <th>Fecha</th>
+                  <th>Horario</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let horario of configNegocio.horariosEspeciales; let i = index"
+                  [class.table-warning]="!horario.activo">
+                  <td>{{ horario.fecha | date:'mediumDate':'':'es' }}</td>
+                  <td>{{ horario.horaInicio }} - {{ horario.horaFin }}</td>
+                  <td>
+                    <div class="form-check form-switch">
+                      <input type="checkbox" class="form-check-input" [(ngModel)]="horario.activo"
+                        [ngModelOptions]="{standalone: true}" (change)="toggleActivoHorarioEspecial(i)">
+                      <label class="form-check-label">
+                        {{ horario.activo ? 'Activo' : 'Inactivo' }}
+                      </label>
+                    </div>
+                  </td>
+
+                  <td style="text-align: right; padding-right: 0;">
+                    <div style="display: inline-flex; align-items: center;">
+                      <button class="btn btn-sm btn-outline-danger" style="white-space: nowrap;"
+                        (click)="eliminarHorarioEspecial(i)">
+                        <i class="bi bi-trash"></i> Eliminar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-
-        <div class="col-md-3">
-          <label class="form-label fw-bold">Hora inicio</label>
-          <input type="time" class="form-control" [(ngModel)]="nuevoHorarioEspecial.horaInicio"
-            [ngModelOptions]="{standalone: true}">
-        </div>
-
-        <div class="col-md-3">
-          <label class="form-label fw-bold">Hora fin</label>
-          <input type="time" class="form-control" [(ngModel)]="nuevoHorarioEspecial.horaFin"
-            [ngModelOptions]="{standalone: true}">
-        </div>
-
-        <div class="col-md-2 d-flex align-items-end">
-          <button class="btn btn-success w-100" (click)="agregarHorarioEspecial()"
-            [disabled]="!nuevoHorarioEspecial.fecha">
-            <i class="bi bi-plus-circle me-1"></i> Añadir
-          </button>
-        </div>
-      </div>
-
-      <!-- Listado de horarios especiales -->
-      <div class="table-responsive">
-        <table class="table table-hover">
-          <thead class="table-light">
-            <tr>
-              <th>Fecha</th>
-              <th>Horario</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let horario of configNegocio.horariosEspeciales; let i = index"
-              [class.table-warning]="!horario.activo">
-              <td>{{ horario.fecha | date:'mediumDate':'':'es' }}</td>
-              <td>{{ horario.horaInicio }} - {{ horario.horaFin }}</td>
-              <td>
-                <div class="form-check form-switch">
-                  <input type="checkbox" class="form-check-input" [(ngModel)]="horario.activo"
-                    [ngModelOptions]="{standalone: true}" (change)="toggleActivoHorarioEspecial(i)">
-                  <label class="form-check-label">
-                    {{ horario.activo ? 'Activo' : 'Inactivo' }}
-                  </label>
-                </div>
-              </td>
-
-              <td style="text-align: right; padding-right: 0;">
-                <div style="display: inline-flex; align-items: center;">
-                  <button class="btn btn-sm btn-outline-danger" style="white-space: nowrap;"
-                    (click)="eliminarHorarioEspecial(i)">
-                    <i class="bi bi-trash"></i> Eliminar
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
       </div>
     </div>
   </div>
 
   <!-- Acordeón para Bloquear Fechas -->
-  <div class="card mb-4">
-    <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center"
-      (click)="showBlockedDates = !showBlockedDates" style="cursor: pointer">
-      <h5 class="mb-0">Bloquear Fechas (Vacaciones, etc.)</h5>
-      <i class="bi" [class.bi-chevron-down]="!showBlockedDates" [class.bi-chevron-up]="showBlockedDates"
-        style="font-size: 1.2rem;"></i>
-    </div>
-    <div class="card-body" *ngIf="showBlockedDates">
-      <div class="row g-3 mb-3">
-        <div class="col-md-4">
-          <label class="form-label fw-bold">Seleccionar fecha a bloquear</label>
-          <input type="date" class="form-control" [(ngModel)]="nuevaFechaBloqueada" name="nuevaFechaBloqueada">
-        </div>
-        <div class="col-md-2 d-flex align-items-end">
-          <button type="button" class="btn btn-danger w-100" (click)="addFechaBloqueada()" [disabled]="!nuevaFechaBloqueada">
-            <i class="bi bi-lock-fill me-1"></i> Bloquear
-          </button>
+  <div class="accordion mb-4">
+    <div class="accordion-item p-2">
+      <h2 class="accordion-header">
+        <button class="accordion-button" type="button" [ngClass]="{'collapsed': !showBlockedDates}"
+          (click)="showBlockedDates = !showBlockedDates">
+          <i class="bi bi-calendar-x me-2"></i>
+          Bloquear Fechas (Vacaciones, etc.)
+        </button>
+      </h2>
+      <div class="accordion-collapse" [class.show]="showBlockedDates"
+        [style.display]="showBlockedDates ? 'block' : 'none'">
+        <div class="accordion-body p-2">
+          <div class="row g-3 mb-3">
+            <div class="col-md-4">
+              <label class="form-label fw-bold">Seleccionar fecha a bloquear</label>
+              <input type="date" class="form-control" [(ngModel)]="nuevaFechaBloqueada" name="nuevaFechaBloqueada">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+              <button type="button" class="btn btn-danger w-100" (click)="addFechaBloqueada()" [disabled]="!nuevaFechaBloqueada">
+                <i class="bi bi-lock-fill me-1"></i> Bloquear
+              </button>
+            </div>
+          </div>
+
+          <h6>Fechas ya bloqueadas:</h6>
+          <ul class="list-group">
+            <li *ngFor="let fecha of fechasBloqueadas" class="list-group-item d-flex justify-content-between align-items-center">
+              {{ fecha | date:'fullDate':'':'es' }}
+              <button class="btn btn-sm btn-outline-success" (click)="deleteFechaBloqueada(fecha)">
+                <i class="bi bi-unlock-fill me-1"></i> Desbloquear
+              </button>
+            </li>
+            <li *ngIf="fechasBloqueadas.length === 0" class="list-group-item text-muted">
+              No hay fechas bloqueadas.
+            </li>
+          </ul>
         </div>
       </div>
-
-      <h6>Fechas ya bloqueadas:</h6>
-      <ul class="list-group">
-        <li *ngFor="let fecha of fechasBloqueadas" class="list-group-item d-flex justify-content-between align-items-center">
-          {{ fecha | date:'fullDate':'':'es' }}
-          <button class="btn btn-sm btn-outline-success" (click)="deleteFechaBloqueada(fecha)">
-            <i class="bi bi-unlock-fill me-1"></i> Desbloquear
-          </button>
-        </li>
-        <li *ngIf="fechasBloqueadas.length === 0" class="list-group-item text-muted">
-          No hay fechas bloqueadas.
-        </li>
-      </ul>
     </div>
   </div>
 </form>
@@ -244,126 +252,128 @@
 <app-booking-calendar *ngIf="calendarVisible" [fechasBloqueadas]="fechasBloqueadas"></app-booking-calendar>
 
 <!-- Acordeón para Reservas Actuales -->
-<div class="card mb-4">
-  <!-- Cabecera con título y contador -->
-  <div class="card-header d-flex justify-content-between align-items-center bg-light">
-    <h5 class="mb-0">
-      <i class="bi bi-calendar-check me-2"></i>Gestión de Reservas
-      <small class="text-muted ms-2">({{ filteredReservas.length }} resultados)</small>
-    </h5>
-    <button class="btn btn-sm btn-outline-primary" (click)="exportToCSV()">
-      <i class="bi bi-download me-1"></i>Exportar
-    </button>
-  </div>
+<div class="accordion mb-4">
+  <div class="accordion-item p-2">
+    <h2 class="accordion-header">
+      <button class="accordion-button" type="button" [ngClass]="{'collapsed': !showCurrentBookings}"
+        (click)="showCurrentBookings = !showCurrentBookings">
+        <i class="bi bi-calendar-check me-2"></i>
+        Gestión de Reservas
+        <small class="text-muted ms-2">({{ filteredReservas.length }} resultados)</small>
+      </button>
+    </h2>
+    <div class="accordion-collapse" [class.show]="showCurrentBookings"
+      [style.display]="showCurrentBookings ? 'block' : 'none'">
+      <div class="accordion-body p-2">
+        <!-- Sección de Filtros -->
+        <div class="border-bottom pb-3 mb-3">
+          <h6 class="mb-3"><i class="bi bi-funnel me-1"></i>Filtros</h6>
 
-  <!-- Sección de Filtros -->
-  <div class="card-body border-bottom">
-    <h6 class="mb-3"><i class="bi bi-funnel me-1"></i>Filtros</h6>
+          <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+              <label class="form-label small mb-1">Búsqueda</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control" [(ngModel)]="searchText" (input)="applyFilters()"
+                  placeholder="Nombre, email o teléfono">
+              </div>
+            </div>
 
-    <div class="row g-2 align-items-end">
-      <div class="col-md-4">
-        <label class="form-label small mb-1">Búsqueda</label>
-        <div class="input-group">
-          <span class="input-group-text"><i class="bi bi-search"></i></span>
-          <input type="text" class="form-control" [(ngModel)]="searchText" (input)="applyFilters()"
-            placeholder="Nombre, email o teléfono">
+            <div class="col-md-3">
+              <label class="form-label small mb-1">Estado</label>
+              <select class="form-select" [(ngModel)]="statusFilter" (change)="applyFilters()">
+                <option value="all">Todos los estados</option>
+                <option value="confirmada">Confirmadas</option>
+                <option value="pendiente_email">Pendientes</option>
+                <option value="cancelada">Canceladas</option>
+              </select>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label small mb-1">Fecha</label>
+              <input type="date" class="form-control" [(ngModel)]="dateFilter" (change)="applyFilters()">
+            </div>
+
+            <div class="col-md-2">
+              <button class="btn btn-outline-secondary w-100" (click)="resetFilters()">
+                <i class="bi bi-arrow-counterclockwise me-1"></i>Limpiar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Listado de Reservas -->
+        <div>
+          <!-- Mensaje cuando no hay resultados -->
+          <div *ngIf="filteredReservas.length === 0" class="alert alert-warning m-4">
+            <i class="bi bi-exclamation-circle me-2"></i>No se encontraron reservas con los filtros actuales
+          </div>
+
+          <!-- Tabla (solo visible cuando hay resultados) -->
+          <div class="table-responsive" *ngIf="filteredReservas.length > 0">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th width="20%">Cliente</th>
+                  <th width="20%">Contacto</th>
+                  <th width="25%">Servicio y Fecha</th>
+                  <th width="15%">Estado</th>
+                  <th width="10%">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let r of filteredReservas">
+                  <td>
+                    <strong>{{ r.usuario?.nombre || 'Sin nombre' }}</strong>
+                  </td>
+                  <td>
+                    <div>{{ r.usuario?.email }}</div>
+                    <small class="text-muted" *ngIf="r.usuario?.telefono">{{ r.usuario.telefono }}</small>
+                  </td>
+                  <td>
+                    <div class="fw-bold">{{ getServiceName(r.servicio) }}</div>
+                    <div class="text-muted small">
+                      {{ r.fechaInicio | date:'dd/MM/yyyy HH:mm' }}
+                      <span *ngIf="r.fechaFin"> - {{ r.fechaFin | date:'HH:mm' }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge rounded-pill" [ngClass]="{
+                      'bg-success': r.estado === 'confirmada',
+                      'bg-warning text-dark': r.estado === 'pendiente_email',
+                      'bg-danger': r.estado === 'cancelada'
+                    }">
+                      {{ r.estado === 'pendiente_email' ? 'Pendiente' : (r.estado | titlecase) }}
+                    </span>
+                  </td>
+                  <td class="text-end"><span class="text-danger"></span>
+                    <button *ngIf="r.estado === 'pendiente_email'" class="btn btn-sm btn-outline-success me-1" (click)="confirmReservation(r.id)">
+                      <i class="bi bi-check-lg"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger me-1" (click)="deleteReservation(r.id)">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-
-      <div class="col-md-3">
-        <label class="form-label small mb-1">Estado</label>
-        <select class="form-select" [(ngModel)]="statusFilter" (change)="applyFilters()">
-          <option value="all">Todos los estados</option>
-          <option value="confirmada">Confirmadas</option>
-          <option value="pendiente_email">Pendientes</option>
-          <option value="cancelada">Canceladas</option>
-        </select>
-      </div>
-
-      <div class="col-md-3">
-        <label class="form-label small mb-1">Fecha</label>
-        <input type="date" class="form-control" [(ngModel)]="dateFilter" (change)="applyFilters()">
-      </div>
-
-      <div class="col-md-2">
-        <button class="btn btn-outline-secondary w-100" (click)="resetFilters()">
-          <i class="bi bi-arrow-counterclockwise me-1"></i>Limpiar
-        </button>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- Listado de Reservas -->
-  <div class="card-body p-0">
-    <!-- Mensaje cuando no hay resultados -->
-    <div *ngIf="filteredReservas.length === 0" class="alert alert-warning m-4">
-      <i class="bi bi-exclamation-circle me-2"></i>No se encontraron reservas con los filtros actuales
-    </div>
-
-    <!-- Tabla (solo visible cuando hay resultados) -->
-    <div class="table-responsive" *ngIf="filteredReservas.length > 0">
-      <table class="table table-hover mb-0">
-        <thead class="table-light">
-          <tr>
-            <th width="20%">Cliente</th>
-            <th width="20%">Contacto</th>
-            <th width="25%">Servicio y Fecha</th>
-            <th width="15%">Estado</th>
-            <th width="10%">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let r of filteredReservas">
-            <td>
-              <strong>{{ r.usuario?.nombre || 'Sin nombre' }}</strong>
-            </td>
-            <td>
-              <div>{{ r.usuario?.email }}</div>
-              <small class="text-muted" *ngIf="r.usuario?.telefono">{{ r.usuario.telefono }}</small>
-            </td>
-            <td>
-              <div class="fw-bold">{{ getServiceName(r.servicio) }}</div>
-              <div class="text-muted small">
-                {{ r.fechaInicio | date:'dd/MM/yyyy HH:mm' }}
-                <span *ngIf="r.fechaFin"> - {{ r.fechaFin | date:'HH:mm' }}</span>
-              </div>
-            </td>
-            <td>
-              <span class="badge rounded-pill" [ngClass]="{
-              'bg-success': r.estado === 'confirmada',
-              'bg-warning text-dark': r.estado === 'pendiente_email',
-              'bg-danger': r.estado === 'cancelada'
-            }">
-                {{ r.estado === 'pendiente_email' ? 'Pendiente' : (r.estado | titlecase) }}
-              </span>
-            </td>
-            <td class="text-end"><span class="text-danger"></span>
-              <button *ngIf="r.estado === 'pendiente_email'" class="btn btn-sm btn-outline-success me-1" (click)="confirmReservation(r.id)">
-                <i class="bi bi-check-lg"></i>
-              </button>
-              <button class="btn btn-sm btn-outline-danger me-1" (click)="deleteReservation(r.id)">
-                <i class="bi bi-trash"></i>
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
     </div>
   </div>
 </div>
 
-
-<div class="accordion mt-3"> <!-- Cambiado mt-4 por mt-3 para mejor espaciado -->
-  <div class="accordion-item border-0"> <!-- Elimina el borde del item -->
-    <h5 class="accordion-header mb-0"> <!-- Usamos h5 como en tu cabecera -->
+<div class="accordion mt-3">
+  <div class="accordion-item border-0">
+    <h5 class="accordion-header mb-0">
       <button class="accordion-button collapsed px-0 bg-transparent shadow-none" type="button" data-bs-toggle="collapse"
         data-bs-target="#panel-reservas">
         <i class="bi bi-plus-circle me-2"></i>Crear reserva nueva
       </button>
     </h5>
     <div id="panel-reservas" class="accordion-collapse collapse">
-      <div class="accordion-body px-0 pt-3"> <!-- Ajuste de padding -->
+      <div class="accordion-body px-0 pt-3">
         <app-booking-user [isAdmin]="true"></app-booking-user>
       </div>
     </div>

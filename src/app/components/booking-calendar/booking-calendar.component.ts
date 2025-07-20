@@ -7,6 +7,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import esLocale from '@fullcalendar/core/locales/es';
 import { CalendarOptions, EventContentArg, DayCellMountArg } from '@fullcalendar/core';
+import { NotificationsService } from '../../services/notifications.service';
 
 @Component({
   selector: 'app-booking-calendar',
@@ -52,10 +53,8 @@ export class BookingCalendarComponent implements OnInit, OnDestroy {
         ]
       };
     },
-    eventClick: (info: any) => {
-      const reserva = info.event.extendedProps;
-      alert(`Reserva de ${reserva.usuario.nombre}\nServicio: ${reserva.servicio}`);
-    },
+    eventClick: (info: any) => {      const reserva = info.event.extendedProps;      const serviceName = this.bookingService.getServiceName(reserva.servicio);      this.notifications.showInfo(`Reserva de ${reserva.usuario.nombre}
+Servicio: ${serviceName}`);    },
     dateClick: (info: any) => {
       this.handleDateClick(info.dateStr);
     },
@@ -76,7 +75,7 @@ export class BookingCalendarComponent implements OnInit, OnDestroy {
 
   private reservasSubscription: Subscription = new Subscription();
 
-  constructor(private bookingService: BookingConfigService) { }
+  constructor(private bookingService: BookingConfigService, private notifications: NotificationsService) { }
 
   ngOnInit(): void {
     this.loadConfirmedReservas();

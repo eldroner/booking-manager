@@ -209,6 +209,12 @@ confirmarReserva(token: string): Observable<Reserva> {
     );
   }
 
+  getServiceName(serviceId: string): string {
+    const config = this.configSubject.value;
+    const servicio = config.servicios.find(s => s.id === serviceId);
+    return servicio ? servicio.nombre : serviceId; // Retorna el nombre o el ID si no lo encuentra
+  }
+
   refreshCalendar(): void {
     this.configSubject.next({ ...this.configSubject.value }); // Forzar actualización reactiva
   }

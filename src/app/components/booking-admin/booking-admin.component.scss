@@ -244,4 +244,20 @@ app-booking-user {
    border: 1px solid rgba(0,0,0,0.05); // Un borde muy sutil para definir mejor la etiqueta.
    }
 
+.small-plus-icon {
+  font-size: 1rem !important;
+}
 
+.btn-icon-only {
+  width: 30px; /* Adjust as needed */
+  height: 30px; /* Adjust as needed */
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%; /* Make it round */
+
+  i {
+    font-size: 1rem; /* Adjust icon size */
+  }
+}

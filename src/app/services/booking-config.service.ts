@@ -266,6 +266,20 @@ confirmarReserva(token: string): Observable<Reserva> {
   );
 }
 
+  confirmReservationByAdmin(id: string): Observable<Reserva> {
+    return this.http.put<Reserva>(`${environment.apiUrl}/api/reservas/${id}/confirm`, {}).pipe(
+      tap(updatedReserva => {
+        const currentReservas = this.reservasSubject.value;
+        const updatedReservas = currentReservas.map(r => r.id === id ? updatedReserva : r);
+        this.reservasSubject.next(updatedReservas);
+      }),
+      catchError(error => {
+        const errorMsg = error.error?.message || 'Error al confirmar la reserva';
+        return throwError(() => new Error(errorMsg));
+      })
+    );
+  }
+
 addReserva(reservaData: Omit<Reserva, 'id' | 'estado'>): Observable<{ token: string }> {
     // Validación mejorada (se mantiene igual)
     if (!reservaData.usuario?.nombre?.trim()) {

@@ -491,31 +491,32 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
       });
   }
 
-  deleteReservation(id: string): void {
-    if (confirm('¿Está seguro que desea eliminar esta reserva?')) {
+  confirmReservation(id: string): void {
+    if (confirm('¿Está seguro que desea confirmar esta reserva?')) {
       this.subscriptions.add(
-        this.bookingService.deleteReserva(id).subscribe({
+        this.bookingService.confirmReservationByAdmin(id).subscribe({
           next: () => {
-            this.reservas = this.reservas.filter(r => r.id !== id);
-            this.updateSummary(); // <-- Asegurar que se actualice
-            this.showSuccessToast('Reserva eliminada');
-            this.reservas = this.reservas.filter(r => r.id !== id);
-            this.filteredReservas = this.filteredReservas.filter(r => r.id !== id);
+            this.notifications.showSuccess('Reserva confirmada correctamente');
+            this.loadReservas(); // Recargar reservas para actualizar el estado
           },
-          error: (err) => this.showErrorToast('Error al eliminar reserva: ' + err.message)
+          error: (err) => this.notifications.showError('Error al confirmar reserva: ' + err.message)
         })
       );
     }
   }
 
-  private showSuccessToast(message: string): void {
-    // Implementar con tu librería de notificaciones preferida
-    console.log('Éxito:', message);
-  }
-
-  private showErrorToast(message: string): void {
-    // Implementar con tu librería de notificaciones preferida
-    console.error('Error:', message);
+  deleteReservation(id: string): void {
+    if (confirm('¿Está seguro que desea eliminar esta reserva?')) {
+      this.subscriptions.add(
+        this.bookingService.deleteReserva(id).subscribe({
+          next: () => {
+            this.notifications.showSuccess('Reserva eliminada');
+            this.loadReservas(); // Recargar reservas para actualizar el estado
+          },
+          error: (err) => this.notifications.showError('Error al eliminar reserva: ' + err.message)
+        })
+      );
+    }
   }
 
   // Helpers
@@ -585,7 +586,7 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
       month: '2-digit',
       year: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   }
 

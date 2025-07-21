@@ -4,8 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { BookingUserComponent } from '../booking-user/booking-user.component';
 import { BookingAdminComponent } from '../booking-admin/booking-admin.component';
 import { BookingConfigService } from '../../services/booking-config.service';
-import { ActivatedRoute } from '@angular/router';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'app-booking-page',
@@ -22,10 +21,17 @@ export class BookingPageComponent implements OnInit {
   constructor(
     private bookingService: BookingConfigService,
     private route: ActivatedRoute,
-    private router: Router // Inyecta el Router
+    private router: Router
   ) {}
 
   ngOnInit(): void {
+    this.route.paramMap.subscribe(params => {
+      const idNegocio = params.get('idNegocio');
+      if (idNegocio) {
+        this.bookingService.loadBusinessData(idNegocio);
+      }
+    });
+
     this.route.data.subscribe(data => {
       this.isAdmin = data['isAdmin'] || false;
     });
@@ -37,13 +43,13 @@ export class BookingPageComponent implements OnInit {
     this.loadFechasBloqueadas();
   }
 
-  // Nuevo método para cambiar de vista
   toggleView() {
+    const currentIdNegocio = this.route.snapshot.paramMap.get('idNegocio');
     this.isAdmin = !this.isAdmin;
     if (this.isAdmin) {
-      this.router.navigate(['/admin']); // Navega a admin
+      this.router.navigate([currentIdNegocio, 'admin']);
     } else {
-      this.router.navigate(['/']); // Navega a home (usuario)
+      this.router.navigate([currentIdNegocio]);
     }
   }
 

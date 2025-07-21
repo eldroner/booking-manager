@@ -1,9 +1,8 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of, throwError, forkJoin } from 'rxjs';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
-//import { v4 as uuidv4 } from 'uuid';
 import { NotificationsService } from './notifications.service';
 
 export enum BusinessType {
@@ -37,10 +36,12 @@ export interface Servicio {
   nombre: string;
   duracion: number;
   precio?: number;
+  idNegocio?: string;
 }
 
 export interface Reserva {
   id: string;
+  idNegocio?: string;
   usuario: UserData;
   duracion: number;
   fechaInicio: string;
@@ -67,6 +68,7 @@ export interface HorarioEspecial {
 }
 
 export interface BusinessConfig {
+  idNegocio?: string;
   nombre: string;
   tipoNegocio: BusinessType;
   duracionBase: number;
@@ -78,6 +80,8 @@ export interface BusinessConfig {
 
 @Injectable({ providedIn: 'root' })
 export class BookingConfigService {
+  private idNegocio: string | null = null;
+
   private loadingSubject = new BehaviorSubject<boolean>(true);
   loading$ = this.loadingSubject.asObservable();
   private defaultConfig: BusinessConfig = {
@@ -105,85 +109,86 @@ export class BookingConfigService {
 
   constructor(
     private http: HttpClient,
-    private notifications: NotificationsService,
+    private notifications: NotificationsService
+  ) {}
 
-  ) {
+  public loadBusinessData(idNegocio: string): void {
+    this.idNegocio = idNegocio;
     this.initializeData();
   }
 
-private initializeData(): void {
-  this.loadingSubject.next(true);
+  private initializeData(): void {
+    if (!this.idNegocio) return;
 
-  // Modifica el flujo para manejar errores correctamente
-  this.loadBackendConfig().pipe(
-    switchMap(config => {
-      this.configSubject.next(config);
-      return forkJoin({
-        reservas: this.loadBackendReservas().pipe(
-          catchError(() => of([])) // Siempre retorna un array vacío en caso de error
-        ),
-        servicios: config.servicios?.length > 0 
-          ? of(config.servicios)
-          : this.loadServiciosFromBackend().pipe(
-              catchError(() => of([])) // Fallback a array vacío
-            )
-      });
-    }),
-    catchError(error => {
-      console.error('Error inicializando datos:', error);
-      return of({ reservas: [], servicios: [] }); // Asegura que el forkJoin siempre complete
-    })
-  ).subscribe({
-    next: ({ reservas, servicios }) => {
-      this.reservasSubject.next(reservas);
-      if (servicios.length > 0) {
-        const currentConfig = this.configSubject.value;
-        this.configSubject.next({ ...currentConfig, servicios });
+    this.loadingSubject.next(true);
+    this.loadBackendConfig().pipe(
+      switchMap(config => {
+        this.configSubject.next(config);
+        return forkJoin({
+          reservas: this.loadBackendReservas().pipe(catchError(() => of([]))),
+          servicios: config.servicios?.length > 0
+            ? of(config.servicios)
+            : this.loadServiciosFromBackend().pipe(catchError(() => of([])))
+        });
+      }),
+      catchError(error => {
+        console.error('Error inicializando datos:', error);
+        this.loadingSubject.next(false);
+        return of({ reservas: [], servicios: [] });
+      })
+    ).subscribe({
+      next: ({ reservas, servicios }) => {
+        this.reservasSubject.next(reservas);
+        if (servicios.length > 0) {
+          const currentConfig = this.configSubject.value;
+          this.configSubject.next({ ...currentConfig, servicios });
+        }
+        this.loadingSubject.next(false);
+      },
+      error: () => {
+        this.loadingSubject.next(false);
       }
-      this.loadingSubject.next(false); // Asegura que el loading se desactive
-    },
-    error: () => {
-      this.loadingSubject.next(false); // Importante: desactiva loading incluso en error
-    }
-  });
-}
+    });
+  }
 
   private loadServiciosFromBackend(): Observable<Servicio[]> {
-    // Si falla, usa datos por defecto
-    const serviciosPorDefecto: Servicio[] = [
-      { id: '1', nombre: 'Corte Básico', duracion: 30 },
-      { id: '2', nombre: 'Corte Premium', duracion: 45 }
-    ];
-
-    return this.http.get<Servicio[]>(`${environment.apiUrl}/api/servicios`).pipe(
+    if (!this.idNegocio) return of([]);
+    const params = new HttpParams().set('idNegocio', this.idNegocio);
+    return this.http.get<Servicio[]>(`${environment.apiUrl}/api/servicios`, { params }).pipe(
       catchError(() => {
         console.warn('Usando servicios por defecto');
-        return of(serviciosPorDefecto);
+        return of([
+          { id: '1', nombre: 'Corte Básico', duracion: 30 },
+          { id: '2', nombre: 'Corte Premium', duracion: 45 }
+        ]);
       })
     );
   }
 
-confirmarReserva(token: string): Observable<Reserva> {
-  return this.http.get<Reserva>(
-    `${environment.apiUrl}/api/reservas/confirmar/${encodeURIComponent(token)}`
-  ).pipe(
-    catchError(error => {
-      const errorMsg = error.error?.message || 'Error al confirmar reserva';
-      return throwError(() => new Error(errorMsg));
-    })
-  );
-}
+  confirmarReserva(token: string): Observable<Reserva> {
+    return this.http.get<Reserva>(
+      `${environment.apiUrl}/api/reservas/confirmar/${encodeURIComponent(token)}`
+    ).pipe(
+      catchError(error => {
+        const errorMsg = error.error?.message || 'Error al confirmar reserva';
+        return throwError(() => new Error(errorMsg));
+      })
+    );
+  }
 
   private loadBackendConfig(): Observable<BusinessConfig> {
-    return this.http.get<BusinessConfig>(`${environment.apiUrl}/api/config`).pipe(
+    if (!this.idNegocio) return of(this.defaultConfig);
+    const params = new HttpParams().set('idNegocio', this.idNegocio);
+    return this.http.get<BusinessConfig>(`${environment.apiUrl}/api/config`, { params }).pipe(
       catchError(() => of(this.defaultConfig))
-    )
+    );
   }
 
   private loadBackendReservas(status?: BookingStatus): Observable<Reserva[]> {
-    const params: { [key: string]: string } = {};
+    if (!this.idNegocio) return of([]);
+    let params = new HttpParams().set('idNegocio', this.idNegocio);
     if (status) {
-      params['estado'] = status;
+      params = params.set('estado', status);
     }
     return this.http.get<Reserva[]>(`${environment.apiUrl}/api/reservas`, { params }).pipe(
       map(reservas => reservas.map(reserva => ({
@@ -212,24 +217,21 @@ confirmarReserva(token: string): Observable<Reserva> {
   getServiceName(serviceId: string): string {
     const config = this.configSubject.value;
     const servicio = config.servicios.find(s => s.id === serviceId);
-    return servicio ? servicio.nombre : serviceId; // Retorna el nombre o el ID si no lo encuentra
+    return servicio ? servicio.nombre : serviceId;
   }
 
   refreshCalendar(): void {
-    this.configSubject.next({ ...this.configSubject.value }); // Forzar actualización reactiva
+    this.configSubject.next({ ...this.configSubject.value });
   }
 
   updateConfig(newConfig: Partial<BusinessConfig>): Observable<BusinessConfig> {
+    if (!this.idNegocio) return throwError(() => new Error('ID de negocio no definido'));
     const currentConfig = this.configSubject.value;
-    const mergedConfig = {
-      ...currentConfig,
-      ...newConfig
-    };
-
-    return this.http.put<BusinessConfig>(`${environment.apiUrl}/api/config`, mergedConfig).pipe(
+    const mergedConfig = { ...currentConfig, ...newConfig };
+    const params = new HttpParams().set('idNegocio', this.idNegocio);
+    return this.http.put<BusinessConfig>(`${environment.apiUrl}/api/config`, mergedConfig, { params }).pipe(
       tap(updatedConfig => {
         this.configSubject.next(updatedConfig);
-        // Eliminamos la notificación aquí para evitar duplicados
       }),
       catchError(error => {
         console.error('Error al guardar configuración:', error);
@@ -261,19 +263,21 @@ confirmarReserva(token: string): Observable<Reserva> {
   }
 
   confirmReservaDefinitiva(token: string): Observable<Reserva> {
-  return this.http.post<Reserva>(
-    `${environment.apiUrl}/api/reservas/confirmar-definitiva/${token}`,
-    {}
-  ).pipe(
-    catchError(error => {
-      const errorMsg = error.error?.message || 'Error al confirmar reserva';
-      return throwError(() => new Error(errorMsg));
-    })
-  );
-}
+    return this.http.post<Reserva>(
+      `${environment.apiUrl}/api/reservas/confirmar-definitiva/${token}`,
+      {}
+    ).pipe(
+      catchError(error => {
+        const errorMsg = error.error?.message || 'Error al confirmar reserva';
+        return throwError(() => new Error(errorMsg));
+      })
+    );
+  }
 
   confirmReservationByAdmin(id: string): Observable<Reserva> {
-    return this.http.put<Reserva>(`${environment.apiUrl}/api/reservas/${id}/confirm`, {}).pipe(
+    if (!this.idNegocio) return throwError(() => new Error('ID de negocio no definido'));
+    const params = new HttpParams().set('idNegocio', this.idNegocio);
+    return this.http.put<Reserva>(`${environment.apiUrl}/api/reservas/${id}/confirm`, {}, { params }).pipe(
       tap(updatedReserva => {
         const currentReservas = this.reservasSubject.value;
         const updatedReservas = currentReservas.map(r => r.id === id ? updatedReserva : r);
@@ -286,52 +290,32 @@ confirmarReserva(token: string): Observable<Reserva> {
     );
   }
 
-addReserva(reservaData: Omit<Reserva, 'id' | 'estado'>): Observable<{ token: string }> {
-    // Validación mejorada (se mantiene igual)
+  addReserva(reservaData: Omit<Reserva, 'id' | 'estado'>): Observable<{ token: string }> {
+    if (!this.idNegocio) return throwError(() => new Error('ID de negocio no definido'));
     if (!reservaData.usuario?.nombre?.trim()) {
       return throwError(() => ({ message: 'El nombre del usuario es requerido', code: 400 }));
     }
-
-    if (!reservaData.usuario?.email?.trim()) {
-      return throwError(() => ({ message: 'El email del usuario es requerido', code: 400 }));
+    if (!reservaData.usuario?.email?.trim() || !this.isValidEmail(reservaData.usuario.email)) {
+      return throwError(() => ({ message: 'El email del usuario es requerido y debe ser válido', code: 400 }));
     }
-
-    if (!this.isValidEmail(reservaData.usuario.email)) {
-      return throwError(() => ({ message: 'El email no tiene un formato válido', code: 400 }));
-    }
-
     if (!reservaData.fechaInicio || isNaN(new Date(reservaData.fechaInicio).getTime())) {
       return throwError(() => ({ message: 'La fecha de inicio es inválida', code: 400 }));
     }
-
-    if (reservaData.fechaFin && isNaN(new Date(reservaData.fechaFin).getTime())) {
-      return throwError(() => ({ message: 'La fecha de fin es inválida', code: 400 }));
-    }
-
     if (!reservaData.duracion || reservaData.duracion < 5) {
-      return throwError(() => ({ 
-        message: 'La duración debe ser de al menos 5 minutos', 
-        code: 400 
-      }));
+      return throwError(() => ({ message: 'La duración debe ser de al menos 5 minutos', code: 400 }));
     }
 
     const payload = {
+      ...reservaData,
+      idNegocio: this.idNegocio,
       usuario: {
         nombre: reservaData.usuario.nombre.trim(),
         email: reservaData.usuario.email.trim(),
         telefono: reservaData.usuario.telefono?.trim() || '',
         ...(reservaData.usuario.notas && { notas: reservaData.usuario.notas })
-      },
-      fechaInicio: reservaData.fechaInicio,
-      servicio: reservaData.servicio,
-      duracion: reservaData.duracion,
-      ...(reservaData.fechaFin && { fechaFin: reservaData.fechaFin }),
-      ...(reservaData.metadata && { metadata: reservaData.metadata })
+      }
     };
 
-    // Cambios clave:
-    // 1. Tipo de retorno: Observable<{ token: string }>
-    // 2. Eliminamos el tap que añadía la reserva al estado local
     return this.http.post<{ token: string }>(`${environment.apiUrl}/api/reservas`, payload).pipe(
       catchError((error: ApiError) => {
         const errorMessage = error.message || 'Error al crear la reserva';
@@ -339,15 +323,15 @@ addReserva(reservaData: Omit<Reserva, 'id' | 'estado'>): Observable<{ token: str
         return throwError(() => error);
       })
     );
-}
+  }
 
   deleteReserva(id: string): Observable<void> {
-    // Asegurar que el ID no está undefined
+    if (!this.idNegocio) return throwError(() => new Error('ID de negocio no definido'));
     if (!id) {
       return throwError(() => new Error('ID de reserva inválido'));
     }
-
-    return this.http.delete<void>(`${environment.apiUrl}/api/reservas/${id}`).pipe(
+    const params = new HttpParams().set('idNegocio', this.idNegocio);
+    return this.http.delete<void>(`${environment.apiUrl}/api/reservas/${id}`, { params }).pipe(
       tap(() => {
         const reservas = this.reservasSubject.value.filter(r => r.id !== id);
         this.reservasSubject.next(reservas);
@@ -360,45 +344,37 @@ addReserva(reservaData: Omit<Reserva, 'id' | 'estado'>): Observable<{ token: str
   }
 
   getReservasPorFecha(fecha: string): Observable<Reserva[]> {
-  return this.http.get<Reserva[]>(`${environment.apiUrl}/api/reservas`, {
-    params: { fecha }
-  }).pipe(
-    catchError(() => of([]))
-  );
-}
+    if (!this.idNegocio) return of([]);
+    const params = new HttpParams().set('idNegocio', this.idNegocio).set('fecha', fecha);
+    return this.http.get<Reserva[]>(`${environment.apiUrl}/api/reservas`, { params }).pipe(
+      catchError(() => of([]))
+    );
+  }
 
-addReservaAdmin(reservaData: Omit<Reserva, 'id'>): Observable<Reserva> {
-    // Validaciones básicas (sin validación de email)
+  addReservaAdmin(reservaData: Omit<Reserva, 'id'>): Observable<Reserva> {
+    if (!this.idNegocio) return throwError(() => new Error('ID de negocio no definido'));
     if (!reservaData.usuario?.nombre?.trim()) {
       return throwError(() => ({ message: 'El nombre del usuario es requerido', code: 400 }));
     }
-
     if (!reservaData.fechaInicio || isNaN(new Date(reservaData.fechaInicio).getTime())) {
       return throwError(() => ({ message: 'La fecha de inicio es inválida', code: 400 }));
     }
-
-    if (reservaData.fechaFin && isNaN(new Date(reservaData.fechaFin).getTime())) {
-      return throwError(() => ({ message: 'La fecha de fin es inválida', code: 400 }));
-    }
-
     if (!reservaData.duracion || reservaData.duracion < 5) {
-      return throwError(() => ({ 
-        message: 'La duración debe ser de al menos 5 minutos', 
-        code: 400 
-      }));
+      return throwError(() => ({ message: 'La duración debe ser de al menos 5 minutos', code: 400 }));
     }
 
     const payload = {
       ...reservaData,
+      idNegocio: this.idNegocio,
       usuario: {
         nombre: reservaData.usuario.nombre.trim(),
-        email: reservaData.usuario.email?.trim() || '', // Email opcional
+        email: reservaData.usuario.email?.trim() || '',
         telefono: reservaData.usuario.telefono?.trim() || '',
         ...(reservaData.usuario.notas && { notas: reservaData.usuario.notas })
       },
-      estado: 'confirmada', // Confirmación inmediata
+      estado: 'confirmada',
       fechaConfirmacion: new Date().toISOString(),
-      origen: 'admin' // Para trazabilidad
+      origen: 'admin'
     };
 
     return this.http.post<Reserva>(`${environment.apiUrl}/api/reservas/admin`, payload).pipe(
@@ -411,23 +387,22 @@ addReservaAdmin(reservaData: Omit<Reserva, 'id'>): Observable<Reserva> {
         return throwError(() => error);
       })
     );
-}
+  }
 
-isHoraDisponible(fecha: string, hora: string, duracion: number): Observable<boolean> {
-  return this.http.get<boolean>(`${environment.apiUrl}/api/disponibilidad`, {
-    params: { 
-      fecha, 
-      hora,
-      duracion: duracion.toString() 
-    }
-  }).pipe(
-    catchError(() => of(false)) // Si falla, asumir no disponible
-  );
-}
+  isHoraDisponible(fecha: string, hora: string, duracion: number): Observable<boolean> {
+    if (!this.idNegocio) return of(false);
+    const params = new HttpParams()
+      .set('idNegocio', this.idNegocio)
+      .set('fecha', fecha)
+      .set('hora', hora)
+      .set('duracion', duracion.toString());
+    return this.http.get<boolean>(`${environment.apiUrl}/api/disponibilidad`, { params }).pipe(
+      catchError(() => of(false))
+    );
+  }
 
   validateHorarioEspecial(horario: Partial<HorarioEspecial>): boolean {
     if (!horario?.fecha || !horario.horaInicio || !horario.horaFin) return false;
-
     return this.isValidDate(horario.fecha) &&
       this.isValidTime(horario.horaInicio) &&
       this.isValidTime(horario.horaFin) &&
@@ -447,13 +422,9 @@ isHoraDisponible(fecha: string, hora: string, duracion: number): Observable<bool
     return [...this.configSubject.value.horariosNormales];
   }
 
-
-
   getHorariosEspeciales(): HorarioEspecial[] {
     return [...this.configSubject.value.horariosEspeciales];
   }
-
-
 
   private compareTimes(time1: string, time2: string): number {
     const [h1, m1] = time1.split(':').map(Number);
@@ -473,14 +444,20 @@ isHoraDisponible(fecha: string, hora: string, duracion: number): Observable<bool
 
   // Métodos para fechas bloqueadas
   getFechasBloqueadas(): Observable<string[]> {
-    return this.http.get<string[]>(`${environment.apiUrl}/api/bloqueo`);
+    if (!this.idNegocio) return of([]);
+    const params = new HttpParams().set('idNegocio', this.idNegocio);
+    return this.http.get<string[]>(`${environment.apiUrl}/api/bloqueo`, { params });
   }
 
   addFechaBloqueada(fecha: string): Observable<any> {
-    return this.http.post(`${environment.apiUrl}/api/bloqueo`, { fecha });
+    if (!this.idNegocio) return throwError(() => new Error('ID de negocio no definido'));
+    const body = { fecha, idNegocio: this.idNegocio };
+    return this.http.post(`${environment.apiUrl}/api/bloqueo`, body);
   }
 
   deleteFechaBloqueada(fecha: string): Observable<any> {
-    return this.http.delete(`${environment.apiUrl}/api/bloqueo/${fecha}`);
+    if (!this.idNegocio) return throwError(() => new Error('ID de negocio no definido'));
+    const params = new HttpParams().set('idNegocio', this.idNegocio);
+    return this.http.delete(`${environment.apiUrl}/api/bloqueo/${fecha}`, { params });
   }
 }

@@ -5,16 +5,21 @@ import { ConfirmarReservaComponent } from './features/confirmar-reserva/confirma
 export const routes: Routes = [
   { 
     path: '', 
-    component: BookingPageComponent,
-    data: { isAdmin: false } // Cambiado de 'admin' a 'isAdmin' para consistencia
+    redirectTo: '/default', // Redirige a un negocio por defecto
+    pathMatch: 'full'
   },
-  { 
-    path: 'admin', 
+  {
+    path: ':idNegocio', // Ruta para el cliente con ID de negocio
     component: BookingPageComponent,
-    data: { isAdmin: true } 
+    data: { isAdmin: false }
   },
-  { 
-    path: 'confirmar/:token', 
-    component: ConfirmarReservaComponent 
+  {
+    path: ':idNegocio/admin', // Ruta para el admin con ID de negocio
+    component: BookingPageComponent,
+    data: { isAdmin: true }
+  },
+  {
+    path: 'confirmar/:token',
+    component: ConfirmarReservaComponent
   }
 ];

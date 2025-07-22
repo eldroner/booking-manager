@@ -177,10 +177,21 @@ export class BookingConfigService {
   }
 
   private loadBackendConfig(): Observable<BusinessConfig> {
-    if (!this.idNegocio) return of(this.defaultConfig);
+    if (!this.idNegocio) return throwError(() => new Error('ID de negocio no proporcionado'));
+
     const params = new HttpParams().set('idNegocio', this.idNegocio);
     return this.http.get<BusinessConfig>(`${environment.apiUrl}/api/config`, { params }).pipe(
-      catchError(() => of(this.defaultConfig))
+      catchError(error => {
+        if (error.status === 404 || error.status === 403) {
+          // Redirigir si el negocio no está autorizado
+          window.location.href = 'https://pixelnova.es/services/booking-manager';
+          return of(this.defaultConfig); // Devuelve un valor por defecto para que el stream no se rompa
+        } else {
+          // Para otros errores, notificar y usar la config por defecto
+          this.notifications.showError('No se pudo cargar la configuración del negocio.');
+          return of(this.defaultConfig);
+        }
+      })
     );
   }
 

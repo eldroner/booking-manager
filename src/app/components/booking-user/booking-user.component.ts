@@ -349,7 +349,7 @@ if (this.isAdmin) {
   } else {
     // Lógica normal para el usuario: enviar email de confirmación
     this.bookingService.addReserva(reservaCompleta).subscribe({
-      next: (response: { token: string }) => {
+      next: (response: { token: string, emailContacto?: string }) => {
         if (!response.token) {
           console.error('No se recibió token de confirmación');
           this.notifications.showError('Error en la confirmación de la reserva');
@@ -368,6 +368,17 @@ if (this.isAdmin) {
           }
         ).then(() => {
           this.notifications.showSuccess('Reserva solicitada. Revisa tu email para validarla. Tienes 48 horas para hacerlo.');
+          // Enviar notificación al administrador
+          if (response.emailContacto && this.config.idNegocio) {
+            this.emailService.sendAdminNotification(
+              response.emailContacto,
+              reservaCompleta.usuario.nombre,
+              this.config.idNegocio
+            ).catch(adminError => {
+              console.error('Error enviando notificación al administrador:', adminError);
+              // No mostrar error al usuario final por esto
+            });
+          }
         }).catch(error => {
           console.error('Error enviando email:', error);
           this.notifications.showError('Reserva creada, pero falló el envío del email de confirmación');

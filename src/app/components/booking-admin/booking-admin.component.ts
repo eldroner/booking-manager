@@ -10,6 +10,7 @@ import { HorarioNormal } from '../../services/booking-config.service';
 import { Router } from '@angular/router';
 import { saveAs } from 'file-saver';
 import { BookingUserComponent } from "../booking-user/booking-user.component";
+import { AdminAuthService } from '../../services/admin-auth.service';
 
 @Component({
   selector: 'app-booking-admin',
@@ -91,9 +92,14 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
   constructor(
     public bookingService: BookingConfigService,
     private notifications: NotificationsService,
-    private router: Router
+    private router: Router,
+    private adminAuthService: AdminAuthService
   ) {
     this.configNegocio = this.getDefaultConfig();
+  }
+
+  logout(): void {
+    this.adminAuthService.logout();
   }
 
   ngOnInit(): void {

@@ -1,21 +1,21 @@
 <form (ngSubmit)="saveConfiguration()" #configForm="ngForm">
   <div class="row g-3 mb-4">
     <!-- Nombre del negocio -->
-    <div class="col-6">
-      <label class="form-label fw-bold">Nombre del negocio</label>
+    <div class="col-5">
+      <label class="form-label fw-bold" title="Aquí tienes que poner el nombre de tu negocio">Brand</label>
       <input type="text" class="form-control" [(ngModel)]="configNegocio.nombre" name="nombre" required
         placeholder="Ej: Mi Negocio">
     </div>
 
     <!-- Reservas/slot -->
-    <div class="col-3">
-      <label class="form-label fw-bold">Reservas/slot</label>
+    <div class="col-2">
+      <label class="form-label fw-bold" title="Máximo de citas simultáneas permitidas">max/citas</label>
       <input type="number" class="form-control" [(ngModel)]="configNegocio.maxReservasPorSlot"
         name="maxReservasPorSlot" min="1" required>
     </div>
 
     <!-- Botones de acción -->
-    <div class="col-3 d-flex align-items-end justify-content-end gap-2">
+    <div class="col-4 d-flex align-items-end justify-content-end gap-2">
       <!-- Botón Guardar -->
       <div>
         <i class="bi bi-cloud-arrow-up fs-4 text-primary cursor-pointer icono" title="Guardar configuración"
@@ -27,6 +27,12 @@
         <i class="bi bi-plus fs-4 text-primary cursor-pointer" title="Crear reserva nueva"
           (click)="scrollAndExpandReserva()"></i>
       </div>
+
+      <!-- Botón Logout -->
+      <div>
+        <i class="bi bi-power fs-4 text-danger cursor-pointer icono" title="Cerrar sesión"
+          (click)="logout()"></i>
+      </div>
     </div>
   </div>
 
@@ -34,14 +40,14 @@
   <div class="accordion mb-4">
     <div class="accordion-item p-2">
       <h2 class="accordion-header">
-        <button class="accordion-button" type="button" [ngClass]="{'collapsed': !isServiciosOpen}"
+        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#serviciosCollapse" [ngClass]="{'collapsed': !isServiciosOpen}"
           (click)="toggleServicios()">
           <i class="bi bi-list-check me-2"></i>
           Gestionar Servicios
           <span class="badge bg-secondary ms-2">{{ configNegocio.servicios.length }}</span>
         </button>
       </h2>
-      <div class="accordion-collapse" [class.show]="isServiciosOpen"
+      <div id="serviciosCollapse" class="accordion-collapse" [class.show]="isServiciosOpen"
         [style.display]="isServiciosOpen ? 'block' : 'none'">
         <div class="accordion-body p-2">
           <!-- Lista de servicios -->
@@ -88,13 +94,13 @@
   <div class="accordion mb-4">
     <div class="accordion-item p-2">
       <h2 class="accordion-header">
-        <button class="accordion-button" type="button" [ngClass]="{'collapsed': !showNormalSchedules}"
+        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#normalSchedulesCollapse" [ngClass]="{'collapsed': !showNormalSchedules}"
           (click)="showNormalSchedules = !showNormalSchedules">
           <i class="bi bi-clock me-2"></i>
           Editar horario
         </button>
       </h2>
-      <div class="accordion-collapse" [class.show]="showNormalSchedules"
+      <div id="normalSchedulesCollapse" class="accordion-collapse" [class.show]="showNormalSchedules"
         [style.display]="showNormalSchedules ? 'block' : 'none'">
         <div class="accordion-body p-2">
           <div *ngFor="let dia of diasSemana" class="mb-3 p-3 border rounded">
@@ -126,13 +132,13 @@
   <div class="accordion mb-4">
     <div class="accordion-item p-2">
       <h2 class="accordion-header">
-        <button class="accordion-button" type="button" [ngClass]="{'collapsed': !showSpecialSchedules}"
+        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#specialSchedulesCollapse" [ngClass]="{'collapsed': !showSpecialSchedules}"
           (click)="showSpecialSchedules = !showSpecialSchedules">
           <i class="bi bi-calendar-event me-2"></i>
           Añadir horario especial
         </button>
       </h2>
-      <div class="accordion-collapse" [class.show]="showSpecialSchedules"
+      <div id="specialSchedulesCollapse" class="accordion-collapse" [class.show]="showSpecialSchedules"
         [style.display]="showSpecialSchedules ? 'block' : 'none'">
         <div class="accordion-body p-2">
           <!-- Formulario para nuevo horario especial -->
@@ -210,13 +216,13 @@
   <div class="accordion mb-4">
     <div class="accordion-item p-2">
       <h2 class="accordion-header">
-        <button class="accordion-button" type="button" [ngClass]="{'collapsed': !showBlockedDates}"
+        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#blockedDatesCollapse" [ngClass]="{'collapsed': !showBlockedDates}"
           (click)="showBlockedDates = !showBlockedDates">
           <i class="bi bi-calendar-x me-2"></i>
           Bloquear Fechas (Vacaciones, etc.)
         </button>
       </h2>
-      <div class="accordion-collapse" [class.show]="showBlockedDates"
+      <div id="blockedDatesCollapse" class="accordion-collapse" [class.show]="showBlockedDates"
         [style.display]="showBlockedDates ? 'block' : 'none'">
         <div class="accordion-body p-2">
           <div class="row g-3 mb-3">
@@ -255,14 +261,14 @@
 <div class="accordion my-4">
   <div class="accordion-item p-2">
     <h2 class="accordion-header">
-      <button class="accordion-button" type="button" [ngClass]="{'collapsed': !showCurrentBookings}"
+      <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#currentBookingsCollapse" [ngClass]="{'collapsed': !showCurrentBookings}"
         (click)="showCurrentBookings = !showCurrentBookings">
         <i class="bi bi-calendar-check me-2"></i>
         Gestionar reservas
         <small class="text-muted ms-2">({{ filteredReservas.length }} resultados)</small>
       </button>
     </h2>
-    <div class="accordion-collapse" [class.show]="showCurrentBookings"
+    <div id="currentBookingsCollapse" class="accordion-collapse" [class.show]="showCurrentBookings"
       [style.display]="showCurrentBookings ? 'block' : 'none'">
       <div class="accordion-body p-2">
         <!-- Sección de Filtros -->

@@ -338,7 +338,6 @@ if (this.isAdmin) {
 
     this.bookingService.addReservaAdmin(reservaAdmin).subscribe({
       next: (reserva) => {
-        this.notifications.showSuccess(`Reserva para ${reserva.usuario.nombre} creada y confirmada.`);
         this.resetForm();
       },
       error: (err) => {

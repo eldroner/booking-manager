@@ -4,6 +4,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { NotificationsService } from './notifications.service';
+import { Router } from '@angular/router';
+import { AuthService } from '../services/auth.service';
 
 export enum BusinessType {
   PELUQUERIA = 'peluqueria',
@@ -109,7 +111,9 @@ export class BookingConfigService {
 
   constructor(
     private http: HttpClient,
-    private notifications: NotificationsService
+    private notifications: NotificationsService,
+    private router: Router,
+    private authService: AuthService
   ) {}
 
   public loadBusinessData(idNegocio: string): void {
@@ -246,6 +250,11 @@ export class BookingConfigService {
       }),
       catchError(error => {
         console.error('Error al guardar configuración:', error);
+        if (error.status === 403 && error.error?.message === 'No autorizado: Token inválido o expirado') {
+          this.notifications.showError('Tu sesión ha expirado. Por favor, inicia sesión de nuevo.');
+          this.authService.logout();
+          this.router.navigate(['/admin-login']);
+        }
         return throwError(() => error);
       })
     );

@@ -1,0 +1,11 @@
+<div class="login-container">
+  <h2>Acceso de Administrador</h2>
+  <form (ngSubmit)="onLogin()">
+    <div class="form-group">
+      <label for="emailContacto">Email de Contacto:</label>
+      <input type="email" id="emailContacto" [(ngModel)]="emailContacto" name="emailContacto" required>
+    
+    </div>
+    <button type="submit">Iniciar Sesión</button>
+  </form>
+</div>

@@ -1,25 +1,29 @@
 import { Routes } from '@angular/router';
-import { BookingPageComponent } from './components/booking-page/booking-page.component';
-import { ConfirmarReservaComponent } from './features/confirmar-reserva/confirmar-reserva.component';
+import { AdminGuard } from './guards/admin.guard';
 
 export const routes: Routes = [
-  { 
-    path: '', 
-    redirectTo: '/default', // Redirige a un negocio por defecto
-    pathMatch: 'full'
+  {
+    path: 'admin-login',
+    loadComponent: () => import('./components/admin-login/admin-login.component').then(m => m.AdminLoginComponent)
   },
   {
-    path: ':idNegocio', // Ruta para el cliente con ID de negocio
-    component: BookingPageComponent,
-    data: { isAdmin: false }
-  },
-  {
-    path: ':idNegocio/admin', // Ruta para el admin con ID de negocio
-    component: BookingPageComponent,
+    path: 'admin',
+    loadComponent: () => import('./components/booking-page/booking-page.component').then(m => m.BookingPageComponent),
+    canActivate: [AdminGuard],
     data: { isAdmin: true }
   },
   {
     path: 'confirmar/:token',
-    component: ConfirmarReservaComponent
+    loadComponent: () => import('./features/confirmar-reserva/confirmar-reserva.component').then(m => m.ConfirmarReservaComponent)
+  },
+  { 
+    path: '', 
+    redirectTo: '/default', 
+    pathMatch: 'full'
+  },
+  {
+    path: ':idNegocio',
+    loadComponent: () => import('./components/booking-page/booking-page.component').then(m => m.BookingPageComponent),
+    data: { isAdmin: false }
   }
 ];

@@ -14,6 +14,7 @@ import { AuthService } from '../../services/auth.service';
 })
 export class AdminLoginComponent {
   emailContacto: string = '';
+  password: string = ''; // Añadimos la propiedad para la contraseña
 
   constructor(
     private router: Router,
@@ -27,7 +28,8 @@ export class AdminLoginComponent {
       return;
     }
 
-    this.authService.loginByEmail(this.emailContacto).subscribe({
+    // Pasamos la contraseña (puede ser vacía si es opcional)
+    this.authService.loginByEmail(this.emailContacto, this.password).subscribe({
       next: () => {
         this.notifications.showSuccess('Inicio de sesión exitoso.');
         this.router.navigate(['/admin']);

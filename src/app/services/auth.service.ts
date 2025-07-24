@@ -15,8 +15,8 @@ export class AuthService {
     return !!localStorage.getItem('admin_token');
   }
 
-  loginByEmail(emailContacto: string): Observable<{ token: string, idNegocio: string }> {
-    return this.http.post<{ token: string, idNegocio: string }>(`${environment.apiUrl}/api/admin/login-by-email`, { emailContacto })
+  loginByEmail(emailContacto: string, password?: string): Observable<{ token: string, idNegocio: string }> {
+    return this.http.post<{ token: string, idNegocio: string }>(`${environment.apiUrl}/api/admin/login-by-email`, { emailContacto, password })
       .pipe(
         tap(response => {
           localStorage.setItem('admin_token', response.token);

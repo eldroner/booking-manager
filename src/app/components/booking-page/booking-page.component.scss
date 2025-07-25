@@ -1,0 +1,33 @@
+footer {
+  margin-top: 2rem;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  text-align: center;
+
+  .footer-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+
+    .footer-logo {
+      max-width: 75px;
+      height: auto;
+    }
+
+    p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: #6c757d;
+
+      a {
+        color: #495057;
+        text-decoration: none;
+
+        &:hover {
+          color: #212529;
+        }
+      }
+    }
+  }
+}

@@ -1,23 +1,26 @@
 <div class="container mt-4">
-    <img src="assets/pixelnova-logo-gris-rojo-sin-fondo.png" alt="Pixelnova Logo" class="d-block mx-auto mb-4" style="max-width: 200px;">
+  <div *ngIf="!isLoading">
+    <!-- <div class="mb-4 text-end">
+      <button class="btn btn-outline-secondary" (click)="toggleView()">
+        Cambiar a vista {{ isAdmin ? 'Usuario' : 'Admin' }}
+      </button>
+    </div> -->
 
-  
-    <div *ngIf="!isLoading">
-      <!-- <div class="mb-4 text-end">
-        <button class="btn btn-outline-secondary" (click)="toggleView()">
-          Cambiar a vista {{ isAdmin ? 'Usuario' : 'Admin' }}
-        </button>
-      </div> -->
-    
-      <!-- Mostrar solo el componente según la ruta -->
-      <app-booking-admin *ngIf="isAdmin"></app-booking-admin>
-      <app-booking-user *ngIf="!isAdmin" [fechasBloqueadas]="fechasBloqueadas"></app-booking-user>
-    </div>
+    <!-- Mostrar solo el componente según la ruta -->
+    <app-booking-admin *ngIf="isAdmin"></app-booking-admin>
+    <app-booking-user *ngIf="!isAdmin" [fechasBloqueadas]="fechasBloqueadas"></app-booking-user>
+  </div>
 
-    <div *ngIf="isLoading" class="text-center py-5">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Cargando...</span>
-      </div>
-      <p class="mt-2">Cargando datos del sistema...</p>
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando...</span>
     </div>
+    <p class="mt-2">Cargando datos del sistema...</p>
+  </div>
 </div>
+<footer>
+  <div class="footer-content">
+    <img src="assets/pixelnova-logo-gris-rojo-sin-fondo.png" alt="Logo Pixelnova" class="footer-logo">
+    <p>Desarrollado por <a href="https://pixelnova.es" target="_blank">Pixelnova</a> © 2025. Todos los derechos reservados.</p>
+  </div>
+</footer>

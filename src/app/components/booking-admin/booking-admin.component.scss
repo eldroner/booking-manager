@@ -1,263 +1,32 @@
-.fc-event {
-  font-size: 14px;
-  padding: 2px 4px;
-  border-radius: 4px;
-
-  &.green {
-    background-color: green !important;
-    color: white !important;
-  }
-
-  &.yellow {
-    background-color: yellow !important;
-    color: black !important;
-  }
-
-  &.red {
-    background-color: red !important;
-    color: white !important;
-  }
-}
-
-/* Añade esto al archivo SCSS */
-.card-header {
-  .bi {
-    transition: transform 0.3s ease;
-    font-size: 1.2rem;
-  }
-  
-  &:hover {
-    background-color: rgba(0,0,0,0.03);
-  }
-}
-
-/* Estilo para las flechas */
-.bi {
-  transition: transform 0.2s ease;
-  &.bi-chevron-up {
-    transform: rotate(180deg);
-  }
-}
-
-/* Efecto hover para mejor UX */
-.card-header:hover {
-  opacity: 0.9;
-}
-
-/* Estructura del calendario */
-.calendar-week-view {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 8px;
-}
-
-.calendar-day {
-  border: 1px solid #dee2e6;
-  border-radius: 4px;
-  padding: 8px;
-  min-height: 100px;
-  
-  &.has-booking {
-    background-color: #f8f9fa;
-    border-left: 3px solid #0d6efd;
-  }
-}
-
-.day-header {
-  font-weight: bold;
+.header-container {
   text-align: center;
-  margin-bottom: 8px;
-  color: #495057;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background-color: #f8f9fa; /* Light gray background */
+  border-radius: 0.5rem; /* Rounded borders */
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* Soft shadow */
 }
 
-.booking-item {
-  background: white;
-  padding: 4px 6px;
-  margin-bottom: 4px;
-  border-radius: 3px;
-  font-size: 0.85rem;
-  display: flex;
-  justify-content: space-between;
-  
-  .booking-time {
-    font-weight: 500;
-    color: #0d6efd;
-  }
-  
-  .booking-name {
-    color: #495057;
-  }
+.business-name {
+  font-family: 'Montserrat', sans-serif;
+  color: #343a40; /* Dark gray */
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
 }
 
-/* Botones de acción */
-.btn-group {
-  .btn {
-    margin-left: 8px;
-  }
+.divider-line {
+  width: 50%; /* Half the width of its container */
+  height: 2px;
+  background-color: rgba(255, 0, 0, 0.3); /* Thin, slightly transparent red */
+  margin: 0.5rem auto; /* Center the line and add some vertical space */
 }
 
-.table-responsive {
-  transition: opacity 0.3s ease;
-}
-
-.alert {
-  transition: all 0.3s ease;
-}
-
-.accordion-button {
-  transition: all 0.3s ease;
-  
-  &.bg-primary-light {
-    background-color: rgba(13, 110, 253, 0.1);
-    color: #0d6efd;
-  }
-}
-
-.accordion-body {
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-/* Estilo para nuevos servicios */
-.bg-light {
-  background-color: rgba(25, 135, 84, 0.05) !important;
-}
-
-.accordion-button {
-  padding: 0.5rem 0;
-  color: inherit;
-  &:focus {
-    box-shadow: none;
-    border-color: transparent;
-  }
-  &:not(.collapsed) {
-    color: inherit;
-    background-color: transparent;
-    box-shadow: none;
-  }
-  &::after {
-    margin-left: 0.5rem; /* Espacio para el icono de flecha */
-  }
-}
-
-/* Estilo para igualar la cabecera */
-.accordion-header h5 {
-  font-size: 1.125rem;
-  font-weight: 500;
-}
-
-/* booking-admin.component.scss */
-.icono {
-  transition: transform 0.2s;
-  &:hover {
-    transform: scale(1.1);
-  }
-  margin-bottom: 0.5rem; // Iguala la alineación vertical
-}
-
-/* booking-admin.component.scss */
-.accordion {
-  transition: max-height 0.3s ease;
-  
-  &.expanded {
-    max-height: none !important; /* Elimina límite cuando está expandido */
-  }
-}
-
-app-booking-user {
-  display: block;
-  min-height: 400px; /* Altura mínima del formulario */
-}
-
-/* Alineación perfecta de iconos */
-.icono {
-  transition: all 0.2s ease;
-  line-height: 1;
-  margin-bottom: 0.35rem; /* Ajuste fino de alineación vertical */
-  
-  &:hover {
-    transform: scale(1.1);
-    opacity: 0.8;
-  }
-}
-
-/* Ajustes específicos para pantallas grandes */
-@media (min-width: 992px) {
-  /* Espaciado entre reservas/slot y botones */
-  .justify-content-lg-end {
-    gap: 2rem;
-  }
-  
-  /* Tamaño consistente de iconos */
-  .bi-plus-circle {
-    font-size: 1.75rem !important; /* Tamaño intermedio */
-  }
-}
-
-.icono {
-  transition: all 0.2s ease;
-  line-height: 1;
-  padding: 0.25rem;
-  margin-bottom: 0.35rem;
-  
-  &:hover {
-    transform: scale(1.1);
-    opacity: 0.8;
-  }
-}
-
-/* Responsive para pantallas medianas */
-@media (max-width: 991.98px) {
-  .d-flex.flex-wrap {
-    gap: 1rem !important; /* Espacio consistente */
-    justify-content: flex-start !important; /* Alineación izquierda */
-  }
-  
-  /* Input reservas/slot ocupa ancho completo */
-  [style="width: 120px;"] {
-    width: 100% !important;
-  }
-}
-
-.btn-sm {
-  padding: 0.25rem 0.5rem;
-  
-  i {
-    font-size: 0.9em; /* Ajuste fino del icono */
-    margin-top: -1px; /* Micro-ajuste de alineación vertical */
-  }
-  
-  span {
-    font-size: 0.875rem;
-  }
-}
-
-    // Estilos mejorados para las etiquetas de estado de las reservas
-    .table .badge {
-    padding: 0.4em 0.8em;          // Aumenta el espacio interior para que no se vea apretado.
-    font-size: 0.8rem;             // Reduce ligeramente el tamaño de la fuente para un look más fino.
-    font-weight: 600;              // Hace la fuente un poco más gruesa (semi-bold) para mejor legibilidad.
-    border-radius: 50px;           // Redondea completamente los bordes para un efecto "píldora".
-    letter-spacing: 0.5px;         // Añade un sutil espacio entre letras.
-    text-transform: uppercase;     // Pone el texto en mayúsculas para un estilo más limpio y uniforme.
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); // Añade una sombra suave para dar profundidad.
-   border: 1px solid rgba(0,0,0,0.05); // Un borde muy sutil para definir mejor la etiqueta.
-   }
-
-.small-plus-icon {
-  font-size: 1rem !important;
-}
-
-.btn-icon-only {
-  width: 30px; /* Adjust as needed */
-  height: 30px; /* Adjust as needed */
-  padding: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 50%; /* Make it round */
-
-  i {
-    font-size: 1rem; /* Adjust icon size */
-  }
+.business-tagline {
+  font-family: 'Montserrat', sans-serif;
+  color: #6c757d; /* Medium gray */
+  font-size: 1.6rem;
+  font-weight: 400;
+  display: block; /* Ensures it's on a new line */
 }

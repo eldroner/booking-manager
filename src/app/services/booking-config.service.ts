@@ -205,6 +205,11 @@ export class BookingConfigService {
     if (status) {
       params = params.set('estado', status);
     }
+    // Añadir un filtro de fecha para obtener solo las reservas futuras
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    params = params.set('fecha', today.toISOString().split('T')[0]);
+
     return this.http.get<Reserva[]>(`${environment.apiUrl}/api/reservas`, { params }).pipe(
       map(reservas => reservas.map(reserva => ({
         ...reserva,

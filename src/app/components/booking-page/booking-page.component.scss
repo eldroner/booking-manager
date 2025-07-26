@@ -10,11 +10,6 @@ footer {
     align-items: center;
     gap: 1rem;
 
-    .footer-logo {
-      max-width: 75px;
-      height: auto;
-    }
-
     p {
       margin: 0;
       font-size: 0.9rem;
@@ -27,6 +22,19 @@ footer {
         &:hover {
           color: #212529;
         }
+      }
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  footer {
+    .footer-content {
+      flex-direction: column; /* Stack items vertically */
+      gap: 0.5rem; /* Reduce gap */
+
+      p {
+        font-size: 0.8rem; /* Smaller font size for mobile */
       }
     }
   }

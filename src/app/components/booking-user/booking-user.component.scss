@@ -1,22 +1,54 @@
-.pixelnova-alert {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  background-color: #343a40; /* Bootstrap's dark gray */
-  color: white;
-  font-size: 1.1rem;
+.header-container {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background-color: #f8f9fa; /* Light gray background */
+  border-radius: 0.5rem; /* Rounded borders */
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* Soft shadow */
 }
 
+.business-name {
+  font-family: 'Montserrat', sans-serif;
+  color: #343a40; /* Dark gray */
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+}
 
+.divider-line {
+  width: 50%; /* Half the width of its container */
+  height: 2px;
+  background-color: rgba(255, 0, 0, 0.3); /* Thin, slightly transparent red */
+  margin: 0.5rem auto; /* Center the line and add some vertical space */
+}
+
+.business-tagline {
+  font-family: 'Montserrat', sans-serif;
+  color: #6c757d; /* Medium gray */
+  font-size: 1.6rem;
+  font-weight: 400;
+  display: block; /* Ensures it's on a new line */
+}
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
-  .pixelnova-alert {
-    flex-direction: column;
-    align-items: flex-start;
+  .business-name {
+    font-size: 2rem;
+  }
+  .business-tagline {
+    font-size: 1.3rem;
+  }
+}
 
-    .business-name-container {
-      margin-top: 0.5rem;
-      padding-left: 0;
-    }
+@media (max-width: 576px) {
+  .business-name {
+    font-size: 1.5rem;
+  }
+  .business-tagline {
+    font-size: 1rem;
+  }
+  .divider-line {
+    width: 70%; /* Adjust line width for smaller screens */
   }
 }

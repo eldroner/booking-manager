@@ -180,9 +180,10 @@
                     [ngModelOptions]="{standalone: true}">
                 </div>
                 <div class="col-4 d-flex align-items-end justify-content-end">
-                  <button class="btn btn-sm btn-success mt-2 btn-icon-only" (click)="agregarHorarioEspecial()"
-                    [disabled]="!nuevoHorarioEspecial.fecha" title="Añadir horario especial">
-                    <i class="bi bi-plus-circle"></i>
+                  <button type="button" (click)="agregarHorarioEspecial()"
+                    class="btn btn-sm text-success bg-transparent border-0 btn-icon-only"
+                    [disabled]="!nuevoHorarioEspecial.fecha" title="Añadir horario">
+                    <i class="bi bi-plus-circle icon-lg"></i>
                   </button>
                 </div>
               </div>
@@ -217,9 +218,8 @@
 
                   <td style="text-align: right; padding-right: 0;">
                     <div style="display: inline-flex; align-items: center;">
-                      <button class="btn btn-sm btn-outline-danger" style="white-space: nowrap;"
-                        (click)="eliminarHorarioEspecial(i)">
-                        <i class="bi bi-trash"></i> Eliminar
+                      <button class="btn btn-sm text-danger bg-transparent border-0" (click)="eliminarHorarioEspecial(i)" title="Eliminar horario">
+                        <i class="bi bi-trash"></i>
                       </button>
                     </div>
                   </td>
@@ -347,7 +347,7 @@
                   <th width="20%">Contacto</th>
                   <th width="25%">Servicio y Fecha</th>
                   <th width="15%">Estado</th>
-                  <th width="10%">Acciones</th>
+                  <th width="10%" class="text-end">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -367,21 +367,18 @@
                     </div>
                   </td>
                   <td>
-                    <span class="badge rounded-pill" [ngClass]="{
-                      'bg-success': r.estado === 'confirmada',
-                      'bg-warning text-dark': r.estado === 'pendiente_email',
-                      'bg-danger': r.estado === 'cancelada'
-                    }">
-                      {{ r.estado === 'pendiente_email' ? 'Pendiente' : (r.estado | titlecase) }}
+                    <span [ngSwitch]="r.estado">
+                      <i *ngSwitchCase="'confirmada'" class="bi bi-check-circle-fill text-success" title="Confirmada"></i>
+                      <i *ngSwitchCase="'pendiente_email'" class="bi bi-clock-fill text-orange" title="Pendiente de verificación por email"></i>
+                      <i *ngSwitchCase="'cancelada'" class="bi bi-x-circle-fill text-danger" title="Cancelada"></i>
                     </span>
                   </td>
-                  <td class="text-end"><span class="text-danger"></span>
-                    <button *ngIf="r.estado === 'pendiente_email'" class="btn btn-sm btn-outline-success me-1"
-                      (click)="confirmReservation(r.id)">
-                      <i class="bi bi-check-lg"></i>
+                  <td class="text-end align-middle">
+                    <button *ngIf="r.estado === 'pendiente_email'" class="btn btn-sm text-success bg-transparent border-0 me-1 align-middle" (click)="confirmReservation(r.id)" title="Confirmar reserva">
+                      <i class="bi bi-check-lg fs-5"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-danger me-1" (click)="deleteReservation(r.id)">
-                      <i class="bi bi-trash"></i>
+                    <button class="btn btn-sm text-danger bg-transparent border-0 me-1 align-middle" (click)="deleteReservation(r.id)" title="Eliminar reserva">
+                      <i class="bi bi-trash fs-5"></i>
                     </button>
                   </td>
                 </tr>

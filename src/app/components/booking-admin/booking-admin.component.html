@@ -208,7 +208,7 @@
                   <td>
                     <div class="form-check form-switch">
                       <input type="checkbox" class="form-check-input" [(ngModel)]="horario.activo"
-                        [ngModelOptions]="{standalone: true}" (change)="toggleActivoHorarioEspecial(i)">
+                        [ngModelOptions]="{standalone: true}" (change)="onToggleHorarioEspecialActivo()">
                       <label class="form-check-label">
                         {{ horario.activo ? 'Activo' : 'Inactivo' }}
                       </label>

@@ -396,8 +396,21 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     }
   }
 
-  toggleActivoHorarioEspecial(index: number): void {
-    this.configNegocio.horariosEspeciales[index].activo = !this.configNegocio.horariosEspeciales[index].activo;
+  
+
+  onToggleHorarioEspecialActivo(): void {
+    this.bookingService.updateConfig({
+      horariosEspeciales: this.configNegocio.horariosEspeciales
+    }).pipe(take(1)).subscribe({
+      next: () => {
+        this.notifications.showSuccess('Estado de horario especial actualizado');
+        this.refreshCalendar();
+      },
+      error: (err) => {
+        console.error('Error al actualizar estado de horario especial:', err);
+        this.notifications.showError('No se pudo actualizar el estado del horario especial');
+      }
+    });
   }
 
   // Métodos principales

@@ -162,8 +162,7 @@
 }
 
 .accordion-body {
-  max-height: 400px;
-  overflow-y: auto;
+  /* Eliminado max-height y overflow-y para permitir que el contenido se expanda */
 }
 
 /* Estilo para nuevos servicios */
@@ -214,7 +213,7 @@
 
 app-booking-user {
   display: block;
-  min-height: 400px; /* Altura mínima del formulario */
+  min-height: auto; /* Ajusta la altura automáticamente al contenido */
 }
 
 /* Alineación perfecta de iconos */

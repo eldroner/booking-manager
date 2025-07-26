@@ -1,5 +1,5 @@
 <div class="container mb-4">
-  <div class="header-container">
+  <div class="header-container" *ngIf="!isAdmin">
   <h1 class="business-name">
     {{ negocioNombre }}
   </h1>

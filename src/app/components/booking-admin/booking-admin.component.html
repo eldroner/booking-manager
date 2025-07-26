@@ -77,7 +77,7 @@
               <div class="col-3"> <!-- Buttons -->
                 <div class="d-flex justify-content-end">
                   <button type="button" (click)="updateService(servicio)" class="btn btn-sm text-success bg-transparent border-0 me-2"
-                    title="Guardar cambios">
+                    title="Guardar cambios" *ngIf="hasServiceChanges(servicio)">
                     <i class="bi bi-check-lg icon-size-18"></i>
                   </button>
                   <button (click)="deleteService(servicio.id)" class="btn btn-sm text-danger bg-transparent border-0"

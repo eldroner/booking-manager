@@ -48,6 +48,7 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
   };
 
   originalConfigNegocio!: BusinessConfig; // Para detectar cambios reales
+  originalServicios: Servicio[] = []; // Para detectar cambios en servicios individuales
 
   showCurrentBookings: boolean = false;  // Puedes cambiar a true si prefieres que inicie abierto
   showSummaryByDate: boolean = false;    // Puedes cambiar a true si prefieres que inicie abierto
@@ -349,12 +350,14 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
 
   addService(): void {
     const newId = Date.now().toString();
-    this.configNegocio.servicios.push({
+    const newService = {
       id: newId,
       nombre: 'Nombre del servicio',
       duracion: 30,
       precio: 0              
-    });
+    };
+    this.configNegocio.servicios.push(newService);
+    this.originalServicios.push(JSON.parse(JSON.stringify(newService))); // Añadir también al original
     //this.isServiciosOpen = true;
   }
 
@@ -367,7 +370,10 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     this.bookingService.updateConfig({ servicios: serviciosValidos })
       .pipe(take(1))
       .subscribe({
-        next: () => this.notifications.showSuccess('Servicios actualizados'),
+        next: () => {
+          this.notifications.showSuccess('Servicios actualizados');
+          this.originalServicios = JSON.parse(JSON.stringify(this.configNegocio.servicios)); // Actualizar copia original de servicios
+        },
         error: (err) => {
           console.error('Error detallado:', err);
           this.notifications.showError('Error al guardar servicios: ' + err.error?.details || err.message);
@@ -386,6 +392,7 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
   deleteService(id: string): void {
     if (confirm('¿Eliminar este servicio?')) {
       this.configNegocio.servicios = this.configNegocio.servicios.filter(s => s.id !== id);
+      this.originalServicios = this.originalServicios.filter(s => s.id !== id); // Eliminar también del original
       this.updateServices(); // Reemplaza el código antiguo
     }
   }
@@ -426,6 +433,7 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
             horariosEspeciales: config.horariosEspeciales || []
           };
           this.originalConfigNegocio = JSON.parse(JSON.stringify(this.configNegocio)); // Guardar copia original
+          this.originalServicios = JSON.parse(JSON.stringify(this.configNegocio.servicios)); // Guardar copia original de servicios
         },
         error: (err) => console.error('Error cargando configuración:', err)
       })
@@ -433,7 +441,15 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
   }
 
   hasChanges(): boolean {
-    return JSON.stringify(this.configNegocio) !== JSON.stringify(this.originalConfigNegocio);
+    // Solo verificar cambios en nombre y maxReservasPorSlot para el botón principal
+    return this.configNegocio.nombre !== this.originalConfigNegocio.nombre ||
+           this.configNegocio.maxReservasPorSlot !== this.originalConfigNegocio.maxReservasPorSlot;
+  }
+
+  public hasServiceChanges(service: Servicio): boolean {
+    const originalService = this.originalServicios.find(s => s.id === service.id);
+    if (!originalService) return true; // Si no hay original, es un servicio nuevo o algo salió mal, consideramos que tiene cambios
+    return JSON.stringify(service) !== JSON.stringify(originalService);
   }
 
   private loadReservas(): void {

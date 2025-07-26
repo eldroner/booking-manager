@@ -49,6 +49,7 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
 
   originalConfigNegocio!: BusinessConfig; // Para detectar cambios reales
   originalServicios: Servicio[] = []; // Para detectar cambios en servicios individuales
+  originalHorariosNormales: HorarioNormal[] = []; // Para detectar cambios en horarios normales
 
   showCurrentBookings: boolean = false;  // Puedes cambiar a true si prefieres que inicie abierto
   showSummaryByDate: boolean = false;    // Puedes cambiar a true si prefieres que inicie abierto
@@ -434,6 +435,7 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
           };
           this.originalConfigNegocio = JSON.parse(JSON.stringify(this.configNegocio)); // Guardar copia original
           this.originalServicios = JSON.parse(JSON.stringify(this.configNegocio.servicios)); // Guardar copia original de servicios
+          this.originalHorariosNormales = JSON.parse(JSON.stringify(this.configNegocio.horariosNormales)); // Guardar copia original de horarios normales
         },
         error: (err) => console.error('Error cargando configuración:', err)
       })
@@ -450,6 +452,17 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     const originalService = this.originalServicios.find(s => s.id === service.id);
     if (!originalService) return true; // Si no hay original, es un servicio nuevo o algo salió mal, consideramos que tiene cambios
     return JSON.stringify(service) !== JSON.stringify(originalService);
+  }
+
+  public hasHorarioNormalChanges(diaId: number, tramo: { horaInicio: string; horaFin: string }): boolean {
+    const originalDia = this.originalHorariosNormales.find(d => d.dia === diaId);
+    if (!originalDia) return true; // Si no hay original, es un día nuevo o algo salió mal
+
+    const originalTramo = originalDia.tramos.find(t => t.horaInicio === tramo.horaInicio && t.horaFin === tramo.horaFin);
+    // Si no encontramos el tramo original, significa que es un tramo nuevo o modificado
+    if (!originalTramo) return true;
+
+    return JSON.stringify(tramo) !== JSON.stringify(originalTramo);
   }
 
   private loadReservas(): void {
@@ -526,6 +539,7 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
         next: () => {
           this.notifications.showSuccess('Guardado ok');
           this.originalConfigNegocio = JSON.parse(JSON.stringify(this.configNegocio)); // Actualizar copia original
+          this.originalHorariosNormales = JSON.parse(JSON.stringify(this.configNegocio.horariosNormales)); // Actualizar copia original de horarios normales
           this.refreshCalendar();
         },
         error: (err) => {

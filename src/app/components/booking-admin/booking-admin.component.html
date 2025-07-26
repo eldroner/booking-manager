@@ -186,7 +186,7 @@
                 <div class="col-4 d-flex align-items-end justify-content-end">
                   <button type="button" (click)="agregarHorarioEspecial()"
                     class="btn btn-sm text-success bg-transparent border-0 btn-icon-only"
-                    [disabled]="!nuevoHorarioEspecial.fecha" title="Añadir horario">
+                    [disabled]="!nuevoHorarioEspecial.fecha" title="Añadir horario" *ngIf="nuevoHorarioEspecial.fecha">
                     <i class="bi bi-plus-circle icon-lg"></i>
                   </button>
                 </div>

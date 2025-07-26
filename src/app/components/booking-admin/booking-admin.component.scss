@@ -221,6 +221,7 @@ app-booking-user {
 .icono {
   transition: all 0.2s ease;
   line-height: 1;
+  padding: 0.25rem;
   margin-bottom: 0.35rem; /* Ajuste fino de alineación vertical */
   
   &:hover {
@@ -305,7 +306,13 @@ app-booking-user {
   align-items: center;
   border-radius: 50%; /* Make it round */
 
-  i {
-    font-size: 1rem; /* Adjust icon size */
+  i.icon-lg {
+    font-size: 18px !important; /* 18px for larger screens */
+  }
+}
+
+@media (max-width: 576px) {
+  .btn-icon-only i.icon-lg {
+    font-size: 15px !important; /* 15px for mobile */
   }
 }

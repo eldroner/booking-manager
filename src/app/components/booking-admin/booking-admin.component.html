@@ -18,8 +18,8 @@
     <!-- Reservas/slot -->
     <div class="col-2">
       <label class="form-label fw-bold" title="Máximo de citas simultáneas permitidas">max/citas</label>
-      <input type="number" class="form-control" [(ngModel)]="configNegocio.maxReservasPorSlot"
-        name="maxReservasPorSlot" min="1" required>
+      <input type="number" class="form-control" [(ngModel)]="configNegocio.maxReservasPorSlot" name="maxReservasPorSlot"
+        min="1" required>
     </div>
 
     <!-- Botones de acción -->
@@ -38,8 +38,7 @@
 
       <!-- Botón Logout -->
       <div>
-        <i class="bi bi-power fs-4 text-danger cursor-pointer icono" title="Cerrar sesión"
-          (click)="logout()"></i>
+        <i class="bi bi-power fs-4 text-danger cursor-pointer icono" title="Cerrar sesión" (click)="logout()"></i>
       </div>
     </div>
   </div>
@@ -48,8 +47,8 @@
   <div class="accordion mb-4">
     <div class="accordion-item p-2">
       <h2 class="accordion-header">
-        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#serviciosCollapse" [ngClass]="{'collapsed': !isServiciosOpen}"
-          (click)="toggleServicios()">
+        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#serviciosCollapse"
+          [ngClass]="{'collapsed': !isServiciosOpen}" (click)="toggleServicios()">
           <i class="bi bi-list-check me-2"></i>
           Gestionar Servicios
           <span class="badge bg-secondary ms-2">{{ configNegocio.servicios.length }}</span>
@@ -102,7 +101,8 @@
   <div class="accordion mb-4">
     <div class="accordion-item p-2">
       <h2 class="accordion-header">
-        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#normalSchedulesCollapse" [ngClass]="{'collapsed': !showNormalSchedules}"
+        <button class="accordion-button" type="button" data-bs-toggle="collapse"
+          data-bs-target="#normalSchedulesCollapse" [ngClass]="{'collapsed': !showNormalSchedules}"
           (click)="showNormalSchedules = !showNormalSchedules">
           <i class="bi bi-clock me-2"></i>
           Editar horario
@@ -112,14 +112,21 @@
         [style.display]="showNormalSchedules ? 'block' : 'none'">
         <div class="accordion-body p-2">
           <div *ngFor="let dia of diasSemana" class="mb-3 p-3 border rounded">
-            <h6>{{dia.nombre}}</h6>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6>{{dia.nombre}}</h6>
+              <button type="button" (click)="agregarTramo(dia.id)"
+                class="btn btn-sm text-success bg-transparent border-0 btn-icon-only" title="Añadir horario">
+                <i class="bi bi-plus-circle icon-lg"></i>
+              </button>
+            </div>
             <div *ngFor="let tramo of getTramosDia(dia.id); let i = index" class="row g-2 mb-2 align-items-center">
               <div class="col-md-4">
                 <input type="time" class="form-control" [(ngModel)]="tramo.horaInicio"
                   [ngModelOptions]="{standalone: true}">
               </div>
               <div class="col-md-4">
-                <input type="time" class="form-control" [(ngModel)]="tramo.horaFin" [ngModelOptions]="{standalone: true}">
+                <input type="time" class="form-control" [(ngModel)]="tramo.horaFin"
+                  [ngModelOptions]="{standalone: true}">
               </div>
               <div class="col-md-4">
                 <button (click)="eliminarTramo(dia.id, i, $event)" class="btn btn-sm btn-danger">
@@ -127,20 +134,22 @@
                 </button>
               </div>
             </div>
-            <button type="button" (click)="agregarTramo(dia.id)" class="btn btn-sm btn-success mt-2 btn-icon-only" title="Añadir horario">
-              <i class="bi bi-plus-circle"></i>
-            </button>
           </div>
         </div>
       </div>
     </div>
   </div>
 
+
+
+
+
   <!-- Acordeón para Horarios Especiales -->
   <div class="accordion mb-4">
     <div class="accordion-item p-2">
       <h2 class="accordion-header">
-        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#specialSchedulesCollapse" [ngClass]="{'collapsed': !showSpecialSchedules}"
+        <button class="accordion-button" type="button" data-bs-toggle="collapse"
+          data-bs-target="#specialSchedulesCollapse" [ngClass]="{'collapsed': !showSpecialSchedules}"
           (click)="showSpecialSchedules = !showSpecialSchedules">
           <i class="bi bi-calendar-event me-2"></i>
           Añadir horario especial
@@ -163,17 +172,20 @@
                 [ngModelOptions]="{standalone: true}">
             </div>
 
-            <div class="col-md-3">
-              <label class="form-label fw-bold">Hora fin</label>
-              <input type="time" class="form-control" [(ngModel)]="nuevoHorarioEspecial.horaFin"
-                [ngModelOptions]="{standalone: true}">
-            </div>
-
-            <div class="col-md-2 d-flex align-items-end">
-              <button class="btn btn-success w-100" (click)="agregarHorarioEspecial()"
-                [disabled]="!nuevoHorarioEspecial.fecha">
-                <i class="bi bi-plus-circle me-1"></i> Añadir
-              </button>
+            <div class="col-md-5">
+              <div class="row g-2">
+                <div class="col-8">
+                  <label class="form-label fw-bold">Hora fin</label>
+                  <input type="time" class="form-control" [(ngModel)]="nuevoHorarioEspecial.horaFin"
+                    [ngModelOptions]="{standalone: true}">
+                </div>
+                <div class="col-4 d-flex align-items-end justify-content-end">
+                  <button class="btn btn-sm btn-success mt-2 btn-icon-only" (click)="agregarHorarioEspecial()"
+                    [disabled]="!nuevoHorarioEspecial.fecha" title="Añadir horario especial">
+                    <i class="bi bi-plus-circle"></i>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -224,8 +236,8 @@
   <div class="accordion mb-4">
     <div class="accordion-item p-2">
       <h2 class="accordion-header">
-        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#blockedDatesCollapse" [ngClass]="{'collapsed': !showBlockedDates}"
-          (click)="showBlockedDates = !showBlockedDates">
+        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#blockedDatesCollapse"
+          [ngClass]="{'collapsed': !showBlockedDates}" (click)="showBlockedDates = !showBlockedDates">
           <i class="bi bi-calendar-x me-2"></i>
           Bloquear Fechas (Vacaciones, etc.)
         </button>
@@ -233,24 +245,27 @@
       <div id="blockedDatesCollapse" class="accordion-collapse" [class.show]="showBlockedDates"
         [style.display]="showBlockedDates ? 'block' : 'none'">
         <div class="accordion-body p-2">
-          <div class="row g-3 mb-3">
-            <div class="col-md-4">
+          <div class="row g-3 mb-3 align-items-end">
+            <div class="col-8 col-md-4">
               <label class="form-label fw-bold">Seleccionar fecha a bloquear</label>
               <input type="date" class="form-control" [(ngModel)]="nuevaFechaBloqueada" name="nuevaFechaBloqueada">
             </div>
-            <div class="col-md-2 d-flex align-items-end">
-              <button type="button" class="btn btn-danger w-100" (click)="addFechaBloqueada()" [disabled]="!nuevaFechaBloqueada">
-                <i class="bi bi-lock-fill me-1"></i> Bloquear
+            <div class="col-4 col-md-2 d-flex align-items-end justify-content-end">
+              <button type="button" class="btn btn-sm text-danger bg-transparent border-0" (click)="addFechaBloqueada()"
+                [disabled]="!nuevaFechaBloqueada" title="Bloquear fecha">
+                <i class="bi bi-lock-fill icon-lg"></i>
               </button>
             </div>
           </div>
 
           <h6>Fechas ya bloqueadas:</h6>
           <ul class="list-group">
-            <li *ngFor="let fecha of fechasBloqueadas" class="list-group-item d-flex justify-content-between align-items-center">
+            <li *ngFor="let fecha of fechasBloqueadas"
+              class="list-group-item d-flex justify-content-between align-items-center">
               {{ fecha | date:'fullDate':'':'es' }}
-              <button class="btn btn-sm btn-outline-success" (click)="deleteFechaBloqueada(fecha)">
-                <i class="bi bi-unlock-fill me-1"></i> Desbloquear
+              <button class="btn btn-sm text-success bg-transparent border-0" (click)="deleteFechaBloqueada(fecha)"
+                title="Desbloquear fecha">
+                <i class="bi bi-unlock-fill icon-lg"></i>
               </button>
             </li>
             <li *ngIf="fechasBloqueadas.length === 0" class="list-group-item text-muted">
@@ -269,8 +284,8 @@
 <div class="accordion my-4">
   <div class="accordion-item p-2">
     <h2 class="accordion-header">
-      <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#currentBookingsCollapse" [ngClass]="{'collapsed': !showCurrentBookings}"
-        (click)="showCurrentBookings = !showCurrentBookings">
+      <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#currentBookingsCollapse"
+        [ngClass]="{'collapsed': !showCurrentBookings}" (click)="showCurrentBookings = !showCurrentBookings">
         <i class="bi bi-calendar-check me-2"></i>
         Gestionar reservas
         <small class="text-muted ms-2">({{ filteredReservas.length }} resultados)</small>
@@ -361,7 +376,8 @@
                     </span>
                   </td>
                   <td class="text-end"><span class="text-danger"></span>
-                    <button *ngIf="r.estado === 'pendiente_email'" class="btn btn-sm btn-outline-success me-1" (click)="confirmReservation(r.id)">
+                    <button *ngIf="r.estado === 'pendiente_email'" class="btn btn-sm btn-outline-success me-1"
+                      (click)="confirmReservation(r.id)">
                       <i class="bi bi-check-lg"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-danger me-1" (click)="deleteReservation(r.id)">

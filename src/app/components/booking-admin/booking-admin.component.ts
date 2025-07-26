@@ -47,6 +47,8 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     horariosEspeciales: []
   };
 
+  originalConfigNegocio!: BusinessConfig; // Para detectar cambios reales
+
   showCurrentBookings: boolean = false;  // Puedes cambiar a true si prefieres que inicie abierto
   showSummaryByDate: boolean = false;    // Puedes cambiar a true si prefieres que inicie abierto
 
@@ -423,10 +425,15 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
             ...config,
             horariosEspeciales: config.horariosEspeciales || []
           };
+          this.originalConfigNegocio = JSON.parse(JSON.stringify(this.configNegocio)); // Guardar copia original
         },
         error: (err) => console.error('Error cargando configuración:', err)
       })
     );
+  }
+
+  hasChanges(): boolean {
+    return JSON.stringify(this.configNegocio) !== JSON.stringify(this.originalConfigNegocio);
   }
 
   private loadReservas(): void {
@@ -502,6 +509,7 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.notifications.showSuccess('Guardado ok');
+          this.originalConfigNegocio = JSON.parse(JSON.stringify(this.configNegocio)); // Actualizar copia original
           this.refreshCalendar();
         },
         error: (err) => {

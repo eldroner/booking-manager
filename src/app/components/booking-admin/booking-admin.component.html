@@ -25,7 +25,7 @@
     <!-- Botones de acción -->
     <div class="col-4 d-flex align-items-end justify-content-end gap-2">
       <!-- Botón Guardar -->
-      <div>
+      <div *ngIf="hasChanges()">
         <i class="bi bi-check-lg fs-4 text-success cursor-pointer icono" title="Guardar configuración"
           (click)="saveConfiguration()"></i>
       </div>

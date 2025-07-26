@@ -52,7 +52,7 @@
           <i class="bi bi-list-check me-2"></i>
           Gestionar Servicios
           <span class="badge bg-secondary ms-2">{{ configNegocio.servicios.length }}</span>
-          <button *ngIf="isServiciosOpen" (click)="addService()" class="btn btn-sm text-primary bg-transparent border-0 ms-auto me-2" title="Nuevo Servicio">
+          <button *ngIf="isServiciosOpen" (click)="addService(); $event.stopPropagation()" class="btn btn-sm text-primary bg-transparent border-0 ms-auto me-2" title="Nuevo Servicio">
             <i class="bi bi-plus-circle icon-size-18"></i>
           </button>
         </button>

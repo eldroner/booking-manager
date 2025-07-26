@@ -47,11 +47,14 @@
   <div class="accordion mb-4">
     <div class="accordion-item p-2">
       <h2 class="accordion-header">
-        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#serviciosCollapse"
+        <button class="accordion-button pe-3" type="button" data-bs-toggle="collapse" data-bs-target="#serviciosCollapse"
           [ngClass]="{'collapsed': !isServiciosOpen}" (click)="toggleServicios()">
           <i class="bi bi-list-check me-2"></i>
           Gestionar Servicios
           <span class="badge bg-secondary ms-2">{{ configNegocio.servicios.length }}</span>
+          <button *ngIf="isServiciosOpen" (click)="addService()" class="btn btn-sm text-primary bg-transparent border-0 ms-auto me-2" title="Nuevo Servicio">
+            <i class="bi bi-plus-circle icon-size-18"></i>
+          </button>
         </button>
       </h2>
       <div id="serviciosCollapse" class="accordion-collapse" [class.show]="isServiciosOpen"
@@ -60,18 +63,18 @@
           <!-- Lista de servicios -->
           <div *ngFor="let servicio of configNegocio.servicios; let i = index" class="mb-2 p-2 border rounded bg-light">
             <div class="row g-2 align-items-center">
-              <div class="col-md-5">
+              <div class="col-5"> <!-- Service Name -->
                 <input type="text" class="form-control form-control-sm" [(ngModel)]="servicio.nombre"
                   [name]="'nombreServicio_' + i" placeholder="Ej: Corte de pelo">
               </div>
-              <div class="col-md-3">
+              <div class="col-4"> <!-- Duration -->
                 <div class="input-group input-group-sm">
                   <input type="number" class="form-control" [(ngModel)]="servicio.duracion"
                     [name]="'duracionServicio_' + i" min="5" step="5" placeholder="Minutos">
                   <span class="input-group-text">min</span>
                 </div>
               </div>
-              <div class="col-md-4">
+              <div class="col-3"> <!-- Buttons -->
                 <div class="d-flex justify-content-end">
                   <button type="button" (click)="updateService(servicio)" class="btn btn-sm text-success bg-transparent border-0 me-2"
                     title="Guardar cambios">
@@ -87,11 +90,7 @@
           </div>
 
           <!-- Botón para añadir -->
-          <button (click)="addService()"
-            class="btn btn-sm btn-primary mt-2 w-100 d-flex align-items-center justify-content-center gap-2">
-            <i class="bi bi-plus-circle fs-6"></i>
-            <span>Nuevo Servicio</span>
-          </button>
+          
         </div>
       </div>
     </div>
@@ -120,15 +119,15 @@
               </button>
             </div>
             <div *ngFor="let tramo of getTramosDia(dia.id); let i = index" class="row g-2 mb-2 align-items-center">
-              <div class="col-4">
+              <div class="col-5">
                 <input type="time" class="form-control" [(ngModel)]="tramo.horaInicio"
                   [ngModelOptions]="{standalone: true}">
               </div>
-              <div class="col-4">
+              <div class="col-5">
                 <input type="time" class="form-control" [(ngModel)]="tramo.horaFin"
                   [ngModelOptions]="{standalone: true}">
               </div>
-              <div class="col-4">
+              <div class="col-2 d-flex justify-content-end">
                 <button (click)="eliminarTramo(dia.id, i, $event)" class="btn btn-sm text-danger bg-transparent border-0" title="Eliminar">
                   <i class="bi bi-trash icon-size-18"></i>
                 </button>

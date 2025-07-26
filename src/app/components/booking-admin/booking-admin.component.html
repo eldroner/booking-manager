@@ -113,10 +113,16 @@
           <div *ngFor="let dia of diasSemana" class="mb-3 p-3 border rounded">
             <div class="d-flex justify-content-between align-items-center mb-2">
               <h6>{{dia.nombre}}</h6>
-              <button type="button" (click)="agregarTramo(dia.id)"
-                class="btn btn-sm text-success bg-transparent border-0 btn-icon-only" title="Añadir horario">
-                <i class="bi bi-plus-circle icon-lg"></i>
-              </button>
+              <div class="d-flex gap-2">
+                <button type="button" (click)="saveConfiguration()"
+                  class="btn btn-sm text-success bg-transparent border-0 btn-icon-only" title="Guardar cambios">
+                  <i class="bi bi-check-lg icon-size-18"></i>
+                </button>
+                <button type="button" (click)="agregarTramo(dia.id)"
+                  class="btn btn-sm text-success bg-transparent border-0 btn-icon-only" title="Añadir horario">
+                  <i class="bi bi-plus-circle icon-lg"></i>
+                </button>
+              </div>
             </div>
             <div *ngFor="let tramo of getTramosDia(dia.id); let i = index" class="row g-2 mb-2 align-items-center">
               <div class="col-5">

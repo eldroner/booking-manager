@@ -73,13 +73,13 @@
               </div>
               <div class="col-md-4">
                 <div class="d-flex justify-content-end">
-                  <button type="button" (click)="updateService(servicio)" class="btn btn-sm btn-outline-success me-2"
+                  <button type="button" (click)="updateService(servicio)" class="btn btn-sm text-success bg-transparent border-0 me-2"
                     title="Guardar cambios">
-                    <i class="bi bi-check-lg"></i>
+                    <i class="bi bi-check-lg icon-size-18"></i>
                   </button>
-                  <button (click)="deleteService(servicio.id)" class="btn btn-sm btn-outline-danger"
+                  <button (click)="deleteService(servicio.id)" class="btn btn-sm text-danger bg-transparent border-0"
                     title="Eliminar servicio">
-                    <i class="bi bi-trash"></i>
+                    <i class="bi bi-trash icon-size-18"></i>
                   </button>
                 </div>
               </div>
@@ -120,17 +120,17 @@
               </button>
             </div>
             <div *ngFor="let tramo of getTramosDia(dia.id); let i = index" class="row g-2 mb-2 align-items-center">
-              <div class="col-md-4">
+              <div class="col-4">
                 <input type="time" class="form-control" [(ngModel)]="tramo.horaInicio"
                   [ngModelOptions]="{standalone: true}">
               </div>
-              <div class="col-md-4">
+              <div class="col-4">
                 <input type="time" class="form-control" [(ngModel)]="tramo.horaFin"
                   [ngModelOptions]="{standalone: true}">
               </div>
-              <div class="col-md-4">
-                <button (click)="eliminarTramo(dia.id, i, $event)" class="btn btn-sm btn-danger">
-                  <i class="bi bi-trash"></i> Eliminar
+              <div class="col-4">
+                <button (click)="eliminarTramo(dia.id, i, $event)" class="btn btn-sm text-danger bg-transparent border-0" title="Eliminar">
+                  <i class="bi bi-trash icon-size-18"></i>
                 </button>
               </div>
             </div>
@@ -219,7 +219,7 @@
                   <td style="text-align: right; padding-right: 0;">
                     <div style="display: inline-flex; align-items: center;">
                       <button class="btn btn-sm text-danger bg-transparent border-0" (click)="eliminarHorarioEspecial(i)" title="Eliminar horario">
-                        <i class="bi bi-trash"></i>
+                        <i class="bi bi-trash icon-size-18"></i>
                       </button>
                     </div>
                   </td>
@@ -248,13 +248,12 @@
           <div class="row g-3 mb-3 align-items-end">
             <div class="col-8 col-md-4">
               <label class="form-label fw-bold">Seleccionar fecha a bloquear</label>
-              <input type="date" class="form-control" [(ngModel)]="nuevaFechaBloqueada" name="nuevaFechaBloqueada">
-            </div>
-            <div class="col-4 col-md-2 d-flex align-items-end justify-content-end">
-              <button type="button" class="btn btn-sm text-danger bg-transparent border-0" (click)="addFechaBloqueada()"
-                [disabled]="!nuevaFechaBloqueada" title="Bloquear fecha">
-                <i class="bi bi-lock-fill icon-lg"></i>
-              </button>
+              <div class="input-group">
+                <input type="date" class="form-control" [(ngModel)]="nuevaFechaBloqueada" name="nuevaFechaBloqueada">
+                <button type="button" class="btn btn-sm text-danger bg-transparent border-0" (click)="addFechaBloqueada()" [disabled]="!nuevaFechaBloqueada" title="Bloquear fecha">
+                  <i class="bi bi-lock-fill icon-lg"></i>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -366,20 +365,22 @@
                       <span *ngIf="r.fechaFin"> - {{ r.fechaFin | date:'HH:mm' }}</span>
                     </div>
                   </td>
-                  <td>
+                  <td class="align-middle">
                     <span [ngSwitch]="r.estado">
-                      <i *ngSwitchCase="'confirmada'" class="bi bi-check-circle-fill text-success" title="Confirmada"></i>
-                      <i *ngSwitchCase="'pendiente_email'" class="bi bi-clock-fill text-orange" title="Pendiente de verificación por email"></i>
-                      <i *ngSwitchCase="'cancelada'" class="bi bi-x-circle-fill text-danger" title="Cancelada"></i>
+                      <i *ngSwitchCase="'confirmada'" class="bi bi-check-circle-fill text-success icon-size-18" title="Confirmada"></i>
+                      <i *ngSwitchCase="'pendiente_email'" class="bi bi-clock-fill text-orange icon-size-18" title="Pendiente de verificación por email"></i>
+                      <i *ngSwitchCase="'cancelada'" class="bi bi-x-circle-fill text-danger icon-size-18" title="Cancelada"></i>
                     </span>
                   </td>
-                  <td class="text-end align-middle">
-                    <button *ngIf="r.estado === 'pendiente_email'" class="btn btn-sm text-success bg-transparent border-0 me-1 align-middle" (click)="confirmReservation(r.id)" title="Confirmar reserva">
-                      <i class="bi bi-check-lg fs-5"></i>
-                    </button>
-                    <button class="btn btn-sm text-danger bg-transparent border-0 me-1 align-middle" (click)="deleteReservation(r.id)" title="Eliminar reserva">
-                      <i class="bi bi-trash fs-5"></i>
-                    </button>
+                  <td class="align-middle">
+                    <div class="d-flex justify-content-end">
+                      <button *ngIf="r.estado === 'pendiente_email'" class="btn btn-sm text-success bg-transparent border-0 me-1" (click)="confirmReservation(r.id)" title="Confirmar reserva">
+                        <i class="bi bi-check-lg icon-size-18"></i>
+                      </button>
+                      <button class="btn btn-sm text-danger bg-transparent border-0 me-1" (click)="deleteReservation(r.id)" title="Eliminar reserva">
+                        <i class="bi bi-trash icon-size-18"></i>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               </tbody>

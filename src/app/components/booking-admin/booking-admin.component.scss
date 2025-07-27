@@ -290,6 +290,31 @@ app-booking-user {
 
 
 
+@media (max-width: 576px) {
+  /* Ajustes para el formulario de horarios especiales en móvil */
+  .accordion-body .row.g-0 .col-3 { /* Columna de la fecha */
+    flex: 0 0 35%;
+    max-width: 35%;
+  }
+
+  .accordion-body .row.g-0 .col-4 { /* Columnas de las horas */
+    flex: 0 0 25%;
+    max-width: 25%;
+  }
+
+  .accordion-body .row.g-0 .col-1 { /* Columna del botón */
+    flex: 0 0 15%;
+    max-width: 15%;
+  }
+
+  .accordion-body input[type="date"], 
+  .accordion-body input[type="time"] {
+    font-size: 1rem; /* Ajuste más fino del tamaño de fuente */
+    padding: 0.15rem 0.3rem; /* Reducir padding */
+    box-sizing: border-box; /* Asegurar que padding se incluya en el ancho */
+  }
+}
+
 .text-orange {
   color: #fd7e14 !important; // Naranja oscuro de Bootstrap
 }

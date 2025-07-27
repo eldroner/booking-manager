@@ -165,25 +165,25 @@
         [style.display]="showSpecialSchedules ? 'block' : 'none'">
         <div class="accordion-body p-2">
           <!-- Formulario para nuevo horario especial -->
-          <div class="row g-0 px-0 bg-light rounded align-items-end">
-            <div class="col-4">
+          <div class="row g-0 g-md-3 mb-0 mb-md-4 p-0 p-md-3 bg-light rounded align-items-end">
+            <div class="col-3 col-md-4">
               <label class="form-label fw-bold">Fecha</label>
               <input type="date" class="form-control" [(ngModel)]="nuevoHorarioEspecial.fecha"
                 [ngModelOptions]="{standalone: true}">
             </div>
 
-            <div class="col-3">
+            <div class="col-4 col-md-3">
               <label class="form-label fw-bold">Inicio</label>
               <input type="time" class="form-control" [(ngModel)]="nuevoHorarioEspecial.horaInicio"
                 [ngModelOptions]="{standalone: true}">
             </div>
 
-            <div class="col-3">
+            <div class="col-4 col-md-3">
               <label class="form-label fw-bold">Fin</label>
               <input type="time" class="form-control" [(ngModel)]="nuevoHorarioEspecial.horaFin"
                 [ngModelOptions]="{standalone: true}">
             </div>
-            <div class="col-auto d-flex justify-content-end">
+            <div class="col-1 col-md-2 d-flex justify-content-end">
               <button type="button" (click)="agregarHorarioEspecial()"
                 class="btn btn-sm text-success bg-transparent border-0 btn-icon-only"
                 [disabled]="!nuevoHorarioEspecial.fecha" title="Añadir horario" *ngIf="nuevoHorarioEspecial.fecha">

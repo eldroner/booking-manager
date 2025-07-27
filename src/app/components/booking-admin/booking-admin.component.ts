@@ -465,6 +465,25 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     return JSON.stringify(tramo) !== JSON.stringify(originalTramo);
   }
 
+  public hasAnyHorarioNormalChanges(diaId: number): boolean {
+    const currentDia = this.configNegocio.horariosNormales.find(d => d.dia === diaId);
+    const originalDia = this.originalHorariosNormales.find(d => d.dia === diaId);
+
+    if (!currentDia && !originalDia) return false; // Ambos vacíos, no hay cambios
+    if (!currentDia || !originalDia) return true; // Uno existe y el otro no, hay cambios
+
+    // Comparar longitud de tramos
+    if (currentDia.tramos.length !== originalDia.tramos.length) return true;
+
+    // Comparar cada tramo
+    for (let i = 0; i < currentDia.tramos.length; i++) {
+      if (JSON.stringify(currentDia.tramos[i]) !== JSON.stringify(originalDia.tramos[i])) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   private loadReservas(): void {
     this.subscriptions.add(
       this.bookingService.getReservas(this.statusFilter === 'all' ? undefined : this.statusFilter as BookingStatus).subscribe({

@@ -114,6 +114,11 @@
             <div class="d-flex justify-content-between align-items-center mb-2">
               <h6>{{dia.nombre}}</h6>
               <div class="d-flex gap-2">
+                <button type="button" (click)="saveConfiguration()"
+                  class="btn btn-sm text-success bg-transparent border-0 btn-icon-only" title="Guardar cambios"
+                  *ngIf="hasAnyHorarioNormalChanges(dia.id)">
+                  <i class="bi bi-check-lg icon-size-18"></i>
+                </button>
                 <button type="button" (click)="agregarTramo(dia.id)"
                   class="btn btn-sm text-success bg-transparent border-0 btn-icon-only" title="Añadir horario">
                   <i class="bi bi-plus-circle icon-lg"></i>
@@ -130,9 +135,6 @@
                   [ngModelOptions]="{standalone: true}">
               </div>
               <div class="col-2 d-flex justify-content-end">
-                <button type="button" (click)="saveConfiguration()" class="btn btn-sm text-success bg-transparent border-0 me-1" title="Guardar cambios" *ngIf="hasHorarioNormalChanges(dia.id, tramo)">
-                  <i class="bi bi-check-lg icon-size-18"></i>
-                </button>
                 <button (click)="eliminarTramo(dia.id, i, $event)" class="btn btn-sm text-danger bg-transparent border-0" title="Eliminar">
                   <i class="bi bi-trash icon-size-18"></i>
                 </button>
@@ -163,34 +165,30 @@
         [style.display]="showSpecialSchedules ? 'block' : 'none'">
         <div class="accordion-body p-2">
           <!-- Formulario para nuevo horario especial -->
-          <div class="row g-3 mb-4 p-3 bg-light rounded">
-            <div class="col-md-4">
+          <div class="row g-0 px-0 bg-light rounded align-items-end">
+            <div class="col-4">
               <label class="form-label fw-bold">Fecha</label>
               <input type="date" class="form-control" [(ngModel)]="nuevoHorarioEspecial.fecha"
                 [ngModelOptions]="{standalone: true}">
             </div>
 
-            <div class="col-md-3">
-              <label class="form-label fw-bold">Hora inicio</label>
+            <div class="col-3">
+              <label class="form-label fw-bold">Inicio</label>
               <input type="time" class="form-control" [(ngModel)]="nuevoHorarioEspecial.horaInicio"
                 [ngModelOptions]="{standalone: true}">
             </div>
 
-            <div class="col-md-5">
-              <div class="row g-2">
-                <div class="col-8">
-                  <label class="form-label fw-bold">Hora fin</label>
-                  <input type="time" class="form-control" [(ngModel)]="nuevoHorarioEspecial.horaFin"
-                    [ngModelOptions]="{standalone: true}">
-                </div>
-                <div class="col-4 d-flex align-items-end justify-content-end">
-                  <button type="button" (click)="agregarHorarioEspecial()"
-                    class="btn btn-sm text-success bg-transparent border-0 btn-icon-only"
-                    [disabled]="!nuevoHorarioEspecial.fecha" title="Añadir horario" *ngIf="nuevoHorarioEspecial.fecha">
-                    <i class="bi bi-plus-circle icon-lg"></i>
-                  </button>
-                </div>
-              </div>
+            <div class="col-3">
+              <label class="form-label fw-bold">Fin</label>
+              <input type="time" class="form-control" [(ngModel)]="nuevoHorarioEspecial.horaFin"
+                [ngModelOptions]="{standalone: true}">
+            </div>
+            <div class="col-auto d-flex justify-content-end">
+              <button type="button" (click)="agregarHorarioEspecial()"
+                class="btn btn-sm text-success bg-transparent border-0 btn-icon-only"
+                [disabled]="!nuevoHorarioEspecial.fecha" title="Añadir horario" *ngIf="nuevoHorarioEspecial.fecha">
+                <i class="bi bi-plus-circle icon-lg"></i>
+              </button>
             </div>
           </div>
 

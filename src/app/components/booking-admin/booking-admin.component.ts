@@ -674,7 +674,9 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
   // Métodos para fechas bloqueadas
   loadFechasBloqueadas(): void {
     this.bookingService.getFechasBloqueadas().subscribe(fechas => {
-      this.fechasBloqueadas = fechas;
+      console.log('Fechas recibidas del servicio:', fechas); // Nuevo log
+      this.fechasBloqueadas = [...fechas]; // Crear nueva referencia de array
+      console.log('Fechas bloqueadas cargadas en el componente:', this.fechasBloqueadas);
     });
   }
 
@@ -691,10 +693,17 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
 
   deleteFechaBloqueada(fecha: string): void {
     if (confirm('¿Desbloquear esta fecha?')) {
-      this.bookingService.deleteFechaBloqueada(fecha).subscribe(() => {
-        this.loadFechasBloqueadas();
-        this.notifications.showSuccess('Fecha desbloqueada correctamente');
-        this.refreshCalendar();
+      this.bookingService.deleteFechaBloqueada(fecha).subscribe({
+        next: () => {
+          this.loadFechasBloqueadas();
+          this.notifications.showSuccess('Fecha desbloqueada correctamente');
+          console.log('Fecha desbloqueada y lista actualizada.');
+          this.refreshCalendar(); // Añadido para forzar la actualización del calendario y la lista
+        },
+        error: (err) => {
+          this.notifications.showError('Error al desbloquear fecha: ' + err.message);
+          console.error('Error al desbloquear fecha:', err);
+        }
       });
     }
   }

@@ -478,6 +478,6 @@ export class BookingConfigService {
   deleteFechaBloqueada(fecha: string): Observable<any> {
     if (!this.idNegocio) return throwError(() => new Error('ID de negocio no definido'));
     const params = new HttpParams().set('idNegocio', this.idNegocio);
-    return this.http.delete(`${environment.apiUrl}/api/bloqueo/${fecha}`, { params });
+    return this.http.delete(`${environment.apiUrl}/api/bloqueo/${fecha}`, { params, responseType: 'text' });
   }
 }

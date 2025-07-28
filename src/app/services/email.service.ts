@@ -15,6 +15,8 @@ export class EmailService {
       fecha: string;
       servicio: string;
       token: string;
+      businessName: string;
+      bookingTime: string;
     }
   ): Promise<void> {
     try {
@@ -30,7 +32,9 @@ export class EmailService {
         verification_link: `${window.location.origin}/confirmar/${bookingDetails.token}`,
         // Añade otras variables que uses en tu template:
         service_name: bookingDetails.servicio,
-        booking_date: bookingDetails.fecha
+        business_name: bookingDetails.businessName,
+        booking_date: bookingDetails.fecha,
+        booking_time: bookingDetails.bookingTime
       };
 
       console.log('Enviando email con params:', templateParams); // 👈 ¡Depuración clave!

@@ -357,13 +357,20 @@ if (this.isAdmin) {
 
         console.log('Email a enviar:', reservaCompleta.usuario.email);
 
+        const fechaFormateada = new Date(reservaCompleta.fechaInicio).toLocaleDateString('es-ES');
+
+        const servicioSeleccionado = this.serviciosDisponibles.find(s => s.id === reservaCompleta.servicio);
+        const nombreServicio = servicioSeleccionado ? servicioSeleccionado.nombre : 'Servicio no encontrado';
+
         this.emailService.sendBookingConfirmation(
           reservaCompleta.usuario.email,
           reservaCompleta.usuario.nombre,
           {
-            fecha: reservaCompleta.fechaInicio,
-            servicio: reservaCompleta.servicio,
-            token: response.token
+            fecha: fechaFormateada,
+            servicio: nombreServicio,
+            token: response.token,
+            businessName: this.negocioNombre,
+            bookingTime: this.selectedTime
           }
         ).then(() => {
           this.notifications.showSuccess('Reserva solicitada. Revisa tu email para validarla. Tienes 48 horas para hacerlo.');

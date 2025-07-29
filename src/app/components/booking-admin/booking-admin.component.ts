@@ -24,6 +24,8 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
   statusFilter = 'all';
   dateFilter = '';
   filteredReservas: any[] = [];
+  reservasFiltradasVisibles: any[] = [];
+  mostrarReservasPasadas = false;
   isServiciosOpen = false;
   selectedReserva: any = null;
   today = new Date();
@@ -146,6 +148,22 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
 }
 
 
+  actualizarVisibilidadReservas(): void {
+    const ahora = new Date();
+    console.log('actualizarVisibilidadReservas: mostrarReservasPasadas =', this.mostrarReservasPasadas);
+    console.log('actualizarVisibilidadReservas: Fecha y hora actuales =', ahora);
+
+    this.reservasFiltradasVisibles = this.filteredReservas.filter(r => {
+      const fechaReserva = new Date(r.fechaInicio);
+      const esPasada = fechaReserva < ahora;
+      const debeMostrar = this.mostrarReservasPasadas || !esPasada;
+
+      console.log(`Reserva: ${r.usuario?.nombre} - Fecha: ${fechaReserva.toLocaleString()} - Es pasada: ${esPasada} - Debe mostrar: ${debeMostrar}`);
+      return debeMostrar;
+    });
+    console.log('actualizarVisibilidadReservas: Total de reservas visibles =', this.reservasFiltradasVisibles.length);
+  }
+
   filterReservations() {
     this.filteredReservas = this.reservas.filter(r => {
       const matchesSearch = this.searchText === '' ||
@@ -161,6 +179,7 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
 
       return matchesSearch && matchesStatus && matchesDate;
     });
+    this.actualizarVisibilidadReservas();
   }
 
   resetFilters(): void {
@@ -489,9 +508,10 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
       this.bookingService.getReservas(this.statusFilter === 'all' ? undefined : this.statusFilter as BookingStatus).subscribe({
         next: (reservas) => {
           this.reservas = reservas.sort((a, b) =>
-            new Date(b.fechaInicio).getTime() - new Date(a.fechaInicio).getTime()
+            new Date(a.fechaInicio).getTime() - new Date(b.fechaInicio).getTime()
           );
           this.filteredReservas = [...this.reservas]; // Inicializa filtradas
+          this.actualizarVisibilidadReservas(); // Llama a la nueva función
           this.updateSummary();
           this.refreshCalendar(); // Asegura que el calendario se actualice
         },
@@ -542,6 +562,7 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
 
     console.log('Reservas filtradas:', this.filteredReservas);
     this.updateSummary();
+    this.actualizarVisibilidadReservas();
   }
 
 

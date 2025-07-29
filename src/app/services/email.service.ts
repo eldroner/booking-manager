@@ -20,31 +20,27 @@ export class EmailService {
     }
   ): Promise<void> {
     try {
-      // 1. Validación EXTRA del email
       if (!userEmail?.includes('@')) {
         throw new Error('Email no válido: ' + userEmail);
       }
 
-      // 2. Objeto con estructura EXACTA que espera EmailJS
       const templateParams = {
         user_email: userEmail,
         user_name: userName,
         verification_link: `${window.location.origin}/confirmar/${bookingDetails.token}`,
-        // Añade otras variables que uses en tu template:
-        service_name: bookingDetails.servicio,
         business_name: bookingDetails.businessName,
+        service_name: bookingDetails.servicio,
         booking_date: bookingDetails.fecha,
         booking_time: bookingDetails.bookingTime
       };
 
-      console.log('Enviando email con params:', templateParams); // 👈 ¡Depuración clave!
+      console.log('Enviando email de confirmación con params:', templateParams);
 
-      // 3. Envío con parámetros corregidos
       await emailjs.send(
         environment.emailjs.serviceId,
         environment.emailjs.templateId,
-        templateParams,  // <-- Envía el objeto completo
-        environment.emailjs.userId  // <-- Opcional: algunos planes lo requieren
+        templateParams,
+        environment.emailjs.userId
       );
     } catch (error) {
       console.error('Error completo:', error);
@@ -55,7 +51,13 @@ export class EmailService {
   async sendAdminNotification(
     userAdminEmail: string,
     userName: string,
-    idNegocio: string
+    bookingDetails: {
+      fecha: string;
+      servicio: string;
+      token: string;
+      businessName: string;
+      bookingTime: string;
+    }
   ): Promise<void> {
     try {
       if (!userAdminEmail?.includes('@')) {
@@ -65,7 +67,10 @@ export class EmailService {
       const templateParams = {
         user_admin: userAdminEmail,
         user_name: userName,
-        id_negocio: idNegocio
+        business_name: bookingDetails.businessName,
+        service_name: bookingDetails.servicio,
+        booking_date: bookingDetails.fecha,
+        booking_time: bookingDetails.bookingTime
       };
 
       console.log('Enviando notificación de administrador con params:', templateParams);
@@ -78,6 +83,44 @@ export class EmailService {
       );
     } catch (error) {
       console.error('Error al enviar notificación al administrador:', error);
+      throw error;
+    }
+  }
+
+  async sendBookingCancellation(
+    userEmail: string,
+    userName: string,
+    bookingDetails: {
+      fecha: string;
+      servicio: string;
+      businessName: string;
+      bookingTime: string;
+    }
+  ): Promise<void> {
+    try {
+      if (!userEmail?.includes('@')) {
+        throw new Error('Email no válido: ' + userEmail);
+      }
+
+      const templateParams = {
+        user_email: userEmail,
+        user_name: userName,
+        business_name: bookingDetails.businessName,
+        service_name: bookingDetails.servicio,
+        booking_date: bookingDetails.fecha,
+        booking_time: bookingDetails.bookingTime
+      };
+
+      console.log('Enviando email de cancelación con params:', templateParams);
+
+      await emailjs.send(
+        environment.emailjs.serviceId,
+        'YOUR_CANCELLATION_TEMPLATE_ID', // <-- ¡IMPORTANTE! Reemplaza esto con el ID de tu plantilla de cancelación
+        templateParams,
+        environment.emailjs.userId
+      );
+    } catch (error) {
+      console.error('Error al enviar email de cancelación:', error);
       throw error;
     }
   }

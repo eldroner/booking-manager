@@ -362,6 +362,8 @@ if (this.isAdmin) {
         const servicioSeleccionado = this.serviciosDisponibles.find(s => s.id === reservaCompleta.servicio);
         const nombreServicio = servicioSeleccionado ? servicioSeleccionado.nombre : 'Servicio no encontrado';
 
+        const bookingTime = this.selectedTime;
+
         this.emailService.sendBookingConfirmation(
           reservaCompleta.usuario.email,
           reservaCompleta.usuario.nombre,
@@ -370,16 +372,24 @@ if (this.isAdmin) {
             servicio: nombreServicio,
             token: response.token,
             businessName: this.negocioNombre,
-            bookingTime: this.selectedTime
+            bookingTime: bookingTime
           }
         ).then(() => {
           this.notifications.showSuccess('Reserva solicitada. Revisa tu email para validarla. Tienes 48 horas para hacerlo.');
           // Enviar notificación al administrador
           if (response.emailContacto && this.config.idNegocio) {
+            const bookingDetails = {
+              fecha: fechaFormateada,
+              servicio: nombreServicio,
+              token: response.token, // Aunque no se use en la plantilla de admin, es bueno tenerlo
+              businessName: this.negocioNombre,
+              bookingTime: bookingTime
+            };
+
             this.emailService.sendAdminNotification(
               response.emailContacto,
               reservaCompleta.usuario.nombre,
-              this.config.idNegocio
+              bookingDetails
             ).catch(adminError => {
               console.error('Error enviando notificación al administrador:', adminError);
               // No mostrar error al usuario final por esto

@@ -16,6 +16,10 @@ export const routes: Routes = [
     path: 'confirmar/:token',
     loadComponent: () => import('./features/confirmar-reserva/confirmar-reserva.component').then(m => m.ConfirmarReservaComponent)
   },
+  {
+    path: 'cancelar-reserva',
+    loadComponent: () => import('./components/cancel-booking/cancel-booking.component').then(m => m.CancelBookingComponent)
+  },
   { 
     path: '', 
     redirectTo: '/default', 

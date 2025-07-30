@@ -348,7 +348,7 @@ if (this.isAdmin) {
   } else {
     // Lógica normal para el usuario: enviar email de confirmación
     this.bookingService.addReserva(reservaCompleta).subscribe({
-      next: (response: { token: string, emailContacto?: string }) => {
+      next: (response: { token: string, cancellationToken: string, emailContacto?: string }) => {
         if (!response.token) {
           console.error('No se recibió token de confirmación');
           this.notifications.showError('Error en la confirmación de la reserva');
@@ -372,7 +372,8 @@ if (this.isAdmin) {
             servicio: nombreServicio,
             token: response.token,
             businessName: this.negocioNombre,
-            bookingTime: bookingTime
+            bookingTime: bookingTime,
+            cancellationToken: response.cancellationToken
           }
         ).then(() => {
           this.notifications.showSuccess('Reserva solicitada. Revisa tu email para validarla. Tienes 48 horas para hacerlo.');

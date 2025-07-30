@@ -17,6 +17,7 @@ export class EmailService {
       token: string;
       businessName: string;
       bookingTime: string;
+      cancellationToken: string;
     }
   ): Promise<void> {
     try {
@@ -28,6 +29,7 @@ export class EmailService {
         user_email: userEmail,
         user_name: userName,
         verification_link: `${window.location.origin}/confirmar/${bookingDetails.token}`,
+        cancellation_link: `${window.location.origin}/cancelar-reserva?token=${bookingDetails.cancellationToken}`,
         business_name: bookingDetails.businessName,
         service_name: bookingDetails.servicio,
         booking_date: bookingDetails.fecha,

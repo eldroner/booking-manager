@@ -602,15 +602,15 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     }
   }
 
-  deleteReservation(id: string): void {
-    if (confirm('¿Está seguro que desea eliminar esta reserva?')) {
+  cancelReservation(id: string): void {
+    if (confirm('¿Está seguro que desea cancelar esta reserva?')) {
       this.subscriptions.add(
-        this.bookingService.deleteReserva(id).subscribe({
+        this.bookingService.cancelReservation(id).subscribe({
           next: () => {
-            this.notifications.showSuccess('Reserva eliminada');
+            this.notifications.showSuccess('Reserva cancelada');
             this.loadReservas(); // Recargar reservas para actualizar el estado
           },
-          error: (err) => this.notifications.showError('Error al eliminar reserva: ' + err.message)
+          error: (err) => this.notifications.showError('Error al cancelar reserva: ' + err.message)
         })
       );
     }

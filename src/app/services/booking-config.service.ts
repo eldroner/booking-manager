@@ -51,6 +51,7 @@ export interface Reserva {
   servicio: string;
   estado: BookingStatus;
   confirmacionToken: string;
+  cancellation_token?: string;
   metadata?: any;
 }
 
@@ -310,7 +311,7 @@ export class BookingConfigService {
     );
   }
 
-  addReserva(reservaData: Omit<Reserva, 'id' | 'estado'>): Observable<{ token: string }> {
+  addReserva(reservaData: Omit<Reserva, 'id' | 'estado' | 'confirmacionToken' | 'cancellation_token'>): Observable<{ token: string, cancellationToken: string, emailContacto?: string }> {
     if (!this.idNegocio) return throwError(() => new Error('ID de negocio no definido'));
     if (!reservaData.usuario?.nombre?.trim()) {
       return throwError(() => ({ message: 'El nombre del usuario es requerido', code: 400 }));
@@ -336,7 +337,7 @@ export class BookingConfigService {
       }
     };
 
-    return this.http.post<{ token: string }>(`${environment.apiUrl}/api/reservas`, payload).pipe(
+    return this.http.post<{ token: string, cancellationToken: string, emailContacto?: string }>(`${environment.apiUrl}/api/reservas`, payload).pipe(
       catchError((error: ApiError) => {
         const errorMessage = error.message || 'Error al crear la reserva';
         this.notifications.showError(errorMessage);
@@ -359,6 +360,32 @@ export class BookingConfigService {
       catchError(error => {
         console.error('Error en deleteReserva:', error);
         return throwError(() => error);
+      })
+    );
+  }
+
+  cancelReservation(id: string): Observable<void> {
+    if (!this.idNegocio) return throwError(() => new Error('ID de negocio no definido'));
+    const params = new HttpParams().set('idNegocio', this.idNegocio);
+    return this.http.patch<void>(`${environment.apiUrl}/api/reservas/${id}/cancelar`, {}, { params }).pipe(
+      tap(() => {
+        const reservas = this.reservasSubject.value.map(r => 
+          r.id === id ? { ...r, estado: BookingStatus.CANCELADA } : r
+        );
+        this.reservasSubject.next(reservas);
+      }),
+      catchError(error => {
+        console.error('Error en cancelReservation:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  cancelReservationByToken(token: string): Observable<{ success: boolean; message: string }> {
+    return this.http.post<{ success: boolean; message: string }>(`${environment.apiUrl}/api/reservas/cancelar-por-token/${token}`, {}).pipe(
+      catchError(error => {
+        const errorMsg = error.error?.message || 'Error al cancelar reserva por token';
+        return throwError(() => new Error(errorMsg));
       })
     );
   }

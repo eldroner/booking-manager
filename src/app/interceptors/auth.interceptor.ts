@@ -27,17 +27,17 @@ export class AuthInterceptor implements HttpInterceptor {
     return next.handle(clonedReq).pipe(
       catchError((error: HttpErrorResponse) => {
         if (error.status === 401) {
-          // 1. Mostrar notificación al usuario
-          this.notifications.showError('Su sesión ha caducado, por favor inicie sesión de nuevo');
-          
-          // 2. Desloguear al usuario (limpiar token, etc.)
-          this.authService.logout();
-          
-          // 3. Redirigir al login
-          this.router.navigate(['/admin-login']);
+          // Solo mostrar la notificación si no es una ruta de login (para evitar bucles)
+          if (!req.url.includes('/admin-login')) {
+            this.notifications.showError('Su sesión ha caducado, por favor inicie sesión de nuevo');
+            this.authService.logout();
+            this.router.navigate(['/admin-login']);
+          }
+          // No propagar el error para evitar que los suscriptores lo manejen
+          return new Observable<HttpEvent<any>>();
         }
         
-        // 4. Propagar el error para que otros manejadores puedan usarlo si es necesario
+        // Propagar el error para otros tipos de errores
         return throwError(() => error);
       })
     );

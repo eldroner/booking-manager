@@ -98,6 +98,7 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
   fechasBloqueadas: string[] = [];
   nuevaFechaBloqueada: string = '';
   private subscriptions: Subscription = new Subscription();
+  private fullNameTimeouts = new Map<string, any>();
 
   constructor(
     public bookingService: BookingConfigService,
@@ -126,6 +127,7 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
+    this.fullNameTimeouts.forEach(timeout => clearTimeout(timeout));
   }
 
   getResumenEntries(): { key: string, value: number }[] {
@@ -741,5 +743,20 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
 
   formatDateForModal(date: any, format: string): string {
     return this.datePipe.transform(date, format) || '';
+  }
+
+  toggleFullName(reserva: any): void {
+    if (this.fullNameTimeouts.has(reserva.id)) {
+      clearTimeout(this.fullNameTimeouts.get(reserva.id));
+    }
+
+    reserva.showFullName = true;
+
+    const timeout = setTimeout(() => {
+      reserva.showFullName = false;
+      this.fullNameTimeouts.delete(reserva.id);
+    }, 5000);
+
+    this.fullNameTimeouts.set(reserva.id, timeout);
   }
 }

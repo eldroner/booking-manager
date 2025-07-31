@@ -358,7 +358,10 @@
               <tbody>
                 <tr *ngFor="let r of reservasFiltradasVisibles">
                   <td>
-                    <strong>{{ r.usuario?.nombre || 'Sin nombre' }}</strong>
+                    <strong class="d-none d-md-block">{{ r.usuario?.nombre || 'Sin nombre' }}</strong>
+                    <span class="d-md-none mobile-client-name" (click)="toggleFullName(r)">
+                      {{ r.showFullName ? r.usuario?.nombre : (r.usuario?.nombre.length > 6 ? r.usuario?.nombre.slice(0, 6) + '...' : r.usuario?.nombre) || 'Sin nombre' }}
+                    </span>
                   </td>
                   <td>
                     <div class="d-none d-md-block">

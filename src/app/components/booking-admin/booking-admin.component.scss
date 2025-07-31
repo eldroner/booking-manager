@@ -225,6 +225,10 @@ app-booking-user {
   }
 }
 
+.create-booking-icon {
+  font-size: 1.2rem; /* Tamaño base para móviles */
+}
+
 /* Ajustes específicos para pantallas grandes */
 @media (min-width: 992px) {
   /* Espaciado entre reservas/slot y botones */
@@ -234,7 +238,11 @@ app-booking-user {
   
   /* Tamaño consistente de iconos */
   .bi-plus-circle {
-    font-size: 1.75rem !important; /* Tamaño intermedio */
+    font-size: 1.2rem !important; /* Tamaño intermedio */
+  }
+
+  .create-booking-icon {
+    font-size: 1.5rem !important; /* Reducir tamaño en pantallas grandes */
   }
 }
 

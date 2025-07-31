@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BookingConfigService, BusinessConfig, Reserva, BusinessType, HorarioEspecial, Servicio, BookingStatus } from '../../services/booking-config.service';
 import { FullCalendarModule } from '@fullcalendar/angular';
@@ -16,6 +16,7 @@ import { AdminAuthService } from '../../services/admin-auth.service';
   selector: 'app-booking-admin',
   standalone: true,
   imports: [CommonModule, FormsModule, FullCalendarModule, BookingCalendarComponent, BookingUserComponent],
+  providers: [DatePipe],
   templateUrl: './booking-admin.component.html',
   styleUrls: ['./booking-admin.component.scss']
 })
@@ -88,6 +89,9 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
   iconosCargados: boolean = false;
   showServicesEditor = false;
 
+  modalTitle = '';
+  modalContent = '';
+
   calendarVisible = true;
   reservas: Reserva[] = [];
   reservasPorDia: { [fecha: string]: number } = {};
@@ -99,7 +103,8 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     public bookingService: BookingConfigService,
     private notifications: NotificationsService,
     private router: Router,
-    private adminAuthService: AdminAuthService
+    private adminAuthService: AdminAuthService,
+    private datePipe: DatePipe
   ) {
     this.configNegocio = this.getDefaultConfig();
   }
@@ -727,5 +732,14 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
         }
       });
     }
+  }
+
+  showDetailsModal(title: string, content: string): void {
+    this.modalTitle = title;
+    this.modalContent = content;
+  }
+
+  formatDateForModal(date: any, format: string): string {
+    return this.datePipe.transform(date, format) || '';
   }
 }

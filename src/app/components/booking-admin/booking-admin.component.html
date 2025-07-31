@@ -348,11 +348,11 @@
             <table class="table table-hover mb-0">
               <thead class="table-light">
                 <tr>
-                  <th width="20%">Cliente</th>
-                  <th width="20%">Contacto</th>
-                  <th width="25%">Servicio y Fecha</th>
-                  <th width="15%">Estado</th>
-                  <th width="10%" class="text-end">Acciones</th>
+                  <th width="20%" title="Cliente"><i class="bi bi-person-fill"></i></th>
+                  <th width="20%" title="Contacto"><i class="bi bi-envelope-fill"></i></th>
+                  <th width="25%" title="Servicio y Fecha"><i class="bi bi-calendar-event-fill"></i></th>
+                  <th width="15%" title="Estado"><i class="bi bi-info-circle-fill"></i></th>
+                  <th width="10%" class="text-end" title="Acciones" style="padding-right: 20px;"><i class="bi bi-gear-fill"></i></th>
                 </tr>
               </thead>
               <tbody>
@@ -361,15 +361,29 @@
                     <strong>{{ r.usuario?.nombre || 'Sin nombre' }}</strong>
                   </td>
                   <td>
-                    <div>{{ r.usuario?.email }}</div>
-                    <small class="text-muted" *ngIf="r.usuario?.telefono">{{ r.usuario.telefono }}</small>
+                    <div class="d-none d-md-block">
+                      <div>{{ r.usuario?.email }}</div>
+                      <small class="text-muted" *ngIf="r.usuario?.telefono">{{ r.usuario.telefono }}</small>
+                    </div>
+                    <i class="bi bi-eye-fill d-md-none text-primary cursor-pointer" 
+                       data-bs-toggle="modal" 
+                       data-bs-target="#detailsModal"
+                       (click)="showDetailsModal('Contacto', (r.usuario?.email || '') + '<br>' + (r.usuario?.telefono || ''))">
+                    </i>
                   </td>
                   <td>
-                    <div class="fw-bold">{{ getServiceName(r.servicio) }}</div>
-                    <div class="text-muted small">
-                      {{ r.fechaInicio | date:'dd/MM/yyyy HH:mm' }}
-                      <span *ngIf="r.fechaFin"> - {{ r.fechaFin | date:'HH:mm' }}</span>
+                    <div class="d-none d-md-block">
+                      <div class="fw-bold">{{ getServiceName(r.servicio) }}</div>
+                      <div class="text-muted small">
+                        {{ r.fechaInicio | date:'dd/MM/yyyy HH:mm' }}
+                        <span *ngIf="r.fechaFin"> - {{ r.fechaFin | date:'HH:mm' }}</span>
+                      </div>
                     </div>
+                    <i class="bi bi-eye-fill d-md-none text-primary cursor-pointer" 
+                       data-bs-toggle="modal" 
+                       data-bs-target="#detailsModal"
+                       (click)="showDetailsModal('Servicio y Fecha', getServiceName(r.servicio) + '<br>' + formatDateForModal(r.fechaInicio, 'dd/MM/yyyy HH:mm') + (r.fechaFin ? ' - ' + formatDateForModal(r.fechaFin, 'HH:mm') : ''))">
+                    </i>
                   </td>
                   <td class="align-middle">
                     <span [ngSwitch]="r.estado">
@@ -410,6 +424,21 @@
     <div id="collapseCrearReserva" class="accordion-collapse collapse" aria-labelledby="headingCrearReserva" data-bs-parent="#crearReservaAccordion">
       <div class="accordion-body p-2">
         <app-booking-user [isAdmin]="true"></app-booking-user>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para ver detalles en móvil -->
+<div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="detailsModalLabel">{{ modalTitle }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div [innerHTML]="modalContent"></div>
       </div>
     </div>
   </div>

@@ -277,6 +277,24 @@
       </div>
     </div>
   </div>
+
+  <!-- Acordeón para Estadísticas -->
+  <div class="accordion mb-4">
+    <div class="accordion-item p-2">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#statsCollapse">
+          <i class="bi bi-bar-chart-line me-2"></i>
+          Estadísticas
+        </button>
+      </h2>
+      <div id="statsCollapse" class="accordion-collapse collapse">
+        <div class="accordion-body p-2">
+          <app-statistics-dashboard></app-statistics-dashboard>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </form>
 
 <app-booking-calendar *ngIf="calendarVisible" [fechasBloqueadas]="fechasBloqueadas"></app-booking-calendar>
@@ -446,3 +464,354 @@
     </div>
   </div>
 </div>
+
+<!-- =================================================================== -->
+<!-- VISTA MÓVIL (PESTAÑAS INFERIORES)                                 -->
+<!-- =================================================================== -->
+<div class="d-block d-md-none mobile-content-padding">
+  <div [ngSwitch]="vistaMovilActiva">
+
+    <!-- PESTAÑA: RESERVAS -->
+    <div *ngSwitchCase="'reservas'">
+      <div class="card">
+        <div class="card-header"><i class="bi bi-calendar-check me-2"></i>Gestionar Reservas</div>
+        <div class="card-body">
+          <!-- Contenido de la gestión de reservas para móvil -->
+          <!-- Sección de Filtros -->
+          <div class="border-bottom pb-3 mb-3">
+            <h6 class="mb-3"><i class="bi bi-funnel me-1"></i>Filtros</h6>
+
+            <div class="row g-2 align-items-end">
+              <div class="col-12 col-md-4">
+                <label class="form-label small mb-1">Búsqueda</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="bi bi-search"></i></span>
+                  <input type="text" class="form-control" [(ngModel)]="searchText" (input)="applyFilters()"
+                    placeholder="Nombre, email o teléfono">
+                </div>
+              </div>
+
+              <div class="col-12 col-md-3">
+                <label class="form-label small mb-1">Estado</label>
+                <select class="form-select" [(ngModel)]="statusFilter" (change)="applyFilters()">
+                  <option value="all">Todos los estados</option>
+                  <option value="confirmada">Confirmadas</option>
+                  <option value="pendiente_email">Pendientes</option>
+                  <option value="cancelada">Canceladas</option>
+                </select>
+              </div>
+
+              <div class="col-6 col-md-3">
+                <label class="form-label small mb-1">Fecha</label>
+                <input type="date" class="form-control" [(ngModel)]="dateFilter" (change)="applyFilters()">
+              </div>
+
+              <div class="col-6 col-md-2 d-flex align-items-end justify-content-end gap-2">
+                <div class="form-check form-switch mb-1">
+                  <label class="form-check-label small" for="mostrarPasadas" title="Mostrar todas las reservas, incluidas las pasadas">Ver todas</label>
+                  <input class="form-check-input" type="checkbox" id="mostrarPasadas" [(ngModel)]="mostrarReservasPasadas" (change)="actualizarVisibilidadReservas()" name="mostrarPasadas">
+                </div>
+                <button class="btn btn-icon-only" (click)="resetFilters()" title="Limpiar filtros">
+                  <i class="bi bi-arrow-counterclockwise"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Listado de Reservas -->
+          <div>
+            <!-- Mensaje cuando no hay resultados -->
+            <div *ngIf="reservasFiltradasVisibles.length === 0" class="alert alert-warning m-4">
+              <i class="bi bi-exclamation-circle me-2"></i>No se encontraron reservas con los filtros actuales
+            </div>
+
+            <!-- Tabla (solo visible cuando hay resultados) -->
+            <div class="table-responsive" *ngIf="filteredReservas.length > 0">
+              <table class="table table-hover mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th width="20%" title="Cliente"><i class="bi bi-person-fill"></i></th>
+                    <th width="20%" title="Contacto"><i class="bi bi-envelope-fill"></i></th>
+                    <th width="25%" title="Servicio y Fecha"><i class="bi bi-calendar-event-fill"></i></th>
+                    <th width="15%" title="Estado"><i class="bi bi-info-circle-fill"></i></th>
+                    <th width="10%" class="text-end" title="Acciones" style="padding-right: 20px;"><i class="bi bi-gear-fill"></i></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let r of reservasFiltradasVisibles">
+                    <td>
+                      <strong class="d-none d-md-block">{{ r.usuario?.nombre || 'Sin nombre' }}</strong>
+                      <span class="d-md-none mobile-client-name" (click)="toggleFullName(r)">
+                        {{ r.showFullName ? r.usuario?.nombre : (r.usuario?.nombre.length > 6 ? r.usuario?.nombre.slice(0, 6) + '...' : r.usuario?.nombre) || 'Sin nombre' }}
+                      </span>
+                    </td>
+                    <td>
+                      <div class="d-none d-md-block">
+                        <div>{{ r.usuario?.email }}</div>
+                        <small class="text-muted" *ngIf="r.usuario?.telefono">{{ r.usuario.telefono }}</small>
+                      </div>
+                      <i class="bi bi-eye-fill d-md-none text-primary cursor-pointer" 
+                         data-bs-toggle="modal" 
+                         data-bs-target="#detailsModal"
+                         (click)="showDetailsModal('Contacto', (r.usuario?.email || '') + '<br>' + (r.usuario?.telefono || ''))">
+                      </i>
+                    </td>
+                    <td>
+                      <div class="d-none d-md-block">
+                        <div class="fw-bold">{{ getServiceName(r.servicio) }}</div>
+                        <div class="text-muted small">
+                          {{ r.fechaInicio | date:'dd/MM/yyyy HH:mm' }}
+                          <span *ngIf="r.fechaFin"> - {{ r.fechaFin | date:'HH:mm' }}</span>
+                        </div>
+                      </div>
+                      <i class="bi bi-eye-fill d-md-none text-primary cursor-pointer" 
+                         data-bs-toggle="modal" 
+                         data-bs-target="#detailsModal"
+                         (click)="showDetailsModal('Servicio y Fecha', getServiceName(r.servicio) + '<br>' + formatDateForModal(r.fechaInicio, 'dd/MM/yyyy HH:mm') + (r.fechaFin ? ' - ' + formatDateForModal(r.fechaFin, 'HH:mm') : ''))">
+                      </i>
+                    </td>
+                    <td class="align-middle">
+                      <span [ngSwitch]="r.estado">
+                        <i *ngSwitchCase="'confirmada'" class="bi bi-check-circle-fill text-success icon-size-18" title="Confirmada"></i>
+                        <i *ngSwitchCase="'pendiente_email'" class="bi bi-clock-fill text-orange icon-size-18" title="Pendiente de confirmación por email"></i>
+                        <i *ngSwitchCase="'cancelada'" class="bi bi-x-circle-fill text-danger icon-size-18" title="Cancelada"></i>
+                      </span>
+                    </td>
+                    <td class="align-middle">
+                      <div class="d-flex justify-content-end">
+                        <button *ngIf="r.estado === 'pendiente_email'" class="btn btn-sm text-success bg-transparent border-0 me-1" (click)="confirmReservation(r.id)" title="Confirmar reserva">
+                          <i class="bi bi-check-lg icon-size-18"></i>
+                        </button>
+                        <button *ngIf="r.estado !== 'cancelada'" class="btn btn-sm text-danger bg-transparent border-0 me-1" (click)="cancelReservation(r.id)" title="Cancelar reserva">
+                          <i class="bi bi-x-circle icon-size-18"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PESTAÑA: CREAR RESERVA -->
+    <div *ngSwitchCase="'crear'">
+      <div class="card">
+        <div class="card-header"><i class="bi bi-plus-circle me-2"></i>Crear Reserva Nueva</div>
+        <div class="card-body">
+          <app-booking-user [isAdmin]="true"></app-booking-user>
+        </div>
+      </div>
+    </div>
+
+    <!-- PESTAÑA: CONFIGURACIÓN -->
+    <div *ngSwitchCase="'config'">
+      <div class="card mb-3">
+        <div class="card-header"><i class="bi bi-list-check me-2"></i>Gestionar Servicios</div>
+        <div class="card-body">
+          <!-- Lista de servicios -->
+          <div *ngFor="let servicio of configNegocio.servicios; let i = index" class="mb-2 p-2 border rounded bg-light">
+            <div class="row g-2 align-items-center">
+              <div class="col-5"> <!-- Service Name -->
+                <input type="text" class="form-control form-control-sm" [(ngModel)]="servicio.nombre"
+                  [name]="'nombreServicio_' + i" placeholder="Ej: Corte de pelo">
+              </div>
+              <div class="col-4"> <!-- Duration -->
+                <div class="input-group input-group-sm">
+                  <input type="number" class="form-control" [(ngModel)]="servicio.duracion"
+                    [name]="'duracionServicio_' + i" min="5" step="5" placeholder="Minutos">
+                  <span class="input-group-text">min</span>
+                </div>
+              </div>
+              <div class="col-3"> <!-- Buttons -->
+                <div class="d-flex justify-content-end">
+                  <button type="button" (click)="updateService(servicio)" class="btn btn-sm text-success bg-transparent border-0 me-2"
+                    title="Guardar cambios" *ngIf="hasServiceChanges(servicio)">
+                    <i class="bi bi-check-lg icon-size-18"></i>
+                  </button>
+                  <button (click)="deleteService(servicio.id)" class="btn btn-sm text-danger bg-transparent border-0"
+                    title="Eliminar servicio">
+                    <i class="bi bi-trash icon-size-18"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-header"><i class="bi bi-clock me-2"></i>Editar Horario</div>
+        <div class="card-body">
+          <div *ngFor="let dia of diasSemana" class="mb-3 p-3 border rounded">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6>{{dia.nombre}}</h6>
+              <div class="d-flex gap-2">
+                <button type="button" (click)="saveConfiguration()"
+                  class="btn btn-sm text-success bg-transparent border-0 btn-icon-only" title="Guardar cambios"
+                  *ngIf="hasAnyHorarioNormalChanges(dia.id)">
+                  <i class="bi bi-check-lg icon-size-18"></i>
+                </button>
+                <button type="button" (click)="agregarTramo(dia.id)"
+                  class="btn btn-sm text-success bg-transparent border-0 btn-icon-only" title="Añadir horario">
+                  <i class="bi bi-plus-circle icon-lg"></i>
+                </button>
+              </div>
+            </div>
+            <div *ngFor="let tramo of getTramosDia(dia.id); let i = index" class="row g-2 mb-2 align-items-center">
+              <div class="col-5">
+                <input type="time" class="form-control" [(ngModel)]="tramo.horaInicio"
+                  [ngModelOptions]="{standalone: true}">
+              </div>
+              <div class="col-5">
+                <input type="time" class="form-control" [(ngModel)]="tramo.horaFin"
+                  [ngModelOptions]="{standalone: true}">
+              </div>
+              <div class="col-2 d-flex justify-content-end">
+                <button (click)="eliminarTramo(dia.id, i, $event)" class="btn btn-sm text-danger bg-transparent border-0" title="Eliminar">
+                  <i class="bi bi-trash icon-size-18"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-header"><i class="bi bi-calendar-event me-2"></i>Añadir Horario Especial</div>
+        <div class="card-body">
+          <!-- Formulario para nuevo horario especial -->
+          <div class="row g-0 g-md-3 mb-0 mb-md-4 p-0 p-md-3 bg-light rounded align-items-end">
+            <div class="col-3 col-md-4">
+              <label class="form-label fw-bold">Fecha</label>
+              <input type="date" class="form-control" [(ngModel)]="nuevoHorarioEspecial.fecha"
+                [ngModelOptions]="{standalone: true}">
+            </div>
+
+            <div class="col-4 col-md-3">
+              <label class="form-label fw-bold">Inicio</label>
+              <input type="time" class="form-control" [(ngModel)]="nuevoHorarioEspecial.horaInicio"
+                [ngModelOptions]="{standalone: true}">
+            </div>
+
+            <div class="col-4 col-md-3">
+              <label class="form-label fw-bold">Fin</label>
+              <input type="time" class="form-control" [(ngModel)]="nuevoHorarioEspecial.horaFin"
+                [ngModelOptions]="{standalone: true}">
+            </div>
+            <div class="col-1 col-md-2 d-flex justify-content-end">
+              <button type="button" (click)="agregarHorarioEspecial()"
+                class="btn btn-sm text-success bg-transparent border-0 btn-icon-only"
+                [disabled]="!nuevoHorarioEspecial.fecha" title="Añadir horario" *ngIf="nuevoHorarioEspecial.fecha">
+                <i class="bi bi-plus-circle icon-lg"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Listado de horarios especiales -->
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead class="table-light">
+                <tr>
+                  <th>Fecha</th>
+                  <th>Horario</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let horario of configNegocio.horariosEspeciales; let i = index"
+                  [class.table-warning]="!horario.activo">
+                  <td>{{ horario.fecha | date:'mediumDate':'':'es' }}</td>
+                  <td>{{ horario.horaInicio }} - {{ horario.horaFin }}</td>
+                  <td>
+                    <div class="form-check form-switch">
+                      <input type="checkbox" class="form-check-input" [(ngModel)]="horario.activo"
+                        [ngModelOptions]="{standalone: true}" (change)="onToggleHorarioEspecialActivo()">
+                      <label class="form-check-label">
+                        {{ horario.activo ? 'Activo' : 'Inactivo' }}
+                      </label>
+                    </div>
+                  </td>
+
+                  <td style="text-align: right; padding-right: 0;">
+                    <div style="display: inline-flex; align-items: center;">
+                      <button class="btn btn-sm text-danger bg-transparent border-0" (click)="eliminarHorarioEspecial(i)" title="Eliminar horario">
+                        <i class="bi bi-trash icon-size-18"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><i class="bi bi-calendar-x me-2"></i>Bloquear Fechas</div>
+        <div class="card-body">
+          <div class="row g-3 mb-3 align-items-end">
+            <div class="col-8 col-md-4">
+              <label class="form-label fw-bold">Seleccionar fecha a bloquear</label>
+              <div class="input-group">
+                <input type="date" class="form-control" [(ngModel)]="nuevaFechaBloqueada" name="nuevaFechaBloqueada">
+                <button type="button" class="btn btn-sm text-danger bg-transparent border-0" (click)="addFechaBloqueada()" [disabled]="!nuevaFechaBloqueada" title="Bloquear fecha">
+                  <i class="bi bi-lock-fill icon-lg"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <h6>Fechas ya bloqueadas:</h6>
+          <ul class="list-group">
+            <li *ngFor="let fecha of fechasBloqueadas"
+              class="list-group-item d-flex justify-content-between align-items-center">
+              {{ fecha | date:'fullDate':'':'es' }}
+              <button class="btn btn-sm text-success bg-transparent border-0" (click)="deleteFechaBloqueada(fecha)"
+                title="Desbloquear fecha">
+                <i class="bi bi-unlock-fill icon-lg"></i>
+              </button>
+            </li>
+            <li *ngIf="fechasBloqueadas.length === 0" class="list-group-item text-muted">
+              No hay fechas bloqueadas.
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- PESTAÑA: ESTADÍSTICAS -->
+    <div *ngSwitchCase="'estadisticas'">
+      <div class="card">
+        <div class="card-header"><i class="bi bi-bar-chart-line me-2"></i>Estadísticas</div>
+        <div class="card-body">
+          <app-statistics-dashboard></app-statistics-dashboard>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Barra de Navegación Móvil (visible solo en móvil) -->
+<nav class="barra-nav-movil d-md-none">
+  <button class="nav-button" (click)="cambiarVistaMovil('reservas')" [class.active]="vistaMovilActiva === 'reservas'">
+    <i class="bi bi-calendar-check"></i>
+    <span>Reservas</span>
+  </button>
+  <button class="nav-button" (click)="cambiarVistaMovil('crear')" [class.active]="vistaMovilActiva === 'crear'">
+    <i class="bi bi-plus-circle"></i>
+    <span>Crear</span>
+  </button>
+  <button class="nav-button" (click)="cambiarVistaMovil('config')" [class.active]="vistaMovilActiva === 'config'">
+    <i class="bi bi-gear"></i>
+    <span>Ajustes</span>
+  </button>
+  <button class="nav-button" (click)="cambiarVistaMovil('estadisticas')" [class.active]="vistaMovilActiva === 'estadisticas'">
+    <i class="bi bi-bar-chart-line"></i>
+    <span>Estadísticas</span>
+  </button>
+</nav>

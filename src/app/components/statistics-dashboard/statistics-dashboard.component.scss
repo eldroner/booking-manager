@@ -1,0 +1,88 @@
+.dashboard-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center; /* Centrar los gráficos */
+  align-items: flex-start; /* Alinear al inicio para que no se estiren verticalmente */
+}
+
+.chart-container {
+  flex: 1 1 45%; /* Por defecto, ocupan casi la mitad del espacio */
+  min-width: 300px;
+  max-width: 100%; /* Asegurar que no se desborde */
+  box-sizing: border-box; /* Incluir padding y border en el ancho */
+}
+
+.pie-chart-container {
+  flex: 0 0 30%; /* El gráfico circular ocupará menos espacio */
+  min-width: 250px; /* Tamaño mínimo para que no se vea demasiado pequeño */
+  max-width: 400px; /* Tamaño máximo para que no crezca demasiado */
+  box-sizing: border-box; /* Incluir padding y border en el ancho */
+
+  display: flex; /* Convertir el contenedor en flex para alinear leyenda y gráfico */
+  flex-direction: column; /* Apilar verticalmente por defecto */
+  align-items: center; /* Centrar horizontalmente */
+}
+
+.pie-chart-legend {
+  display: none; /* Ocultar por defecto en pantallas grandes */
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.legend-color {
+  width: 15px;
+  height: 15px;
+  border-radius: 3px;
+  margin-right: 8px;
+}
+
+.legend-text {
+  font-size: 0.9em;
+}
+
+.chart-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.2rem; /* Tamaño de fuente más pequeño */
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Centrar el título y el botón */
+}
+
+.chart-title .btn-link {
+  font-size: 1rem; /* Tamaño del icono */
+  color: var(--bs-primary); /* Color del icono */
+}
+
+/* Ajustes para pantallas muy pequeñas */
+@media (max-width: 576px) {
+  .chart-container,
+  .pie-chart-container {
+    flex: 1 1 100%; /* En móviles, cada gráfico ocupa todo el ancho */
+    min-width: auto; /* Eliminar el mínimo para que se adapte */
+    max-width: 100%; /* Asegurar que no se desborde */
+  }
+
+  /* Asegurar que el canvas se ajuste al contenedor */
+  .chart-container canvas,
+  .pie-chart-container canvas {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  .pie-chart-container {
+    flex-direction: column; /* Asegurar que se apilan verticalmente */
+    justify-content: center; /* Centrar el contenido */
+    align-items: center; /* Centrar horizontalmente */
+  }
+
+  .pie-chart-legend {
+    display: flex; /* Mostrar la leyenda en móvil */
+    align-items: center; /* Centrar la leyenda en móvil */
+  }
+}

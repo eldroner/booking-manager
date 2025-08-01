@@ -11,16 +11,18 @@ import { Router } from '@angular/router';
 import { saveAs } from 'file-saver';
 import { BookingUserComponent } from "../booking-user/booking-user.component";
 import { AdminAuthService } from '../../services/admin-auth.service';
+import { StatisticsDashboardComponent } from '../statistics-dashboard/statistics-dashboard.component'; // Importar el nuevo componente
 
 @Component({
   selector: 'app-booking-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, FullCalendarModule, BookingCalendarComponent, BookingUserComponent],
+  imports: [CommonModule, FormsModule, FullCalendarModule, BookingCalendarComponent, BookingUserComponent, StatisticsDashboardComponent], // Añadir el nuevo componente aquí
   providers: [DatePipe],
   templateUrl: './booking-admin.component.html',
   styleUrls: ['./booking-admin.component.scss']
 })
 export class BookingAdminComponent implements OnInit, OnDestroy {
+  public vistaMovilActiva: string = 'reservas'; // Opciones: 'reservas', 'crear', 'config', 'estadisticas'
   searchText = '';
   statusFilter = 'all';
   dateFilter = '';
@@ -119,6 +121,10 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     this.loadReservas();
     this.loadFechasBloqueadas();
     this.checkIconsLoaded();
+  }
+
+  cambiarVistaMovil(vista: string): void {
+    this.vistaMovilActiva = vista;
   }
 
   goToUser() {
@@ -328,7 +334,7 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           console.error('Error al eliminar tramo:', err);
-          this.notifications.showError('No se pudo eliminar el tramo horario');
+          this.notifications.showError('No se pudo actualizar el estado del horario especial');
         }
       });
   }

@@ -1,0 +1,50 @@
+<div class="dashboard-container">
+  <div class="chart-container">
+    <h3 class="chart-title">Reservas por Mes</h3>
+    <canvas baseChart 
+      [data]="barChartData" 
+      [options]="barChartOptions" 
+      [type]="barChartType">
+    </canvas>
+  </div>
+  <div class="chart-container pie-chart-container">
+    <h3 class="chart-title">
+      Por servicios
+      <button type="button" class="btn btn-sm btn-link p-0 ms-2" data-bs-toggle="modal" data-bs-target="#serviceDetailsModal" title="Ver detalles de servicios">
+        <i class="bi bi-info-circle"></i>
+      </button>
+    </h3>
+    
+    <canvas baseChart 
+      [data]="pieChartData" 
+      [options]="pieChartOptions" 
+      [type]="pieChartType">
+    </canvas>
+  </div>
+</div>
+
+<!-- Modal de Detalles de Servicios -->
+<div class="modal fade" id="serviceDetailsModal" tabindex="-1" aria-labelledby="serviceDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="serviceDetailsModalLabel">Detalles de Servicios</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <ul class="list-group">
+          <li *ngFor="let item of pieChartLegendItems" class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <span class="legend-color me-2" [style.background-color]="item.color"></span>
+              {{ item.text }}
+            </div>
+            <span class="badge bg-primary rounded-pill">{{ item.count }} ({{ item.percentage | number:'1.0-0' }}%)</span>
+          </li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>

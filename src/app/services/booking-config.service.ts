@@ -514,6 +514,18 @@ export class BookingConfigService {
     return this.http.delete(`${environment.apiUrl}/api/bloqueo/${fecha}`, { params, responseType: 'text' });
   }
 
+  uploadImage(file: File): Observable<{ imageUrl: string }> {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    return this.http.post<{ imageUrl: string }>(`${environment.apiUrl}/api/upload/image`, formData).pipe(
+      catchError(error => {
+        console.error('Error al subir la imagen:', error);
+        return throwError(() => new Error(error.error?.error || 'Error en el servidor al subir la imagen'));
+      })
+    );
+  }
+
   getGoogleMapsApiKey(): Observable<string> {
     return this.http.get<{ apiKey: string }>(`${environment.apiUrl}/api/config/maps-api-key`).pipe(
       map(response => response.apiKey),

@@ -33,6 +33,9 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
   selectedReserva: any = null;
   today = new Date();
   showReservaManual = false;
+  selectedFile: File | null = null;
+  uploading = false;
+
   configNegocio: BusinessConfig = {
     nombre: '',
     tipoNegocio: BusinessType.PELUQUERIA,
@@ -780,5 +783,39 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     }, 5000);
 
     this.fullNameTimeouts.set(reserva.id, timeout);
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.selectedFile = input.files[0];
+    }
+  }
+
+  uploadFile(): void {
+    if (!this.selectedFile) {
+      return;
+    }
+
+    this.uploading = true;
+    this.bookingService.uploadImage(this.selectedFile).subscribe({
+      next: (response) => {
+        this.uploading = false;
+        if (response.imageUrl) {
+          this.configNegocio.fotoUrls = [...(this.configNegocio.fotoUrls || []), response.imageUrl];
+          this.notifications.showSuccess('Imagen subida correctamente');
+        }
+      },
+      error: (err) => {
+        this.uploading = false;
+        this.notifications.showError('Error al subir la imagen: ' + err.message);
+      }
+    });
+  }
+
+  removeImage(index: number): void {
+    if (confirm('¿Eliminar esta imagen?')) {
+      this.configNegocio.fotoUrls?.splice(index, 1);
+    }
   }
 }

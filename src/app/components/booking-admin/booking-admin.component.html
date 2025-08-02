@@ -66,9 +66,20 @@
               placeholder="Una breve descripción de tu negocio..."></textarea>
           </div>
           <div class="mb-3">
-            <label class="form-label fw-bold">URLs de Fotos (separadas por comas)</label>
-            <input type="text" class="form-control" [(ngModel)]="configNegocio.fotoUrls" name="fotoUrls"
-              placeholder="Ej: http://ejemplo.com/foto1.jpg, http://ejemplo.com/foto2.png">
+            <label class="form-label fw-bold">Fotos del Negocio</label>
+            <div class="input-group mb-2">
+              <input type="file" class="form-control" (change)="onFileSelected($event)" accept="image/*" #fileInput>
+              <button class="btn btn-outline-secondary" type="button" (click)="uploadFile()" [disabled]="!selectedFile">Subir Foto</button>
+            </div>
+            <div *ngIf="uploading" class="progress mb-2">
+              <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" [style.width.%]="100"></div>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+              <div *ngFor="let url of configNegocio.fotoUrls; let i = index" class="position-relative">
+                <img [src]="url" class="img-thumbnail" width="100" height="100" alt="Foto del negocio">
+                <button class="btn btn-sm btn-danger position-absolute top-0 end-0" (click)="removeImage(i)">&times;</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

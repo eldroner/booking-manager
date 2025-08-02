@@ -1,5 +1,5 @@
-import { Component, OnInit, Input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, Input, PLATFORM_ID, Inject } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BookingConfigService, Servicio, BusinessConfig, BusinessType, UserData, BookingStatus } from '../../services/booking-config.service';
 import { registerLocaleData } from '@angular/common';
@@ -9,6 +9,14 @@ import { NotificationsService } from '../../services/notifications.service';
 import { HoraFinPipe } from "../../pipes/hora-fin.pipe";
 import { EmailService } from '../../services/email.service';
 import { Router } from '@angular/router';
+
+declare const google: any; // Declare google to avoid TypeScript errors
+
+declare global {
+  interface Window {
+    initMap: () => void;
+  }
+}
 
 registerLocaleData(localeEs);
 
@@ -53,7 +61,8 @@ export class BookingUserComponent implements OnInit {
     private bookingService: BookingConfigService,
     private notifications: NotificationsService,
     private emailService: EmailService,
-    private router: Router
+    private router: Router,
+    @Inject(PLATFORM_ID) private platformId: Object
   ) { }
 
   ngOnInit(): void {
@@ -76,12 +85,56 @@ export class BookingUserComponent implements OnInit {
         this.config = config || this.getDefaultConfig();
         this.negocioNombre = this.config.nombre || 'Sistema de Reservas';
         this.loadServicios();
+        if (isPlatformBrowser(this.platformId) && this.config.direccion) {
+          this.loadGoogleMapsScript().then(() => {
+            this.initMap();
+          });
+        }
       },
       error: (err) => {
         console.error('Error cargando configuración:', err);
         this.notifications.showError('Error al cargar configuración');
         this.config = this.getDefaultConfig();
         this.loadServicios();
+      }
+    });
+  }
+
+  private loadGoogleMapsScript(): Promise<void> {
+    return new Promise((resolve) => {
+      if (typeof google !== 'undefined' && google.maps) {
+        resolve();
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyBTN27wrbXk1WXNrdFICr6iTTJUO-tfl8g&callback=initMap&loading=async`;
+      script.async = true;
+      script.defer = true;
+      window['initMap'] = () => resolve(); // Global callback
+      document.head.appendChild(script);
+    });
+  }
+
+  private initMap(): void {
+    if (!this.config.direccion) return;
+
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ 'address': this.config.direccion }, (results: any, status: any) => {
+      if (status === 'OK' && results[0]) {
+        const mapOptions = {
+          zoom: 15,
+          center: results[0].geometry.location,
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+        const map = new google.maps.Map(document.getElementById('map'), mapOptions);
+        new google.maps.Marker({
+          position: results[0].geometry.location,
+          map: map,
+          title: this.config.nombre
+        });
+      } else {
+        console.error('Geocode was not successful for the following reason: ' + status);
       }
     });
   }

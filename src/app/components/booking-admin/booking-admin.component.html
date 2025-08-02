@@ -8,16 +8,9 @@
 
 <form (ngSubmit)="saveConfiguration()" #configForm="ngForm">
   <div class="row g-3 mb-4">
-    <!-- Nombre del negocio -->
-    <div class="col-5">
-      <label class="form-label fw-bold" title="Aquí tienes que poner el nombre de tu negocio">Brand</label>
-      <input type="text" class="form-control" [(ngModel)]="configNegocio.nombre" name="nombre" required
-        placeholder="Ej: Mi Negocio">
-    </div>
-
     <!-- Reservas/slot -->
-    <div class="col-2">
-      <label class="form-label fw-bold" title="Máximo de citas simultáneas permitidas">max/citas</label>
+    <div class="col-3">
+      <label class="form-label fw-bold" title="Máximo de citas simultáneas permitidas">Máx. citas simultáneas</label>
       <input type="number" class="form-control" [(ngModel)]="configNegocio.maxReservasPorSlot" name="maxReservasPorSlot"
         min="1" required>
     </div>
@@ -57,6 +50,11 @@
       <div id="businessInfoCollapse" class="accordion-collapse" [class.show]="showBusinessInfo"
         [style.display]="showBusinessInfo ? 'block' : 'none'">
         <div class="accordion-body p-2">
+          <div class="mb-3">
+            <label class="form-label fw-bold" title="Aquí tienes que poner el nombre de tu negocio">Nombre o marca de tu negocio</label>
+            <input type="text" class="form-control" [(ngModel)]="configNegocio.nombre" name="nombre" required
+              placeholder="Ej: Mi Negocio">
+          </div>
           <div class="mb-3">
             <label class="form-label fw-bold">Dirección</label>
             <input type="text" class="form-control" [(ngModel)]="configNegocio.direccion" name="direccion"
@@ -114,7 +112,7 @@
                     title="Guardar cambios" *ngIf="hasServiceChanges(servicio)">
                     <i class="bi bi-check-lg icon-size-18"></i>
                   </button>
-                  <button (click)="deleteService(servicio.id)" class="btn btn-sm text-danger bg-transparent border-0"
+                  <button type="button" (click)="deleteService(servicio.id)" class="btn btn-sm text-danger bg-transparent border-0"
                     title="Eliminar servicio">
                     <i class="bi bi-trash icon-size-18"></i>
                   </button>
@@ -169,7 +167,7 @@
                   [ngModelOptions]="{standalone: true}">
               </div>
               <div class="col-2 d-flex justify-content-end">
-                <button (click)="eliminarTramo(dia.id, i, $event)" class="btn btn-sm text-danger bg-transparent border-0" title="Eliminar">
+                <button type="button" (click)="eliminarTramo(dia.id, i, $event)" class="btn btn-sm text-danger bg-transparent border-0" title="Eliminar">
                   <i class="bi bi-trash icon-size-18"></i>
                 </button>
               </div>
@@ -254,7 +252,7 @@
 
                   <td style="text-align: right; padding-right: 0;">
                     <div style="display: inline-flex; align-items: center;">
-                      <button class="btn btn-sm text-danger bg-transparent border-0" (click)="eliminarHorarioEspecial(i)" title="Eliminar horario">
+                      <button type="button" class="btn btn-sm text-danger bg-transparent border-0" (click)="eliminarHorarioEspecial(i)" title="Eliminar horario">
                         <i class="bi bi-trash icon-size-18"></i>
                       </button>
                     </div>
@@ -665,7 +663,7 @@
                     title="Guardar cambios" *ngIf="hasServiceChanges(servicio)">
                     <i class="bi bi-check-lg icon-size-18"></i>
                   </button>
-                  <button (click)="deleteService(servicio.id)" class="btn btn-sm text-danger bg-transparent border-0"
+                  <button type="button" (click)="deleteService(servicio.id)" class="btn btn-sm text-danger bg-transparent border-0"
                     title="Eliminar servicio">
                     <i class="bi bi-trash icon-size-18"></i>
                   </button>
@@ -704,7 +702,7 @@
                   [ngModelOptions]="{standalone: true}">
               </div>
               <div class="col-2 d-flex justify-content-end">
-                <button (click)="eliminarTramo(dia.id, i, $event)" class="btn btn-sm text-danger bg-transparent border-0" title="Eliminar">
+                <button type="button" (click)="eliminarTramo(dia.id, i, $event)" class="btn btn-sm text-danger bg-transparent border-0" title="Eliminar">
                   <i class="bi bi-trash icon-size-18"></i>
                 </button>
               </div>
@@ -772,7 +770,7 @@
 
                   <td style="text-align: right; padding-right: 0;">
                     <div style="display: inline-flex; align-items: center;">
-                      <button class="btn btn-sm text-danger bg-transparent border-0" (click)="eliminarHorarioEspecial(i)" title="Eliminar horario">
+                      <button type="button" class="btn btn-sm text-danger bg-transparent border-0" (click)="eliminarHorarioEspecial(i)" title="Eliminar horario">
                         <i class="bi bi-trash icon-size-18"></i>
                       </button>
                     </div>

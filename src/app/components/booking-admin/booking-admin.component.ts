@@ -88,6 +88,7 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
   showNormalSchedules = false;
   showSpecialSchedules = false;
   showBlockedDates = false; // Nueva propiedad para el acordeón de fechas bloqueadas
+  showBusinessInfo = false; // Nueva propiedad para el acordeón de información del negocio
   iconosCargados: boolean = false;
   showServicesEditor = false;
 
@@ -153,7 +154,7 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
   // 2. Scroll suave hasta el formulario
   setTimeout(() => {
     const reservaSection = document.getElementById('panel-reservas');
-    reservaSection?.scrollIntoView({ 
+    reservaSection?.scrollIntoView({
       behavior: 'smooth',
       block: 'nearest'
     });
@@ -463,7 +464,10 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
           this.configNegocio = {
             ...this.getDefaultConfig(),
             ...config,
-            horariosEspeciales: config.horariosEspeciales || []
+            horariosEspeciales: config.horariosEspeciales || [],
+            direccion: config.direccion || '',
+            descripcion: config.descripcion || '',
+            fotoUrls: config.fotoUrls || []
           };
           this.originalConfigNegocio = JSON.parse(JSON.stringify(this.configNegocio)); // Guardar copia original
           this.originalServicios = JSON.parse(JSON.stringify(this.configNegocio.servicios)); // Guardar copia original de servicios
@@ -477,7 +481,10 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
   hasChanges(): boolean {
     // Solo verificar cambios en nombre y maxReservasPorSlot para el botón principal
     return this.configNegocio.nombre !== this.originalConfigNegocio.nombre ||
-           this.configNegocio.maxReservasPorSlot !== this.originalConfigNegocio.maxReservasPorSlot;
+           this.configNegocio.maxReservasPorSlot !== this.originalConfigNegocio.maxReservasPorSlot ||
+           this.configNegocio.direccion !== this.originalConfigNegocio.direccion ||
+           this.configNegocio.descripcion !== this.originalConfigNegocio.descripcion ||
+           JSON.stringify(this.configNegocio.fotoUrls) !== JSON.stringify(this.originalConfigNegocio.fotoUrls);
   }
 
   public hasServiceChanges(service: Servicio): boolean {
@@ -586,7 +593,13 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.bookingService.updateConfig(this.configNegocio)
+    // Convertir la cadena de fotoUrls a un array si no es nula o indefinida
+    const configToSave = { ...this.configNegocio };
+    if (typeof configToSave.fotoUrls === 'string') {
+      configToSave.fotoUrls = (configToSave.fotoUrls as string).split(',').map(url => url.trim()).filter(url => url.length > 0);
+    }
+
+    this.bookingService.updateConfig(configToSave)
       .pipe(take(1))
       .subscribe({
         next: () => {
@@ -645,7 +658,10 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
             [{ horaInicio: '10:00', horaFin: '14:00' }] :
             [] // Domingo - cerrado por defecto
       })),
-      horariosEspeciales: []
+      horariosEspeciales: [],
+      direccion: '',
+      descripcion: '',
+      fotoUrls: []
     };
   }
 

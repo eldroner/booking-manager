@@ -43,6 +43,40 @@
     </div>
   </div>
 
+  <!-- Nuevo Acordeón para Información del Negocio -->
+  <div class="accordion mb-4">
+    <div class="accordion-item p-2">
+      <h2 class="accordion-header">
+        <button class="accordion-button" type="button" data-bs-toggle="collapse"
+          data-bs-target="#businessInfoCollapse" [ngClass]="{'collapsed': !showBusinessInfo}"
+          (click)="showBusinessInfo = !showBusinessInfo">
+          <i class="bi bi-info-circle me-2"></i>
+          Información del Negocio
+        </button>
+      </h2>
+      <div id="businessInfoCollapse" class="accordion-collapse" [class.show]="showBusinessInfo"
+        [style.display]="showBusinessInfo ? 'block' : 'none'">
+        <div class="accordion-body p-2">
+          <div class="mb-3">
+            <label class="form-label fw-bold">Dirección</label>
+            <input type="text" class="form-control" [(ngModel)]="configNegocio.direccion" name="direccion"
+              placeholder="Ej: Calle Falsa 123, Ciudad, País">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Descripción</label>
+            <textarea class="form-control" [(ngModel)]="configNegocio.descripcion" name="descripcion" rows="3"
+              placeholder="Una breve descripción de tu negocio..."></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">URLs de Fotos (separadas por comas)</label>
+            <input type="text" class="form-control" [(ngModel)]="configNegocio.fotoUrls" name="fotoUrls"
+              placeholder="Ej: http://ejemplo.com/foto1.jpg, http://ejemplo.com/foto2.png">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Acordeón para Servicios -->
   <div class="accordion mb-4">
     <div class="accordion-item p-2">

@@ -190,7 +190,10 @@ export class BookingUserComponent implements OnInit {
       maxReservasPorSlot: 1,
       servicios: [],
       horariosNormales: [],
-      horariosEspeciales: []
+      horariosEspeciales: [],
+      direccion: '',
+      descripcion: '',
+      fotoUrls: []
     };
   }
 

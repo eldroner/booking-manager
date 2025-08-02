@@ -79,6 +79,9 @@ export interface BusinessConfig {
   servicios: Servicio[];
   horariosNormales: HorarioNormal[];
   horariosEspeciales: HorarioEspecial[];
+  direccion?: string;
+  descripcion?: string;
+  fotoUrls?: string[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -101,7 +104,10 @@ export class BookingConfigService {
       { dia: 5, tramos: [{ horaInicio: '09:00', horaFin: '13:00' }, { horaInicio: '15:00', horaFin: '19:00' }] },
       { dia: 6, tramos: [{ horaInicio: '10:00', horaFin: '14:00' }] }
     ],
-    horariosEspeciales: []
+    horariosEspeciales: [],
+    direccion: '',
+    descripcion: '',
+    fotoUrls: []
   };
 
   private configSubject = new BehaviorSubject<BusinessConfig>(this.defaultConfig);

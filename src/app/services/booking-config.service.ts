@@ -513,4 +513,15 @@ export class BookingConfigService {
     const params = new HttpParams().set('idNegocio', this.idNegocio);
     return this.http.delete(`${environment.apiUrl}/api/bloqueo/${fecha}`, { params, responseType: 'text' });
   }
+
+  getGoogleMapsApiKey(): Observable<string> {
+    return this.http.get<{ apiKey: string }>(`${environment.apiUrl}/api/config/maps-api-key`).pipe(
+      map(response => response.apiKey),
+      catchError(error => {
+        console.error('Error fetching Google Maps API Key:', error);
+        this.notifications.showError('No se pudo cargar la clave de API de Google Maps');
+        return throwError(() => new Error('Failed to load Google Maps API Key'));
+      })
+    );
+  }
 }

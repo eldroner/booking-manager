@@ -101,18 +101,28 @@ export class BookingUserComponent implements OnInit {
   }
 
   private loadGoogleMapsScript(): Promise<void> {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       if (typeof google !== 'undefined' && google.maps) {
         resolve();
         return;
       }
 
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyBTN27wrbXk1WXNrdFICr6iTTJUO-tfl8g&callback=initMap&loading=async`;
-      script.async = true;
-      script.defer = true;
-      window['initMap'] = () => resolve(); // Global callback
-      document.head.appendChild(script);
+      this.bookingService.getGoogleMapsApiKey().pipe(take(1)).subscribe({
+        next: (apiKey) => {
+          const script = document.createElement('script');
+          script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initMap&loading=async`;
+          script.async = true;
+          script.defer = true;
+          window['initMap'] = () => resolve(); // Global callback
+          script.onerror = () => reject(new Error('Failed to load Google Maps script'));
+          document.head.appendChild(script);
+        },
+        error: (err) => {
+          console.error('Could not load Google Maps API Key', err);
+          this.notifications.showError('No se pudo cargar el mapa.');
+          reject(err);
+        }
+      });
     });
   }
 

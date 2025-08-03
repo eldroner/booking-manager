@@ -127,9 +127,7 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     this.checkIconsLoaded();
   }
 
-  cambiarVistaMovil(vista: string): void {
-    this.vistaMovilActiva = vista;
-  }
+  
 
   goToUser() {
     this.router.navigate(['/']);

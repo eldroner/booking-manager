@@ -85,7 +85,7 @@ export class BookingUserComponent implements OnInit {
         this.config = config || this.getDefaultConfig();
         this.negocioNombre = this.config.nombre || 'Sistema de Reservas';
         this.loadServicios();
-        if (isPlatformBrowser(this.platformId) && this.config.direccion) {
+        if (isPlatformBrowser(this.platformId) && this.config.direccion && !this.isAdmin) {
           this.loadGoogleMapsScript().then(() => {
             this.initMap();
           });

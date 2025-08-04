@@ -74,6 +74,7 @@ export interface BusinessConfig {
   idNegocio?: string;
   nombre: string;
   slogan?: string;
+  telefono?: string;
   tipoNegocio: BusinessType;
   duracionBase: number;
   maxReservasPorSlot: number;
@@ -94,6 +95,7 @@ export class BookingConfigService {
   private defaultConfig: BusinessConfig = {
     nombre: '',
     slogan: '',
+    telefono: '',
     tipoNegocio: BusinessType.GENERAL,
     duracionBase: 30,
     maxReservasPorSlot: 1,

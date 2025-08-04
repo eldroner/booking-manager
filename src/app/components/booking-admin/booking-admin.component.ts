@@ -39,6 +39,7 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
   configNegocio: BusinessConfig = {
     nombre: '',
     slogan: '', // Añadido
+    telefono: '', // Añadido
     tipoNegocio: BusinessType.PELUQUERIA,
     duracionBase: 30,
     maxReservasPorSlot: 1,
@@ -487,6 +488,7 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
            this.configNegocio.maxReservasPorSlot !== this.originalConfigNegocio.maxReservasPorSlot ||
            this.configNegocio.direccion !== this.originalConfigNegocio.direccion ||
            this.configNegocio.descripcion !== this.originalConfigNegocio.descripcion ||
+           this.configNegocio.telefono !== this.originalConfigNegocio.telefono ||
            JSON.stringify(this.configNegocio.fotoUrls) !== JSON.stringify(this.originalConfigNegocio.fotoUrls);
   }
 
@@ -650,6 +652,7 @@ export class BookingAdminComponent implements OnInit, OnDestroy {
     return {
       nombre: '',
       slogan: '', // Añadido
+      telefono: '', // Añadido
       tipoNegocio: BusinessType.PELUQUERIA,
       duracionBase: 30,
       maxReservasPorSlot: 1,

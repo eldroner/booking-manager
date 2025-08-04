@@ -50,42 +50,62 @@
       <div id="businessInfoCollapse" class="accordion-collapse" [class.show]="showBusinessInfo"
         [style.display]="showBusinessInfo ? 'block' : 'none'">
         <div class="accordion-body p-2">
-          <div class="mb-3">
-            <label class="form-label fw-bold" title="Aquí tienes que poner el nombre de tu negocio">Nombre o marca de tu negocio</label>
-            <input type="text" class="form-control" [(ngModel)]="configNegocio.nombre" name="nombre" required
-              placeholder="Ej: Mi Negocio">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label fw-bold" title="Aquí tienes que poner el nombre de tu negocio">Nombre o marca de tu negocio</label>
+                <input type="text" class="form-control" [(ngModel)]="configNegocio.nombre" name="nombre" required
+                  placeholder="Ej: Mi Negocio">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label fw-bold">Slogan o subtítulo</label>
+                <input type="text" class="form-control" [(ngModel)]="configNegocio.slogan" name="slogan" maxlength="150"
+                  placeholder="Ej: La mejor peluquería de la ciudad (máx. 150 caracteres).">
+              </div>
+            </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label fw-bold">Slogan o subtítulo</label>
-            <input type="text" class="form-control" [(ngModel)]="configNegocio.slogan" name="slogan" maxlength="150"
-              placeholder="Ej: La mejor peluquería de la ciudad">
-            <div class="form-text">Este texto aparecerá debajo del nombre de tu negocio (máx. 150 caracteres).</div>
+
+          <div class="row">
+            <div class="col-md-4">
+              <div class="mb-3">
+                <label class="form-label fw-bold">Dirección</label>
+                <input type="text" class="form-control" [(ngModel)]="configNegocio.direccion" name="direccion"
+                  placeholder="Ej: Calle Falsa 123, Ciudad, País">
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="mb-3">
+                <label class="form-label fw-bold">Teléfono</label>
+                <input type="tel" class="form-control" [(ngModel)]="configNegocio.telefono" name="telefono"
+                  placeholder="Ej: +34 612 345 678 (Número de contacto para clientes).">
+              </div>
+            </div>
+            <div class="col-md-5">
+              <div class="mb-3">
+                <label class="form-label fw-bold">Foto</label>
+                <div class="input-group mb-2">
+                  <input type="file" class="form-control" (change)="onFileSelected($event)" accept="image/*" #fileInput>
+                  <button class="btn btn-outline-secondary" type="button" (click)="uploadFile()" [disabled]="!selectedFile">Subir Foto</button>
+                </div>
+                <div *ngIf="uploading" class="progress mb-2">
+                  <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" [style.width.%]="100"></div>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                  <div *ngFor="let url of configNegocio.fotoUrls; let i = index" class="position-relative">
+                    <img [src]="url" class="img-thumbnail" width="100" height="100" alt="Foto del negocio">
+                    <button class="btn btn-sm btn-danger position-absolute top-0 end-0" (click)="removeImage(i)">&times;</button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label fw-bold">Dirección</label>
-            <input type="text" class="form-control" [(ngModel)]="configNegocio.direccion" name="direccion"
-              placeholder="Ej: Calle Falsa 123, Ciudad, País">
-          </div>
+
           <div class="mb-3">
             <label class="form-label fw-bold">Descripción</label>
             <textarea class="form-control" [(ngModel)]="configNegocio.descripcion" name="descripcion" rows="3"
               placeholder="Una breve descripción de tu negocio..."></textarea>
-          </div>
-          <div class="mb-3">
-            <label class="form-label fw-bold">Fotos del Negocio</label>
-            <div class="input-group mb-2">
-              <input type="file" class="form-control" (change)="onFileSelected($event)" accept="image/*" #fileInput>
-              <button class="btn btn-outline-secondary" type="button" (click)="uploadFile()" [disabled]="!selectedFile">Subir Foto</button>
-            </div>
-            <div *ngIf="uploading" class="progress mb-2">
-              <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" [style.width.%]="100"></div>
-            </div>
-            <div class="d-flex flex-wrap gap-2">
-              <div *ngFor="let url of configNegocio.fotoUrls; let i = index" class="position-relative">
-                <img [src]="url" class="img-thumbnail" width="100" height="100" alt="Foto del negocio">
-                <button class="btn btn-sm btn-danger position-absolute top-0 end-0" (click)="removeImage(i)">&times;</button>
-              </div>
-            </div>
           </div>
         </div>
       </div>

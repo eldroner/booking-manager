@@ -28,87 +28,117 @@
   </div>
 </div>
 
-<div class="card p-4 shadow-sm">
-  <h2 class="text-center mb-4 business-tagline">Reserva tu cita</h2>
-  <div class="divider-line mb-4" style="width: 50%; margin: auto;"></div>
+<div class="row g-4">
+  <!-- Columna del Formulario de Reserva -->
+  <div class="col-lg-7">
+    <div class="card p-4 shadow-sm h-100">
+      <h2 class="text-center mb-2 business-tagline"><i class="bi bi-calendar-check me-2"></i>Reserva tu cita</h2>
+      <div class="divider-line mb-4" style="width: 50%; margin: auto;"></div>
 
-    <!-- Selector de Servicio -->
-    <div class="mb-3">
-      <label class="form-label">Servicio</label>
-      <select class="form-select" [(ngModel)]="reservaData.servicio" (change)="onServiceChange()" required>
-        <option value="" disabled selected>Seleccione un servicio</option>
-        <option *ngFor="let servicio of serviciosDisponibles" [value]="servicio.id">
-          {{ servicio.nombre }} ({{ servicio.duracion }} min)
-        </option>
-      </select>
-    </div>
+      <!-- Selector de Servicio -->
+      <div class="mb-3">
+        <label class="form-label">Servicio</label>
+        <select class="form-select" [(ngModel)]="reservaData.servicio" (change)="onServiceChange()" required>
+          <option value="" disabled selected>Seleccione un servicio</option>
+          <option *ngFor="let servicio of serviciosDisponibles" [value]="servicio.id">
+            {{ servicio.nombre }} ({{ servicio.duracion }} min)
+          </option>
+        </select>
+      </div>
 
-    <div class="mt-3">
-      <div class="reservation-form">
-        <!-- Selector de Fecha y Hora -->
-        <div class="row g-3 mb-3">
-          <div class="col-md-6">
-            <label class="form-label fw-bold">Fecha:</label>
-            <input type="date" class="form-control" [(ngModel)]="reservaData.fechaInicio"
-              (change)="onDateChange(reservaData.fechaInicio)" [min]="today" [max]="maxDate" required>
+      <div class="mt-3">
+        <div class="reservation-form">
+          <!-- Selector de Fecha y Hora -->
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Fecha:</label>
+              <input type="date" class="form-control" [(ngModel)]="reservaData.fechaInicio"
+                (change)="onDateChange(reservaData.fechaInicio)" [min]="today" [max]="maxDate" required>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Hora:</label>
+              <select class="form-select" [(ngModel)]="selectedTime" [disabled]="!reservaData.fechaInicio" required>
+                <option value="" disabled selected>Selecciona hora</option>
+                <option *ngFor="let time of availableTimes" [value]="time">
+                  {{ time }}
+                </option>
+              </select>
+            </div>
           </div>
 
-          <div class="col-md-6">
-            <label class="form-label fw-bold">Hora:</label>
-            <select class="form-select" [(ngModel)]="selectedTime" [disabled]="!reservaData.fechaInicio" required>
-              <option value="" disabled selected>Selecciona hora</option>
-              <option *ngFor="let time of availableTimes" [value]="time">
-                {{ time }}
-              </option>
-            </select>
+          <!-- Confirmación de reserva -->
+          <div *ngIf="reservaData.fechaInicio && selectedTime" class="alert alert-success mb-3">
+            <i class="bi bi-calendar-check me-2"></i>
+            <strong>Reserva programada:</strong>
+            {{ reservaData.fechaInicio | date:'fullDate':'':'es' }} a las {{ selectedTime }}
+            <span *ngIf="reservaData.duracion">
+              (Finaliza ~{{ reservaData.fechaInicio | horaFin:selectedTime:reservaData.duracion }})
+            </span>
           </div>
-        </div>
 
-        <!-- Confirmación de reserva -->
-        <div *ngIf="reservaData.fechaInicio && selectedTime" class="alert alert-success mb-3">
-          <i class="bi bi-calendar-check me-2"></i>
-          <strong>Reserva programada:</strong>
-          {{ reservaData.fechaInicio | date:'fullDate':'':'es' }} a las {{ selectedTime }}
-          <span *ngIf="reservaData.duracion">
-            (Finaliza ~{{ reservaData.fechaInicio | horaFin:selectedTime:reservaData.duracion }})
-          </span>
-        </div>
-
-        <!-- Datos del usuario -->
-        <div class="mb-3">
-          <label class="form-label fw-bold">Nombre completo:</label>
-          <input type="text" class="form-control" [(ngModel)]="reservaData.usuario.nombre" required minlength="3">
-        </div>
-
-        <div class="mb-3">
-          <label for="userEmail" class="form-label fw-bold">Correo electrónico:</label>
-          <input type="email" id="userEmail" class="form-control {{emailTouched && emailError ? 'is-invalid' : ''}}"
-            [(ngModel)]="reservaData.usuario.email" name="email" required placeholder="Ej: ejemplo@correo.com"
-            (change)="debugEmail()" (blur)="emailTouched = true; isFormValid()"> <!-- Actualizamos aquí -->
-          @if (emailTouched && emailError) {
-          <div class="invalid-feedback">
-            {{emailError}}
+          <!-- Datos del usuario -->
+          <div class="mb-3">
+            <label class="form-label fw-bold">Nombre completo:</label>
+            <input type="text" class="form-control" [(ngModel)]="reservaData.usuario.nombre" required minlength="3">
           </div>
-          }
-        </div>
 
-        <div class="mb-3">
-          <label class="form-label">Teléfono*:</label>
-          <input type="tel" class="form-control" [(ngModel)]="reservaData.usuario.telefono"
-            (input)="soloNumeros($event)" (blur)="phoneTouched = true; isFormValid()"
-            [class.is-invalid]="phoneTouched && phoneError" name="telefono" placeholder="Ej: 612345678">
-
-          <div *ngIf="phoneTouched && phoneError" class="invalid-feedback">
-            {{ phoneError }}
+          <div class="mb-3">
+            <label for="userEmail" class="form-label fw-bold">Correo electrónico:</label>
+            <input type="email" id="userEmail" class="form-control {{emailTouched && emailError ? 'is-invalid' : ''}}"
+              [(ngModel)]="reservaData.usuario.email" name="email" required placeholder="Ej: ejemplo@correo.com"
+              (change)="debugEmail()" (blur)="emailTouched = true; isFormValid()"> <!-- Actualizamos aquí -->
+            @if (emailTouched && emailError) {
+            <div class="invalid-feedback">
+              {{emailError}}
+            </div>
+            }
           </div>
-        </div>
 
-        <!-- Botón de confirmación -->
-        <button class="btn pixelnova-btn w-100 py-2 fw-bold" (click)="confirmarReserva()" [disabled]="!isFormValid()">
-          <i class="bi bi-check-circle me-2"></i>
-          Confirmar reserva
-        </button>
+          <div class="mb-3">
+            <label class="form-label">Teléfono*:</label>
+            <input type="tel" class="form-control" [(ngModel)]="reservaData.usuario.telefono"
+              (input)="soloNumeros($event)" (blur)="phoneTouched = true; isFormValid()"
+              [class.is-invalid]="phoneTouched && phoneError" name="telefono" placeholder="Ej: 612345678">
+
+            <div *ngIf="phoneTouched && phoneError" class="invalid-feedback">
+              {{ phoneError }}
+            </div>
+          </div>
+
+          <!-- Botón de confirmación -->
+          <button class="btn pixelnova-btn w-100 py-2 fw-bold" (click)="confirmarReserva()" [disabled]="!isFormValid()">
+            <i class="bi bi-check-circle me-2"></i>
+            Confirmar reserva
+          </button>
+        </div>
       </div>
     </div>
   </div>
+
+  <!-- Columna de Información del Negocio -->
+  <div class="col-lg-5">
+    <div class="card p-4 shadow-sm h-100">
+      <h4 class="mb-2 text-center business-tagline"><i class="bi bi-clock-history me-2"></i>Nuestro Horario</h4>
+      <div class="divider-line mb-4 mx-auto" style="width: 75%;"></div>
+      <div class="d-flex align-items-center mb-3">
+        <i class="bi bi-circle-fill me-2" [ngClass]="estadoClase"></i>
+        <span class="fw-bold" [ngClass]="estadoClase">{{ estadoActual }}</span>
+      </div>
+      <ul class="list-group list-group-flush">
+        <li *ngFor="let dia of diasSemana" class="list-group-item d-flex justify-content-between align-items-center">
+          <strong>{{ dia.nombre }}</strong>
+          <span *ngIf="getTramosParaDia(dia.id).length > 0; else cerrado">
+            <span *ngFor="let tramo of getTramosParaDia(dia.id); let last = last">
+              {{ tramo.horaInicio }} - {{ tramo.horaFin }}{{ !last ? ', ' : '' }}
+            </span>
+          </span>
+          <ng-template #cerrado>
+            <span class="text-muted">Cerrado</span>
+          </ng-template>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
 </div>

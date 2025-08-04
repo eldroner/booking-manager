@@ -56,6 +56,19 @@ export class BookingUserComponent implements OnInit {
   today: string = new Date().toISOString().split('T')[0];
   maxDate: string = new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0];
   config!: BusinessConfig;
+  estadoActual: string = 'Cargando...';
+  estadoClase: string = 'text-muted';
+  private intervalId: any;
+
+  diasSemana = [
+    { id: 1, nombre: 'Lunes' },
+    { id: 2, nombre: 'Martes' },
+    { id: 3, nombre: 'Miércoles' },
+    { id: 4, nombre: 'Jueves' },
+    { id: 5, nombre: 'Viernes' },
+    { id: 6, nombre: 'Sábado' },
+    { id: 0, nombre: 'Domingo' }
+  ];
 
   constructor(
     private bookingService: BookingConfigService,
@@ -67,6 +80,13 @@ export class BookingUserComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadInitialData();
+    this.intervalId = setInterval(() => this.actualizarEstadoNegocio(), 60000); // Actualiza cada minuto
+  }
+
+  ngOnDestroy(): void {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+    }
   }
 
   private loadInitialData(): void {
@@ -90,6 +110,7 @@ export class BookingUserComponent implements OnInit {
             this.initMap();
           });
         }
+        this.actualizarEstadoNegocio(); // Llamada inicial
       },
       error: (err) => {
         console.error('Error cargando configuración:', err);
@@ -493,5 +514,52 @@ if (this.isAdmin) {
     this.emailTouched = false;
     this.phoneError = null;
     this.phoneTouched = false;
+  }
+
+  actualizarEstadoNegocio(): void {
+    if (!this.config) return;
+
+    const ahora = new Date();
+    const diaSemana = ahora.getDay();
+    const fechaHoy = ahora.toISOString().split('T')[0];
+    const horaActual = ahora.getHours().toString().padStart(2, '0') + ':' + ahora.getMinutes().toString().padStart(2, '0');
+
+    // Prioridad 1: Horario especial para hoy
+    const horarioEspecialHoy = this.config.horariosEspeciales.find(h => h.fecha === fechaHoy && h.activo);
+    if (horarioEspecialHoy) {
+      if (horaActual >= horarioEspecialHoy.horaInicio && horaActual < horarioEspecialHoy.horaFin) {
+        this.estadoActual = 'Abierto ahora (Horario especial)';
+        this.estadoClase = 'text-success';
+      } else {
+        this.estadoActual = 'Cerrado ahora';
+        this.estadoClase = 'text-danger';
+      }
+      return;
+    }
+
+    // Prioridad 2: Horario normal
+    const horarioNormalHoy = this.config.horariosNormales.find(h => h.dia === diaSemana);
+    if (horarioNormalHoy && horarioNormalHoy.tramos.length > 0) {
+      const tramoActual = horarioNormalHoy.tramos.find(t => horaActual >= t.horaInicio && horaActual < t.horaFin);
+      if (tramoActual) {
+        this.estadoActual = 'Abierto ahora';
+        this.estadoClase = 'text-success';
+      } else {
+        this.estadoActual = 'Cerrado ahora';
+        this.estadoClase = 'text-danger';
+      }
+    } else {
+      this.estadoActual = 'Cerrado hoy';
+      this.estadoClase = 'text-danger';
+    }
+  }
+
+  getTramosParaDia(diaId: number): any[] {
+    const horario = this.config.horariosNormales.find(h => h.dia === diaId);
+    if (!horario || !horario.tramos) {
+      return [];
+    }
+    // Filtrar tramos inválidos o que indican cierre
+    return horario.tramos.filter(t => t.horaInicio !== '00:00' || t.horaFin !== '00:00');
   }
 }

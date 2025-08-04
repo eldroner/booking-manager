@@ -4,7 +4,7 @@
     {{ negocioNombre }}
   </h1>
   <div class="divider-line"></div>
-  <span class="business-tagline">Reserva tu cita</span>
+  <span class="business-tagline">{{ config.slogan || 'Nuestra prioridad, nuestros clientes' }}</span>
 </div>
 
 <!-- Nueva sección de información del negocio -->
@@ -29,7 +29,8 @@
 </div>
 
 <div class="card p-4 shadow-sm">
-
+  <h2 class="text-center mb-4 business-tagline">Reserva tu cita</h2>
+  <div class="divider-line mb-4" style="width: 50%; margin: auto;"></div>
 
     <!-- Selector de Servicio -->
     <div class="mb-3">

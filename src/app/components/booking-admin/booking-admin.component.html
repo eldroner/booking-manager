@@ -56,6 +56,12 @@
               placeholder="Ej: Mi Negocio">
           </div>
           <div class="mb-3">
+            <label class="form-label fw-bold">Slogan o subtítulo</label>
+            <input type="text" class="form-control" [(ngModel)]="configNegocio.slogan" name="slogan" maxlength="150"
+              placeholder="Ej: La mejor peluquería de la ciudad">
+            <div class="form-text">Este texto aparecerá debajo del nombre de tu negocio (máx. 150 caracteres).</div>
+          </div>
+          <div class="mb-3">
             <label class="form-label fw-bold">Dirección</label>
             <input type="text" class="form-control" [(ngModel)]="configNegocio.direccion" name="direccion"
               placeholder="Ej: Calle Falsa 123, Ciudad, País">

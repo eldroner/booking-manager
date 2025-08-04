@@ -73,6 +73,7 @@ export interface HorarioEspecial {
 export interface BusinessConfig {
   idNegocio?: string;
   nombre: string;
+  slogan?: string;
   tipoNegocio: BusinessType;
   duracionBase: number;
   maxReservasPorSlot: number;
@@ -92,6 +93,7 @@ export class BookingConfigService {
   loading$ = this.loadingSubject.asObservable();
   private defaultConfig: BusinessConfig = {
     nombre: '',
+    slogan: '',
     tipoNegocio: BusinessType.GENERAL,
     duracionBase: 30,
     maxReservasPorSlot: 1,

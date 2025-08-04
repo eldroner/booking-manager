@@ -9,24 +9,23 @@
 
 <!-- Nueva sección de información del negocio -->
 <div class="card p-4 shadow-sm mb-4" *ngIf="(config.direccion || (config.fotoUrls && config.fotoUrls.length > 0)) && !isAdmin">
-  <div class="row g-3 align-items-end">
-    <div class="col-md-6">
+  <div class="row g-3 align-items-stretch">
+    <div class="col-md-6 d-flex flex-column">
       <p *ngIf="config.direccion">
         <a href="https://www.google.com/maps/search/?api=1&query={{ config.direccion }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-dark">
           <i class="bi bi-geo-alt-fill me-2"></i>{{ config.direccion }}
         </a>
       </p>
       <div id="map" style="height: 300px; width: 100%; margin-top: 15px;"></div>
+      <div *ngIf="config.descripcion" class="mt-3">
+        <h2 style="font-size: 16px; text-transform: uppercase;">Sobre {{ negocioNombre }}</h2>
+        <p class="small text-muted">{{ config.descripcion }}</p>
+      </div>
     </div>
-    <div class="col-md-6 d-flex align-items-center justify-content-center" style="height: 300px;">
-      <img [src]="(config.fotoUrls && config.fotoUrls.length > 0) ? config.fotoUrls[0] : 'https://raw.githubusercontent.com/eldroner/mis-assets/main/business.jpg'" class="img-fluid rounded" alt="Imagen del negocio" style="max-height: 300px; object-fit: contain;">
+    <div class="col-md-6">
+      <img [src]="(config.fotoUrls && config.fotoUrls.length > 0) ? config.fotoUrls[0] : 'https://raw.githubusercontent.com/eldroner/mis-assets/main/business.jpg'" class="img-fluid rounded" alt="Imagen del negocio" style="height: 100%; width: 100%; object-fit: cover;">
     </div>
   </div>
-</div>
-
-<!-- Nueva sección de descripción -->
-<div class="card p-4 shadow-sm mb-4" *ngIf="config.descripcion && !isAdmin">
-  <h5 class="mb-3 text-center">{{ config.descripcion }}</h5>
 </div>
 
 <div class="card p-4 shadow-sm">

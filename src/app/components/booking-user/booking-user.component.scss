@@ -31,6 +31,24 @@
   display: block; /* Ensures it's on a new line */
 }
 
+.small-icon-link {
+  font-size: 1.2rem; /* Tamaño del icono */
+  color: #007bff; /* Color del icono, puedes ajustarlo */
+  transition: color 0.2s ease-in-out;
+
+  &:hover {
+    color: #0056b3; /* Color al pasar el ratón */
+  }
+}
+
+.whatsapp-icon {
+  color: #25D366; /* Color verde de WhatsApp */
+
+  &:hover {
+    color: #1DA851; /* Un verde un poco más oscuro al pasar el ratón */
+  }
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .business-name {

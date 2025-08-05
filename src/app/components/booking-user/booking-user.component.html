@@ -146,6 +146,12 @@
           </ng-template>
         </li>
       </ul>
+      <div *ngIf="proximoHorarioEspecial" class="alert alert-info mt-3 text-center">
+        <i class="bi bi-info-circle-fill me-2"></i>
+        <span>{{ proximoHorarioEspecial.prefijo }}</span>
+        <strong>{{ proximoHorarioEspecial.fecha }}</strong>
+        <span [innerHTML]="proximoHorarioEspecial.resto"></span>
+      </div>
     </div>
   </div>
 </div>

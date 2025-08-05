@@ -59,6 +59,7 @@ export class BookingUserComponent implements OnInit {
   estadoActual: string = 'Cargando...';
   estadoClase: string = 'text-muted';
   private intervalId: any;
+  proximoHorarioEspecial: { prefijo: string, fecha: string, resto: string } | null = null;
 
   diasSemana = [
     { id: 1, nombre: 'Lun' },
@@ -111,6 +112,7 @@ export class BookingUserComponent implements OnInit {
           });
         }
         this.actualizarEstadoNegocio(); // Llamada inicial
+        this.calcularProximoHorarioEspecial();
       },
       error: (err) => {
         console.error('Error cargando configuración:', err);
@@ -561,5 +563,30 @@ if (this.isAdmin) {
     }
     // Filtrar tramos inválidos o que indican cierre
     return horario.tramos.filter(t => t.horaInicio !== '00:00' || t.horaFin !== '00:00');
+  }
+
+  private calcularProximoHorarioEspecial(): void {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0); // Normalizar a medianoche
+
+    const proximoEspecial = this.config.horariosEspeciales
+      .filter(h => h.activo && new Date(h.fecha) >= hoy)
+      .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())[0];
+
+    if (proximoEspecial) {
+      const fechaEspecial = new Date(proximoEspecial.fecha);
+      
+      const unaSemanaEnMilisegundos = 7 * 24 * 60 * 60 * 1000;
+      const prefijo = (fechaEspecial.getTime() - hoy.getTime()) < unaSemanaEnMilisegundos ? 'Este' : 'El próximo';
+
+      const fechaFormateada = fechaEspecial.toLocaleDateString('es-ES', { weekday: 'long', month: 'long', day: 'numeric' });
+      const horario = `de ${proximoEspecial.horaInicio} a ${proximoEspecial.horaFin}`;
+
+      this.proximoHorarioEspecial = {
+        prefijo: `${prefijo} `,
+        fecha: fechaFormateada,
+        resto: `, estaremos abiertos en horario especial: <strong>${horario}</strong>. ¡Te esperamos!`
+      };
+    }
   }
 }

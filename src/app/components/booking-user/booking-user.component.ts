@@ -61,13 +61,13 @@ export class BookingUserComponent implements OnInit {
   private intervalId: any;
 
   diasSemana = [
-    { id: 1, nombre: 'Lunes' },
-    { id: 2, nombre: 'Martes' },
-    { id: 3, nombre: 'Miércoles' },
-    { id: 4, nombre: 'Jueves' },
-    { id: 5, nombre: 'Viernes' },
-    { id: 6, nombre: 'Sábado' },
-    { id: 0, nombre: 'Domingo' }
+    { id: 1, nombre: 'Lun' },
+    { id: 2, nombre: 'Mar' },
+    { id: 3, nombre: 'Mié' },
+    { id: 4, nombre: 'Jue' },
+    { id: 5, nombre: 'Vie' },
+    { id: 6, nombre: 'Sáb' },
+    { id: 0, nombre: 'Dom' }
   ];
 
   constructor(
